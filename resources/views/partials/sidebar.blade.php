@@ -28,7 +28,7 @@
     class="flex items-center px-6 py-8 border-b border-gray-50 dark:border-slate-800"
   >
     <a href="/admin" class="flex items-center gap-3">
-      <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
+      <div class="flex h-9 w-9 shirnk-0 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
@@ -39,7 +39,7 @@
     </a>
   </div>
 
-  <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear flex-grow">
+  <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear grow">
     <nav class="px-4 py-6">
       
       <div class="mb-8">
@@ -56,8 +56,11 @@
             </a>
           </li>
           <li>
-            <a href="/eng/stock" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <a href="{{ route('stock.eng.index') }}" 
+               class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('stock-engineering*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
               <span x-show="!sidebarToggle">Stock Nozzle ENG</span>
             </a>
           </li>
