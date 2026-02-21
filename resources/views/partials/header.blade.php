@@ -1,5 +1,5 @@
 <header
-  x-data="{ dropdownOpen: false, notifyOpen: false }"
+  x-data="{ dropdownOpen: false, notifyOpen: false, profileModalOpen: false }"
   class="sticky top-0 z-999 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
 >
   <div class="flex w-full items-center justify-between px-4 py-3 sm:px-5 lg:px-9">
@@ -72,9 +72,9 @@
 
       <div class="relative ml-1" @click.outside="dropdownOpen = false">
         <button @click="dropdownOpen = !dropdownOpen" class="flex items-center gap-3">
-          {{-- FOTO PROFIL DINAMIS DENGAN CACHE BUSTER --}}
           <div class="h-11 w-11 overflow-hidden rounded-full ring-2 ring-blue-500/10 shadow-sm border border-gray-200 dark:border-gray-700">
             <img 
+              id="header-profile-img"
               src="{{ Auth::user()->profile_photo_path ? asset('storage/'.Auth::user()->profile_photo_path) . '?v=' . time() : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff' }}" 
               alt="User" class="h-full w-full object-cover"
             >
@@ -98,10 +98,10 @@
           </div>
           
           <div class="p-2">
-            <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-all">
+            <button @click="profileModalOpen = true; dropdownOpen = false" class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-all">
               <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
               My Profile
-            </a>
+            </button>
           </div>
 
           <div class="p-2 border-t border-gray-50 dark:border-gray-800">
@@ -119,5 +119,107 @@
     </div>
   </div>
 
+  <div 
+    x-show="profileModalOpen" 
+    class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-md px-4"
+    x-cloak
+    style="display: none;"
+  >
+    <div @click.outside="profileModalOpen = false" class="w-full max-w-sm rounded-[2.5rem] bg-white dark:bg-slate-900 shadow-2xl overflow-hidden border border-white/20">
+      <div class="h-24 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
+          <button @click="profileModalOpen = false" class="absolute top-4 right-4 text-white/80 hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+      </div>
+
+      <div class="px-8 pb-8">
+          <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="relative -mt-12 flex flex-col items-center">
+              @csrf
+              @method('PUT')
+              
+              {{-- INPUT HIDDEN UNTUK FLAG HAPUS FOTO --}}
+              <input type="hidden" name="remove_photo" id="remove_photo_input" value="0">
+
+              <div class="relative group">
+                  <div class="h-28 w-28 rounded-full ring-4 ring-white dark:ring-slate-900 overflow-hidden bg-slate-200 shadow-xl">
+                      <img id="profile-preview" 
+                           src="{{ Auth::user()->profile_photo_path ? asset('storage/'.Auth::user()->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff' }}" 
+                           class="h-full w-full object-cover">
+                  </div>
+                  
+                  {{-- Label Upload --}}
+                  <label for="photo-upload" class="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  </label>
+
+                  {{-- TOMBOL HAPUS FOTO (TRASH ICON) --}}
+                  @if(Auth::user()->profile_photo_path)
+                  <button type="button" id="delete-photo-btn" onclick="removePhotoAction()" class="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white border-2 border-white dark:border-slate-900 hover:bg-red-600 shadow-lg transition-all active:scale-90">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                  @endif
+
+                  <input id="photo-upload" type="file" name="photo" class="hidden" onchange="previewImage(event)">
+              </div>
+
+              <div class="mt-4 text-center">
+                  <h3 class="text-xl font-black text-slate-800 dark:text-white tracking-tight">{{ Auth::user()->name }}</h3>
+                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ Auth::user()->role }}</p>
+              </div>
+
+              <div class="mt-8 w-full space-y-4">
+                  <div class="relative">
+                      <label class="absolute -top-2 left-4 bg-white dark:bg-slate-900 px-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest">Full Name</label>
+                      <input type="text" name="name" value="{{ Auth::user()->name }}" 
+                          class="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-transparent py-4 px-5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-indigo-600 transition-all">
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-center">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">NIM / Identifier</p>
+                      <p class="text-sm font-mono font-bold text-slate-600 dark:text-slate-300 mt-1">{{ Auth::user()->nim }}</p>
+                  </div>
+              </div>
+
+              <div class="mt-8 flex w-full gap-3">
+                  <button type="submit" class="flex-1 rounded-2xl bg-indigo-600 py-4 text-xs font-black text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95 uppercase tracking-widest">
+                      Update Profile
+                  </button>
+              </div>
+          </form>
+      </div>
+    </div>
+  </div>
+
   <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
 </header>
+
+<script>
+  // Preview foto saat milih file
+  function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+      const output = document.getElementById('profile-preview');
+      output.src = reader.result;
+      // Reset flag hapus kalau user milih file baru
+      document.getElementById('remove_photo_input').value = '0';
+    };
+    reader.readAsDataURL(event.target.files[0]);
+  }
+
+  // Fungsi Action Hapus Foto (Jalur Murni JS)
+  function removePhotoAction() {
+    // 1. Set input hidden jadi 1 agar Controller tahu ini instruksi HAPUS
+    document.getElementById('remove_photo_input').value = '1';
+
+    // 2. Ganti tampilan ke UI Avatars (Efek visual seolah sudah terhapus)
+    const name = "{{ Auth::user()->name }}";
+    const placeholder = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`;
+    document.getElementById('profile-preview').src = placeholder;
+
+    // 3. Kosongkan input file jika ada file yang nyangkut
+    document.getElementById('photo-upload').value = '';
+
+    // 4. Sembunyikan tombol hapus
+    const btn = document.getElementById('delete-photo-btn');
+    if(btn) btn.style.display = 'none';
+  }
+</script>

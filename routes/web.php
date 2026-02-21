@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StockEngController;
+use App\Http\Controllers\ProfileController; // 1. Tambahkan import ini
 use Illuminate\Support\Facades\Route;
 
 // 1. Redirect Halaman Utama
@@ -19,15 +20,18 @@ Route::middleware('guest')->group(function () {
 // 3. Grup Route untuk Auth (Sudah Login)
 Route::middleware('auth')->group(function () {
     
-    // Dashboard Utama (Arahkan ke view admin)
+    // Dashboard Utama (Admin)
     Route::get('/admin', function () {
         return view('admin'); 
-    })->name('admin.dashboard');
+    })->name('dashboard'); // Tetap pakai name 'dashboard' sesuai request lo
+
+    // --- Module: Profile (Fitur Edit Foto & Nama) ---
+    Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::prefix('admin/users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users.index');
         Route::post('/store', [UserController::class, 'store'])->name('users.store');
-        Route::put('/{user}', [UserController::class, 'update'])->name('users.update'); // Tambahkan ini
+        Route::put('/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
@@ -37,14 +41,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/store', [StockEngController::class, 'store'])->name('stock.eng.store');
     });
 
-    // --- Module: Production (Halaman untuk role Production) ---
-    Route::get('/dashboard', function () {
-        return view('dashboard'); // View untuk user biasa/production
-    })->name('dashboard');
-// Di dalam middleware auth
-Route::get('/admin', function () {
-    return view('admin'); // File blade Anda
-})->name('dashboard'); // Pastikan namanya 'dashboard'
+    // --- Module: Production ---
+    Route::get('/production-dashboard', function () {
+        return view('dashboard'); 
+    })->name('production.dashboard');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
