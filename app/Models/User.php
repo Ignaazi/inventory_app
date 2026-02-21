@@ -19,8 +19,10 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'email',
+        'nim', 
         'password',
+        'role', 
+        'profile_photo_path', // ganti image jadi ini
     ];
 
     /**
@@ -41,8 +43,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            // email_verified_at dihapus karena kita tidak menggunakan email lagi
             'password' => 'hashed',
         ];
     }
-}
+}   

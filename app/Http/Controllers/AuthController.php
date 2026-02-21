@@ -10,28 +10,36 @@ class AuthController extends Controller
     // Menampilkan halaman login
     public function index()
     {
+        // Pastikan nama file view-nya 'login.blade.php'
         return view('login');
     }
 
     // Proses Autentikasi
     public function login(Request $request)
     {
+        // 1. Validasi: Ganti 'nim' (rule) menjadi 'string'
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'nim' => ['required', 'string'], 
             'password' => ['required'],
         ]);
 
+        // 2. Proses Login menggunakan NIM
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             
-            // Redirect ke halaman admin setelah sukses
-            return redirect()->intended('admin');
+            // 3. Redirect dinamis berdasarkan role (Opsional tapi bagus untuk sistem Anda)
+            $user = Auth::user();
+            if ($user->role === 'admin' || $user->role === 'engineering') {
+                return redirect()->intended('admin');
+            }
+            
+            return redirect()->intended('dashboard'); // default untuk role lain
         }
 
         // Jika gagal, kembali dengan pesan error
         return back()->withErrors([
-            'email' => 'Email atau password yang Anda masukkan salah.',
-        ])->onlyInput('email');
+            'nim' => 'NIM atau password yang Anda masukkan salah.',
+        ])->onlyInput('nim');
     }
 
     // Proses Logout

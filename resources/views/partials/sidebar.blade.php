@@ -6,6 +6,27 @@
     flex-shrink: 0;
   }
   
+  /* Animasi Scroll Smooth dan Custom Scrollbar */
+  .custom-scroll-container {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Membuat scrollbar lebih cantik (Modern Look) */
+  .custom-scroll-container::-webkit-scrollbar {
+    width: 5px;
+  }
+  .custom-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scroll-container::-webkit-scrollbar-thumb {
+    background: #e2e8f0; /* slate-200 */
+    border-radius: 10px;
+  }
+  .dark .custom-scroll-container::-webkit-scrollbar-thumb {
+    background: #334155; /* slate-700 */
+  }
+
   /* Responsivitas dasar */
   @media (max-width: 1024px) {
     .sidebar-responsive {
@@ -28,7 +49,7 @@
     class="flex items-center px-6 py-8 border-b border-gray-50 dark:border-slate-800"
   >
     <a href="/admin" class="flex items-center gap-3">
-      <div class="flex h-9 w-9 shirnk-0 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
@@ -39,9 +60,31 @@
     </a>
   </div>
 
-  <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear grow">
+  <div class="custom-scroll-container flex flex-col overflow-y-auto duration-300 ease-linear grow">
     <nav class="px-4 py-6">
       
+      <div class="mb-8">
+        <ul class="flex flex-col gap-1.5">
+          <li>
+            <a href="/admin" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('admin') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+              </svg>
+              <span x-show="!sidebarToggle">Main Dashboard</span>
+            </a>
+          </li>
+          
+          <li>
+            <a href="/admin/users" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('admin/users*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              <span x-show="!sidebarToggle">Management User</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
       <div class="mb-8">
         <h3 x-show="!sidebarToggle" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           ENGINEERING
@@ -49,12 +92,6 @@
         <div x-show="sidebarToggle" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">ENG</div>
 
         <ul class="flex flex-col gap-1.5">
-          <li>
-            <a href="/eng/dashboard" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('eng/dashboard') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              <span x-show="!sidebarToggle">Dashboard</span>
-            </a>
-          </li>
           <li>
             <a href="{{ route('stock.eng.index') }}" 
                class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('stock-engineering*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
@@ -79,19 +116,13 @@
         </ul>
       </div>
 
-      <div>
+      <div class="mb-8">
         <h3 x-show="!sidebarToggle" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           PRODUCTION
         </h3>
         <div x-show="sidebarToggle" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">PROD</div>
 
         <ul class="flex flex-col gap-1.5">
-          <li>
-            <a href="/prod/dashboard" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
-              <span x-show="!sidebarToggle">Dashboard</span>
-            </a>
-          </li>
           <li>
             <a href="/prod/stock" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
               <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
@@ -112,6 +143,23 @@
           </li>
         </ul>
       </div>
+
+      <div class="mb-8">
+        <h3 x-show="!sidebarToggle" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+          COSTING
+        </h3>
+        <div x-show="sidebarToggle" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">CST</div>
+
+        <ul class="flex flex-col gap-1.5">
+          <li>
+            <a href="/costing/purchase-request" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/purchase-request*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span x-show="!sidebarToggle">Purchase Order</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
     </nav>
   </div>
 </aside>

@@ -106,7 +106,15 @@
                   </div>
             
                   <div class="mt-6 flex items-center gap-4">
-                    <div class="text-3xl animate-bounce-slow">👋</div>
+                    {{-- Foto Profil User (Dinamis sesuai DB) --}}
+                    <div class="relative">
+                      <img 
+                        src="{{ Auth::user()->profile_photo_path ? asset('storage/' . Auth::user()->profile_photo_path) . '?v=' . time() : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff' }}" 
+                        class="h-16 w-16 rounded-2xl object-cover border-4 border-white dark:border-slate-800 shadow-xl"
+                        alt="Avatar"
+                      >
+                    </div>
+
                     <div>
                       <h3 class="text-xl font-bold text-slate-800 dark:text-white leading-tight">
                         Selamat Datang, {{ Auth::user()->name }}
