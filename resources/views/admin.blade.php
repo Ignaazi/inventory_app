@@ -42,11 +42,17 @@
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .shadow-default { box-shadow: 0px 8px 13px -3px rgba(0, 0, 0, 0.07); }
         
-        /* Custom Scrollbar untuk Table agar lebih clean */
+        /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #2e3a47; }
+
+        /* Perbaikan Scroll: Memastikan kontainer utama stabil */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -98,12 +104,12 @@
             
             @include('partials.header')
 
-            <main class="sidebar-transition">
+            <main class="w-full">
                 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
                     
                     @if(Route::is('dashboard'))
                         
-                        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+                        <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-7">
                             @php
                                 $kpis = [
                                     ['label' => 'ALL', 'val' => '2,140', 'icon' => 'package', 'bg' => 'bg-primary/10', 'color' => 'text-primary', 'trend' => '+11.01%', 'up' => true],
@@ -118,7 +124,7 @@
                             @foreach($kpis as $kpi)
                             <div class="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
                                 <div class="flex items-center gap-3 mb-4">
-                                    <div class="flex h-9 w-9 items-center justify-center rounded-full {{ $kpi['bg'] }}">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $kpi['bg'] }}">
                                         <i data-feather="{{ $kpi['icon'] }}" class="w-4 h-4 {{ $kpi['color'] }}"></i>
                                     </div>
                                     <div class="overflow-hidden">
@@ -126,7 +132,7 @@
                                         <span class="text-[9px] text-bodydark2 block">Stock</span>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between">
+                                <div class="flex items-center justify-between gap-1">
                                     <h4 class="text-lg font-bold text-slate-800 dark:text-white">{{ $kpi['val'] }}</h4>
                                     <span class="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold {{ $kpi['up'] ? 'bg-emerald-50 text-success' : 'bg-rose-50 text-danger' }}">
                                         {{ $kpi['trend'] }}
@@ -137,8 +143,8 @@
                         </div>
 
                         <div class="grid grid-cols-12 gap-6 mb-6">
-                            <div class="col-span-12 xl:col-span-8 space-y-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="col-span-12 xl:col-span-12 space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-strokedark dark:bg-boxdark">
                                         <div class="flex justify-between items-start mb-4">
                                             <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase">
@@ -184,58 +190,60 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-                                    <div class="flex justify-between items-center mb-4">
-                                        <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm">Inventory Traceability Trend</h4>
-                                        <div class="flex gap-4 text-[10px] font-bold">
-                                            <span class="flex items-center gap-1"><span class="w-2 h-2 bg-primary rounded-full"></span> IN</span>
-                                            <span class="flex items-center gap-1"><span class="w-2 h-2 bg-success rounded-full"></span> OUT</span>
+                                    <div class="rounded-2xl border border-stroke bg-white p-5 shadow-default dark:border-strokedark dark:bg-boxdark">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase">
+                                                <i data-feather="dollar-sign" class="w-4 h-4 text-success"></i> Costing
+                                            </h4>
+                                            <i data-feather="more-vertical" class="w-4 h-4 text-bodydark2"></i>
                                         </div>
-                                    </div>
-                                    <div class="h-[250px]"><canvas id="portfolioChart"></canvas></div>
-                                </div>
-                            </div>
-
-                            <div class="col-span-12 xl:col-span-4 space-y-6">
-                                <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-                                    <h4 class="mb-4 font-bold text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase">
-                                        <i data-feather="dollar-sign" class="w-4 h-4 text-success"></i> Costing Summary
-                                    </h4>
-                                    <div class="p-5 bg-slate-900 text-white rounded-2xl mb-4 relative overflow-hidden">
-                                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Est. Consumption</p>
-                                        <h3 class="text-3xl font-black mt-1">$4,250.00</h3>
-                                        <i data-feather="trending-up" class="absolute right-[-10px] bottom-[-10px] text-white/10 w-24 h-24"></i>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div class="p-3 border border-stroke dark:border-strokedark rounded-xl text-center">
-                                            <p class="text-[9px] text-bodydark2 font-bold uppercase">Approved</p>
-                                            <p class="font-bold text-success text-lg">18</p>
+                                        <div class="flex items-end justify-between">
+                                            <h3 class="text-2xl font-bold dark:text-white">$4,250</h3>
+                                            <div class="w-24 h-12"><canvas id="costChart"></canvas></div>
                                         </div>
-                                        <div class="p-3 border border-stroke dark:border-strokedark rounded-xl text-center">
-                                            <p class="text-[9px] text-bodydark2 font-bold uppercase">Pending</p>
-                                            <p class="font-bold text-warning text-lg">4</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark overflow-hidden">
-                                    <div class="px-6 py-4 border-b border-stroke dark:border-strokedark">
-                                        <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm">Live Alerts</h4>
-                                    </div>
-                                    <div class="p-4 space-y-4">
-                                        <template x-for="i in 2">
-                                            <div class="flex gap-4 p-2 rounded-xl hover:bg-whiten dark:hover:bg-boxdark-2 transition-all">
-                                                <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-danger shrink-0">
-                                                    <i data-feather="alert-circle" class="w-5 h-5"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="text-sm font-bold dark:text-white">Stock Critical</p>
-                                                    <p class="text-xs text-bodydark2">Line 05 needs nozzle refill.</p>
-                                                </div>
+                                        <div class="mt-4 space-y-2 border-t border-stroke dark:border-strokedark pt-4">
+                                            <div class="flex justify-between text-[10px] items-center text-success">
+                                                <span class="font-medium uppercase">Approved Req</span>
+                                                <span class="font-bold">18 Items</span>
                                             </div>
-                                        </template>
+                                            <div class="flex justify-between text-[10px] items-center text-warning">
+                                                <span class="font-medium uppercase">Pending Req</span>
+                                                <span class="font-bold">4 Items</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-12 gap-6">
+                                    <div class="col-span-12 xl:col-span-8 rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+                                        <div class="flex justify-between items-center mb-4">
+                                            <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm">Inventory Traceability Trend</h4>
+                                            <div class="flex gap-4 text-[10px] font-bold">
+                                                <span class="flex items-center gap-1"><span class="w-2 h-2 bg-primary rounded-full"></span> IN</span>
+                                                <span class="flex items-center gap-1"><span class="w-2 h-2 bg-success rounded-full"></span> OUT</span>
+                                            </div>
+                                        </div>
+                                        <div class="h-[250px]"><canvas id="portfolioChart"></canvas></div>
+                                    </div>
+
+                                    <div class="col-span-12 xl:col-span-4 rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark overflow-hidden">
+                                        <div class="px-6 py-4 border-b border-stroke dark:border-strokedark">
+                                            <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm">Live Alerts</h4>
+                                        </div>
+                                        <div class="p-4 space-y-4">
+                                            <template x-for="i in 2">
+                                                <div class="flex gap-4 p-2 rounded-xl hover:bg-whiten dark:hover:bg-boxdark-2 transition-all">
+                                                    <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-danger shrink-0">
+                                                        <i data-feather="alert-circle" class="w-5 h-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-bold dark:text-white">Stock Critical</p>
+                                                        <p class="text-xs text-bodydark2">Line 05 needs nozzle refill.</p>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -243,7 +251,6 @@
 
                         <div class="col-span-12 mb-10">
                             <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark overflow-hidden">
-                                
                                 <div class="px-6 py-6 border-b border-stroke dark:border-strokedark flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <h4 class="text-xl font-bold text-slate-800 dark:text-white">Latest Transactions</h4>
                                     <div class="relative w-full max-w-[300px]">
@@ -351,10 +358,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initial feather icons load
             feather.replace();
 
-            // CHART CONFIGS
             const sparklineOptions = (color) => ({
                 type: 'line',
                 data: {
@@ -376,12 +381,21 @@
                 }
             });
 
-            new Chart(document.getElementById('opChart'), sparklineOptions('#219653'));
+            new Chart(document.getElementById('opChart'), sparklineOptions('#3c50e0'));
             
             const riskCtx = document.getElementById('riskChart');
-            const riskOpt = sparklineOptions('#D34053');
-            riskOpt.data.datasets[0].data = [80, 60, 70, 40, 50, 30, 40, 35];
-            new Chart(riskCtx, riskOpt);
+            if(riskCtx) {
+                const riskOpt = sparklineOptions('#D34053');
+                riskOpt.data.datasets[0].data = [80, 60, 70, 40, 50, 30, 40, 35];
+                new Chart(riskCtx, riskOpt);
+            }
+
+            const costCtx = document.getElementById('costChart');
+            if(costCtx) {
+                const costOpt = sparklineOptions('#219653');
+                costOpt.data.datasets[0].data = [40, 50, 45, 70, 80, 85, 90, 100];
+                new Chart(costCtx, costOpt);
+            }
 
             const ctxLine = document.getElementById('portfolioChart');
             if (ctxLine) {
