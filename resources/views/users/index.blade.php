@@ -54,7 +54,7 @@
                 <thead>
                     <tr class="bg-slate-50 text-left dark:bg-slate-800/50">
                         <th class="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Full Name</th>
-                        <th class="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">NIM / Username</th>
+                        <th class="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">NIM</th>
                         <th class="py-4 px-6 text-center font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Role</th>
                         <th class="py-4 px-6 text-right font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
                     </tr>

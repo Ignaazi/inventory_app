@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StockEngController;
-use App\Http\Controllers\ProfileController; // 1. Tambahkan import ini
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Redirect Halaman Utama
@@ -23,11 +23,12 @@ Route::middleware('auth')->group(function () {
     // Dashboard Utama (Admin)
     Route::get('/admin', function () {
         return view('admin'); 
-    })->name('dashboard'); // Tetap pakai name 'dashboard' sesuai request lo
+    })->name('dashboard');
 
     // --- Module: Profile (Fitur Edit Foto & Nama) ---
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 
+    // --- Module: User Management ---
     Route::prefix('admin/users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users.index');
         Route::post('/store', [UserController::class, 'store'])->name('users.store');
@@ -39,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('stock-engineering')->group(function () {
         Route::get('/', [StockEngController::class, 'index'])->name('stock.eng.index');
         Route::post('/store', [StockEngController::class, 'store'])->name('stock.eng.store');
+        // Tambahkan dua route di bawah ini agar Edit & Delete berfungsi
+        Route::put('/{id}', [StockEngController::class, 'update'])->name('stock.eng.update');
+        Route::delete('/{id}', [StockEngController::class, 'destroy'])->name('stock.eng.destroy');
     });
 
     // --- Module: Production ---
