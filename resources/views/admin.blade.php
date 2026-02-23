@@ -347,7 +347,6 @@
                         </div>
 
                     @else
-                        <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
                             @yield('content')
                         </div>
                     @endif
