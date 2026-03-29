@@ -1,5 +1,5 @@
 ## Dashboard Overview
-<img width="1440" height="778" alt="Screenshot 2026-01-12 at 05 41 23" src="https://github.com/user-attachments/assets/ad03e1f6-ea04-4a2d-805e-8504fd264e00" />
+<img width="1440" height="778" alt="Screenshot 2026-02-23 at 08 13 15" src="https://github.com/user-attachments/assets/5a935765-19ff-4465-b42c-3d7888a6beb9" />
 
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
