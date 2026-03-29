@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StockEngController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EngineeringOverviewController;
+use App\Http\Controllers\Engineering\TransactionController; // Import Controller Baru
 use Illuminate\Support\Facades\Route;
 
 // 1. Redirect Halaman Utama
@@ -41,6 +42,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/store', [StockEngController::class, 'store'])->name('stock.eng.store');
         Route::put('/{id}', [StockEngController::class, 'update'])->name('stock.eng.update');
         Route::delete('/{id}', [StockEngController::class, 'destroy'])->name('stock.eng.destroy');
+    });
+
+    // --- ADDED: ENGINEERING TRANSACTIONS (IN, OUT, DISPOSAL) ---
+    Route::prefix('eng')->group(function () {
+        Route::get('/in', [TransactionController::class, 'indexIn'])->name('eng.in');
+        Route::get('/out', [TransactionController::class, 'indexOut'])->name('eng.out');
+        Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
     });
 
     // --- MODULE LAINNYA ---

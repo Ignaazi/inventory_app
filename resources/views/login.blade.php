@@ -18,7 +18,7 @@
                 <form action="/login" method="POST" class="space-y-6">
                     @csrf
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">NIM</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">NIK</label>
                         <input type="text" name="nim" required value="{{ old('nim') }}"
                             class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-slate-50 text-slate-900"
                             placeholder="Enter your NIM">
