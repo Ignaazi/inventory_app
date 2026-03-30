@@ -5,7 +5,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StockEngController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EngineeringOverviewController;
-use App\Http\Controllers\Engineering\TransactionController; // Import Controller Baru
+use App\Http\Controllers\Engineering\TransactionController;
+use App\Http\Controllers\Engineering\ListSparepartEngController; // Nama Controller Baru
 use Illuminate\Support\Facades\Route;
 
 // 1. Redirect Halaman Utama
@@ -44,13 +45,23 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [StockEngController::class, 'destroy'])->name('stock.eng.destroy');
     });
 
-    // --- ADDED: ENGINEERING TRANSACTIONS (IN, OUT, DISPOSAL) ---
+    // --- LIST SPAREPART (Controller Terpisah) ---
+    Route::get('/eng/list-sparepart', [ListSparepartEngController::class, 'index'])->name('eng.list');
+
+    // --- ENGINEERING TRANSACTIONS (IN, OUT, DISPOSAL) ---
     Route::prefix('eng')->group(function () {
         Route::get('/in', [TransactionController::class, 'indexIn'])->name('eng.in');
         Route::get('/out', [TransactionController::class, 'indexOut'])->name('eng.out');
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
     });
 
+    // --- ADDED: APPROVAL SYSTEM (Baru) ---
+    Route::get('/eng/approval', [App\Http\Controllers\Engineering\ApprovalEngController::class, 'index'])->name('eng.approval');
+    
+    // --- ADDED: PURCHASE REQUEST (Baru) ---
+    Route::get('/eng/purchase-request', [App\Http\Controllers\Engineering\PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
+
+    
     // --- MODULE LAINNYA ---
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/production-dashboard', function () {
