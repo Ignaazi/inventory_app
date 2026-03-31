@@ -1,71 +1,133 @@
 @extends('admin')
 
 @section('content')
-<div class="flex flex-col gap-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">Production Stock Inventory</h2>
-            <p class="text-xs text-bodydark2 uppercase font-bold tracking-widest mt-1">Items currently held by Production Dept</p>
+<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)]">
+    
+    <div class="p-4 md:p-8 2xl:p-10">
+        
+        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-slate-900 dark:text-white">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight uppercase">Stock Management</h1>
+                <nav class="flex text-sm text-slate-500 font-medium mt-1">
+                    <span>Production</span>
+                    <span class="mx-2 text-slate-300">/</span>
+                    <span class="text-emerald-600 font-bold uppercase tracking-tight">Stock Movement</span>
+                </nav>
+            </div>
         </div>
-        <div class="flex gap-3">
-             <button class="bg-white border border-stroke dark:border-strokedark dark:bg-boxdark text-slate-600 dark:text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 font-mono">
-                <i data-feather="download" class="w-4 h-4"></i>
-                Export Report
-            </button>
-        </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-indigo-600 p-5 rounded-2xl shadow-md text-white">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Active Parts on Line</p>
-            <h3 class="text-3xl font-bold mt-1 tracking-tight">128 <span class="text-sm font-normal opacity-70 italic">PCS</span></h3>
-        </div>
-        <div class="bg-white dark:bg-boxdark p-5 rounded-2xl border border-stroke dark:border-strokedark shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Last Receipt From Eng</p>
-            <h3 class="text-3xl font-bold text-slate-800 dark:text-white mt-1 tracking-tight italic">#REQ-2026-001</h3>
-        </div>
-    </div>
+        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden">
+            
+            <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 dark:border-strokedark">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white uppercase">Transaction History</h3>
+                    <p class="text-sm text-slate-500 font-bold uppercase tracking-tight mt-1">Track every sparepart movement in and out of the production line.</p>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Export Log
+                    </button>
+                    <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white hover:bg-emerald-700 shadow-md shadow-emerald-100 dark:shadow-none transition-all uppercase">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        New Transaction
+                    </button>
+                </div>
+            </div>
 
-    <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark overflow-hidden mb-10">
-        <div class="max-w-full overflow-x-auto">
-            <table class="w-full table-auto">
-                <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800/50 text-left">
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-bodydark2 tracking-wider">SAP Code</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-bodydark2 tracking-wider">Part Description</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-bodydark2 tracking-wider text-center">In-Hand Stock</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-bodydark2 tracking-wider text-center">Status</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-bodydark2 tracking-wider text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm divide-y divide-stroke dark:divide-strokedark font-medium">
-                    <tr class="hover:bg-slate-50 dark:hover:bg-meta-4/20 transition-colors">
-                        <td class="px-6 py-4 font-mono font-bold text-indigo-600">SAP-NOZ-YMH221</td>
-                        <td class="px-6 py-4 uppercase">
-                            <span class="font-bold text-slate-800 dark:text-white tracking-tight">Nozzle Yamaha Type 221</span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="font-black text-lg text-slate-800 dark:text-white">10</span>
-                            <span class="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">PCS</span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-widest">In Use</span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <button title="Return to Eng" class="p-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-all shadow-sm">
-                                <i data-feather="corner-up-left" class="w-4 h-4"></i>
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-boxdark">
+                <div class="relative w-full md:w-80">
+                    <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <input type="text" placeholder="Search Transaction / Part..." class="w-full pl-11 pr-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 outline-none transition-all dark:bg-meta-4 text-sm font-bold uppercase">
+                </div>
+                <button class="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.5a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Filter Type
+                </button>
+            </div>
+
+            <div class="max-w-full overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20">
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">No.</th>
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Sparepart Info</th>
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Movement</th>
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Qty</th>
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">SAP Code</th>
+                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Date & Time</th>
+                            <th class="px-6 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark font-bold">
+                        {{-- Row 1: Stock In --}}
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all">
+                            <td class="px-6 py-6 text-xs text-slate-400 font-black">01</td>
+                            <td class="px-6 py-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex items-center justify-center border border-slate-100 dark:border-strokedark text-emerald-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-width="1.5"/></svg>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-black text-slate-800 dark:text-white uppercase">Nozzle Yamaha 221</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Production In (Supply)</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-tighter">Stock In</span>
+                            </td>
+                            <td class="px-6 py-6 text-center text-xs font-black text-emerald-600 uppercase">+10 PCS</td>
+                            <td class="px-6 py-6 text-center">
+                                <span class="bg-slate-50 dark:bg-emerald-500/10 text-slate-600 dark:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black tracking-tight">SAP-NOZ-YMH01</span>
+                            </td>
+                            <td class="px-6 py-6 text-center text-xs font-black text-slate-500 uppercase">31 Mar, 14:20</td>
+                            <td class="px-6 py-6 text-right">
+                                <button class="text-slate-400 hover:text-emerald-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
+                            </td>
+                        </tr>
+                        {{-- Row 2: Stock Out --}}
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all">
+                            <td class="px-6 py-6 text-xs text-slate-400 font-black">02</td>
+                            <td class="px-6 py-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex items-center justify-center border border-slate-100 dark:border-strokedark text-rose-500">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-width="1.5"/></svg>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-black text-slate-800 dark:text-white uppercase">Feeder 8mm Yamaha</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Production Out (Usage)</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-tighter">Stock Out</span>
+                            </td>
+                            <td class="px-6 py-6 text-center text-xs font-black text-rose-600 uppercase">-01 UNIT</td>
+                            <td class="px-6 py-6 text-center">
+                                <span class="bg-slate-50 dark:bg-emerald-500/10 text-slate-600 dark:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black tracking-tight">SAP-FDR-YMH08</span>
+                            </td>
+                            <td class="px-6 py-6 text-center text-xs font-black text-slate-500 uppercase">31 Mar, 10:15</td>
+                            <td class="px-6 py-6 text-right">
+                                <button class="text-slate-400 hover:text-emerald-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 dark:border-strokedark">
+                <p class="text-xs font-black text-slate-500 uppercase tracking-widest">Showing <span class="text-slate-800 dark:text-white font-black">1 to 2</span> of 150 Log</p>
+                <div class="flex items-center gap-2">
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="w-9 h-9 flex items-center justify-center bg-emerald-600 rounded-xl text-white text-sm font-black shadow-lg shadow-emerald-100 dark:shadow-none">1</button>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-600 dark:text-white text-sm font-black hover:bg-slate-50 transition-all">2</button>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        feather.replace();
-    });
-</script>
 @endsection
