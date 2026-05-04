@@ -12,6 +12,7 @@ use App\Http\Controllers\Production\TransactionProdController;
 use App\Http\Controllers\Costing\CostingOverviewController;
 use App\Http\Controllers\Costing\ApprovalController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BarcodeParsingController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -104,6 +105,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/production-dashboard', function () {
         return view('dashboard'); 
     })->name('production.dashboard');
+
+    Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
+    Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
