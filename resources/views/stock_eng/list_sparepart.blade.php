@@ -1,6 +1,8 @@
 @extends('admin')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)]">
     
     <div class="p-4 md:p-8 2xl:p-10">
@@ -203,5 +205,66 @@
     }
 
     function closeModal() { modal.classList.add('hidden'); }
+
+    @if(session('success'))
+        Swal.fire({
+            title: 'SUCCESS!',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#4f46e5', // Warna indigo sesuai tema lu
+            borderRadius: '2rem',
+            customClass: {
+                popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
+                title: 'text-slate-900 tracking-tighter',
+                confirmButton: 'rounded-xl px-10 py-3 text-[10px] tracking-widest'
+            }
+        });
+    @endif
+
+    // Popup untuk Error Message
+    @if(session('error'))
+        Swal.fire({
+            title: 'ERROR!',
+            text: "{{ session('error') }}",
+            icon: 'error',
+            confirmButtonText: 'TRY AGAIN',
+            confirmButtonColor: '#f43f5e',
+            customClass: {
+                popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
+                confirmButton: 'rounded-xl px-10 py-3 text-[10px] tracking-widest'
+            }
+        });
+    @endif
+
+    // Intercept Form Delete agar pakai Popup Cantik
+    document.querySelectorAll('form[onsubmit]').forEach(form => {
+        form.onsubmit = function(e) {
+            e.preventDefault(); // Stop confirm bawaan browser
+            
+            Swal.fire({
+                title: 'ARE YOU SURE?',
+                text: "THIS ACTION WILL PERMANENTLY DELETE THE COMPONENT!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f43f5e', // Rose/Merah
+                cancelButtonColor: '#64748b', // Slate
+                confirmButtonText: 'YES, DELETE IT!',
+                cancelButtonText: 'CANCEL',
+                customClass: {
+                    popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
+                    confirmButton: 'rounded-xl px-6 py-3 text-[10px] tracking-widest',
+                    cancelButton: 'rounded-xl px-6 py-3 text-[10px] tracking-widest'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit(); // Jalankan hapus jika klik Yes
+                }
+            });
+        };
+    });
+
 </script>
+
+
 @endsection
