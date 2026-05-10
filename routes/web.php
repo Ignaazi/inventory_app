@@ -109,6 +109,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
     Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
+    Route::prefix('eng')->group(function () {
+        Route::resource('list-sparepart', ListSparepartEngController::class);
+    });
+    
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
