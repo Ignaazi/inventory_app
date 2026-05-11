@@ -15,7 +15,7 @@ class Rak extends Model
     // Sesuaikan fillable dengan kolom yang ada di migration
     protected $fillable = [
         'nama_rak', 
-        'keterangan' // Gue ganti dari 'lokasi' ke 'keterangan' biar sinkron sama Controller
+        'lokasi' // Gue ganti dari 'lokasi' ke 'keterangan' biar sinkron sama Controller
     ];
 
     /**
