@@ -13,6 +13,7 @@ use App\Http\Controllers\Costing\CostingOverviewController;
 use App\Http\Controllers\Costing\ApprovalController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BarcodeParsingController;
+use App\Http\Controllers\StockEngineeringController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -113,6 +114,28 @@ Route::middleware('auth')->group(function () {
         Route::resource('list-sparepart', ListSparepartEngController::class);
     });
     
+    // ROUTE GROUP UNTUK STOCK ENGINEERING
+    Route::controller(StockEngineeringController::class)->group(function () {
+    // Tampilan Utama
+    Route::get('/stock-engineering', 'index')->name('stock.eng.index');
+    
+    // Simpan Data Nozzle
+    Route::post('/stock-engineering', 'store')->name('stock.eng.store');
+    
+    // Update Data Nozzle
+    Route::put('/stock-engineering/{id}', 'update')->name('stock.eng.update');
+    
+    // Hapus Data Nozzle
+    Route::delete('/stock-engineering/{id}', 'destroy')->name('stock.eng.destroy');
+    
+    // Export Data ke CSV
+    Route::get('/stock-engineering-export', 'export')->name('stock.eng.export');
+    
+    // SIMPAN DATA RAK BARU (Ini yang buat tombol Add Rak lu bisa save ke DB)
+    Route::post('/rak-store', 'storeRak')->name('rak.store');
+});
+    
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
