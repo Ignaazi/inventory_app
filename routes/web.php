@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\StockEngController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EngineeringOverviewController;
 use App\Http\Controllers\Engineering\TransactionController;
@@ -43,13 +42,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-    // --- SESUAI SIDEBAR ASLI: stock-engineering (Pakai Named Route) ---
-    Route::prefix('stock-engineering')->group(function () {
-        Route::get('/', [StockEngController::class, 'index'])->name('stock.eng.index');
-        Route::post('/store', [StockEngController::class, 'store'])->name('stock.eng.store');
-        Route::put('/{id}', [StockEngController::class, 'update'])->name('stock.eng.update');
-        Route::delete('/{id}', [StockEngController::class, 'destroy'])->name('stock.eng.destroy');
-    });
 
     // --- LIST SPAREPART (Controller Terpisah) ---
     Route::get('/eng/list-sparepart', [ListSparepartEngController::class, 'index'])->name('eng.list');

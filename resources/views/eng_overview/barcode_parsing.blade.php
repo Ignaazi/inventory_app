@@ -86,8 +86,6 @@
             const canvas = document.createElement('canvas');
             previewArea.appendChild(canvas);
             
-            // Menggunakan JsBarcode (Data Matrix memerlukan library spesifik lain, 
-            // namun Code128 sudah include di sini)
             JsBarcode(canvas, content, {
                 format: "CODE128",
                 lineColor: "#000",
