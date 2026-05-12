@@ -2,23 +2,57 @@
 
 @section('content')
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
-    
+
+
     @php
-        $outOfStock = $stocks->where('qty', '<=', 0)->count();
-        $lowStock = $stocks->filter(function($item) {
-            return $item->qty > 0 && $item->qty <= $item->min_stock;
-        })->count();
-    @endphp
+    // Patokan data dari database
+    $outOfStock = $stocks->where('qty', '<=', 0)->count();
+    $lowStock = $stocks->filter(function($item) {
+        return $item->qty > 0 && $item->qty <= $item->min_stock;
+    })->count();
+
+    // Menentukan Tema Warna Berdasarkan Status Terparah
+    if ($outOfStock > 0) {
+        $theme = [
+            'bg' => 'bg-red-50', 
+            'border' => 'border-red-200', 
+            'dot' => 'bg-red-600', 
+            'text' => 'text-red-800',
+            'status' => 'LOST',
+            'msg' => $outOfStock . ' item out of stock — immediate reorder recommended'
+        ];
+    } elseif ($lowStock > 0) {
+        $theme = [
+            'bg' => 'bg-[#FFFBEB]', 
+            'border' => 'border-amber-200', 
+            'dot' => 'bg-[#F59E0B]', 
+            'text' => 'text-[#92400E]',
+            'status' => 'WARNING',
+            'msg' => $lowStock . ' low stock — prepare for reorder'
+        ];
+    } else {
+        $theme = [
+            'bg' => 'bg-emerald-50', 
+            'border' => 'border-emerald-200', 
+            'dot' => 'bg-emerald-500', 
+            'text' => 'text-emerald-800',
+            'status' => 'SAFE',
+            'msg' => 'All systems stable — stock levels are safe'
+        ];
+    }
+@endphp
+
+<!-- Alert Dinamis Mengikuti Database -->
+<div class="mb-6 flex items-center gap-3 rounded-2xl border {{ $theme['border'] }} {{ $theme['bg'] }} px-5 py-3 shadow-sm transition-all">
+    <!-- Titik Indikator Dinamis -->
+    <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $theme['dot'] }} animate-pulse"></span>
     
-    @if($outOfStock > 0 || $lowStock > 0)
-    <div class="mb-6 flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-white font-bold">!</span>
-        <p>
-            <span class="font-bold text-rose-600 dark:text-rose-400">{{ $outOfStock }} Out of Stock</span> · 
-            <span class="font-bold text-amber-600 dark:text-amber-400">{{ $lowStock }} Low Stock</span> — Immediate reorder recommended
-        </p>
-    </div>
-    @endif
+    <p class="text-sm font-medium {{ $theme['text'] }}">
+        <span class="uppercase font-bold mr-1">{{ $theme['status'] }}:</span> 
+        {{ $theme['msg'] }}
+    </p>
+</div>
+
 <!-- HEADER AREA: JUDUL & BUTTON SEJAJAR -->
 <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
@@ -154,6 +188,7 @@
                     @endforelse
                 </tbody>
             </table>
+            
         </div>
 
         <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
