@@ -18,6 +18,50 @@ class StockEngineeringController extends Controller
         return view('stock_eng.index', compact('stocks', 'raks'));
     }
 
+    /**
+     * Menampilkan halaman Transaction IN
+     * Menampilkan data stock untuk pilihan manual & history update terbaru
+     */
+    public function indexIn()
+    {
+        // Mengambil semua data untuk kebutuhan dropdown manual & pencarian scan
+        $stocks = StockEng::all();
+
+        // Mengambil 5 data yang baru saja diupdate qty-nya untuk history di samping
+        $recent_logs = StockEng::orderBy('updated_at', 'desc')->take(5)->get();
+
+        return view('stock_eng.transaction.in', compact('stocks', 'recent_logs'));
+    }
+
+    /**
+     * Memproses penambahan stok (QTY IN)
+     */
+    public function updateStockIn(Request $request)
+    {
+        try {
+            $request->validate([
+                'stock_id' => 'required|exists:stock_engs,id',
+                'qty_in'   => 'required|numeric|min:1'
+            ]);
+
+            $stock = StockEng::findOrFail($request->stock_id);
+            
+            $oldQty = $stock->qty;
+            // Menambah qty yang sudah ada dengan input qty baru
+            $stock->qty = $oldQty + $request->qty_in;
+            $stock->save();
+
+            // Flash session untuk memunculkan angka penambahan di history (opsional)
+            session()->flash('last_in_' . $stock->id, $request->qty_in);
+
+            return redirect()->back()->with('success', "Stok {$stock->no_nozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
+
+        } catch (\Exception $e) {
+            Log::error("Gagal update stok IN: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -81,7 +125,7 @@ class StockEngineeringController extends Controller
     {
         $stock = StockEng::findOrFail($id);
         $stock->delete();
-        return redirect()->back()->with('success', 'Data Berhasil Dihapus');
+        return redirect()->back()->with('success', 'Data Berhasil Dapus');
     }
 
     public function export()
@@ -117,6 +161,7 @@ class StockEngineeringController extends Controller
             fclose($file);
         };
 
+        
         return response()->stream($callback, 200, $headers);
     }
 }

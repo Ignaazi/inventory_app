@@ -48,7 +48,9 @@ Route::middleware('auth')->group(function () {
 
     // --- ENGINEERING TRANSACTIONS (IN, OUT, DISPOSAL) ---
     Route::prefix('eng')->group(function () {
-        Route::get('/in', [TransactionController::class, 'indexIn'])->name('eng.in');
+        // BARIS DIBAWAH INI SAYA NONAKTIFKAN AGAR TIDAK BENTROK DENGAN SISTEM BARU
+        // Route::get('/in', [TransactionController::class, 'indexIn'])->name('eng.in'); 
+        
         Route::get('/out', [TransactionController::class, 'indexOut'])->name('eng.out');
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
     });
@@ -81,16 +83,9 @@ Route::middleware('auth')->group(function () {
     // --- COSTING MODULE ---
     Route::prefix('costing')->name('costing.')->group(function () {
         Route::get('/overview', [CostingOverviewController::class, 'index'])->name('overview');
-        
-        // Sekarang ini sudah masuk ke dalam group costing
-        // Bisa dipanggil via route('costing.incoming.pr')
         Route::get('/incoming-pr', [ApprovalController::class, 'index'])->name('incoming.pr');
-        
-        // Route untuk proses Action (Approve/Reject)
         Route::post('/incoming-pr/{id}/action', [ApprovalController::class, 'update'])->name('incoming.action');
-
-        // Modul Material Received
-    Route::get('/material-received', [App\Http\Controllers\Costing\MaterialReceivedController::class, 'index'])->name('material.received');
+        Route::get('/material-received', [App\Http\Controllers\Costing\MaterialReceivedController::class, 'index'])->name('material.received');
     });
 
     // --- MODULE LAINNYA ---
@@ -108,24 +103,29 @@ Route::middleware('auth')->group(function () {
     
     // ROUTE GROUP UNTUK STOCK ENGINEERING
     Route::controller(StockEngineeringController::class)->group(function () {
-    // Tampilan Utama
-    Route::get('/stock-engineering', 'index')->name('stock.eng.index');
-    
-    // Simpan Data Nozzle
-    Route::post('/stock-engineering', 'store')->name('stock.eng.store');
-    
-    // Update Data Nozzle
-    Route::put('/stock-engineering/{id}', 'update')->name('stock.eng.update');
-    
-    // Hapus Data Nozzle
-    Route::delete('/stock-engineering/{id}', 'destroy')->name('stock.eng.destroy');
-    
-    // Export Data ke CSV
-    Route::get('/stock-engineering-export', 'export')->name('stock.eng.export');
-    
-    // SIMPAN DATA RAK BARU (Ini yang buat tombol Add Rak lu bisa save ke DB)
-    Route::post('/rak-store', 'storeRak')->name('rak.store');
-});
+        // Tampilan Utama
+        Route::get('/stock-engineering', 'index')->name('stock.eng.index');
+        
+        // Simpan Data Nozzle
+        Route::post('/stock-engineering', 'store')->name('stock.eng.store');
+        
+        // Update Data Nozzle
+        Route::put('/stock-engineering/{id}', 'update')->name('stock.eng.update');
+        
+        // Hapus Data Nozzle
+        Route::delete('/stock-engineering/{id}', 'destroy')->name('stock.eng.destroy');
+        
+        // Export Data ke CSV
+        Route::get('/stock-engineering-export', 'export')->name('stock.eng.export');
+        
+        // SIMPAN DATA RAK BARU
+        Route::post('/rak-store', 'storeRak')->name('rak.store');
+
+        // --- SISTEM TRANSACTION IN BARU ---
+        // Menggunakan URL /eng/in agar sesuai dengan link di sidebar kamu
+        Route::get('/eng/in', 'indexIn')->name('eng.in'); 
+        Route::post('/eng/in/update', 'updateStockIn')->name('stock.eng.in.update');
+    });
     
 
     // Logout
