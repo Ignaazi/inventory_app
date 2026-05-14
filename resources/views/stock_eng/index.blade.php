@@ -1,6 +1,8 @@
 @extends('admin')
 
 @section('content')
+<!-- SweetAlert2 CSS & JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
 
 
@@ -169,11 +171,9 @@
                                 </button>
                         
                                 <!-- Action Delete (Merah Normal -> Hover Agak Gelap) -->
-                                <form action="{{ route('stock.eng.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete item?')">
+                                <form action="{{ route('stock.eng.destroy', $item->id) }}" method="POST" class="inline form-delete">
                                     @csrf @method('DELETE')
-                                    <button type="submit" 
-                                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white transition-all hover:bg-red-700 active:scale-90 shadow-sm" 
-                                        title="Delete">
+                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -309,7 +309,7 @@
         
         if (mode === 'edit') {
             document.getElementById('modalTitle').innerText = 'Edit Nozzle Data';
-            form.action = "/eng/stock-engineering/" + data.id;
+            form.action = "/stock-engineering/" + data.id;
             methodField.innerHTML = '<input type="hidden" name="_method" value="PUT">';
             
             document.getElementById('rak_id').value = data.rak_id;
@@ -326,6 +326,84 @@
             methodField.innerHTML = '';
         }
     }
+    // 1. Konfirmasi Delete
+document.querySelectorAll('.btn-delete').forEach(button => {
+    button.addEventListener('click', function(e) {
+        let form = this.closest('.form-delete');
+        Swal.fire({
+            title: 'Yakin mau hapus?',
+            text: "Data yang dihapus tidak bisa dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+
+// 2. Konfirmasi Update (Saat klik tombol "Save Data" di Modal)
+document.getElementById('nozzleForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Stop form biar gak langsung submit
+    
+    let form = this;
+    let method = document.getElementById('methodField').innerHTML;
+    let isEdit = method.includes('PUT');
+
+    Swal.fire({
+        title: isEdit ? 'Yakin simpan perubahan?' : 'Yakin tambah data?',
+        text: "Pastikan semua data sudah benar",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Proses!',
+        cancelButtonText: 'Cek Lagi'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Tampilkan loading saat proses
+            Swal.fire({
+                title: 'Sedang memproses...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+            form.submit();
+        }
+    });
+});
+// Popup jika Sukses
+@if(session('success'))
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: "{{ session('success') }}",
+        timer: 3000,
+        showConfirmButton: false
+    });
+@endif
+
+// Popup jika ada Error Validasi (Data tidak lengkap/salah)
+@if($errors->any())
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: "{{ $errors->first() }}", // Ambil error pertama
+    });
+@endif
+
+// Popup jika ada Error dari Exception (Logika database/Lag)
+@if(session('error'))
+    Swal.fire({
+        icon: 'error',
+        title: 'Terjadi Kesalahan',
+        text: "{{ session('error') }}",
+    });
+@endif
 
     function closeModal() { document.getElementById('modalNozzle').classList.add('hidden'); }
     function openRackModal() { document.getElementById('modalRack').classList.remove('hidden'); }
@@ -335,5 +413,8 @@
 <style>
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .flex.items-center.gap-2 svg { width: 20px; height: 20px; }
+    .swal2-container {
+        z-index: 10000 !important;
+    }
 </style>
 @endsection
