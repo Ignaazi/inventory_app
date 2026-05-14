@@ -16,17 +16,13 @@ class ProfileController extends Controller
 
         $request->validate([
             'name'  => 'required|string|max:255',
-            'nim'   => 'required|string|max:50', // Ubah jadi required kalau di DB emang wajib ada
+            'nim'   => 'required|string|max:50', 
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $user->name = $request->name;
-        
-        // Pastikan NIM hanya diupdate jika ada isinya, 
-        // atau biarkan validasi 'required' di atas yang menangani
         $user->nim = $request->nim;
 
-        // --- LOGIKA HAPUS FOTO ---
         if ($request->remove_photo == '1') {
             if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);
@@ -34,7 +30,7 @@ class ProfileController extends Controller
             $user->profile_photo_path = null;
         }
 
-        // --- LOGIKA UPLOAD FOTO BARU ---
+
         if ($request->hasFile('photo')) {
             if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);

@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\StockEng;
 use App\Models\Rak; 
 use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Log; // Tambahkan ini untuk cek error di log
+use Illuminate\Support\Facades\Log;
 
 class StockEngineeringController extends Controller
 {
@@ -19,22 +19,40 @@ class StockEngineeringController extends Controller
     }
 
     /**
-     * Menampilkan halaman Transaction IN
-     * Menampilkan data stock untuk pilihan manual & history update terbaru
+     * Menampilkan halaman Utama Transaction IN (History)
+     * File: resources/views/stock_eng/transaction/in.blade.php
      */
     public function indexIn()
     {
-        // Mengambil semua data untuk kebutuhan dropdown manual & pencarian scan
-        $stocks = StockEng::all();
+        // Mengambil 10 data yang baru saja diupdate untuk history
+        $recent_logs = StockEng::orderBy('updated_at', 'desc')->take(10)->get();
 
-        // Mengambil 5 data yang baru saja diupdate qty-nya untuk history di samping
-        $recent_logs = StockEng::orderBy('updated_at', 'desc')->take(5)->get();
+        return view('stock_eng.transaction.in', compact('recent_logs'));
+    }
 
-        return view('stock_eng.transaction.in', compact('stocks', 'recent_logs'));
+    /**
+     * Menampilkan halaman Mode Scanner
+     * File: resources/views/stock_eng/transaction/in_scan.blade.php
+     */
+    public function inScan()
+    {
+        $stocks = StockEng::all(); // Dibutuhkan untuk pencarian JS di scanner
+        return view('stock_eng.transaction.in_scan', compact('stocks'));
+    }
+
+    /**
+     * Menampilkan halaman Mode Manual
+     * File: resources/views/stock_eng/transaction/in_manual.blade.php
+     */
+    public function inManual()
+    {
+        $stocks = StockEng::all(); // Dibutuhkan untuk dropdown select manual
+        return view('stock_eng.transaction.in_manual', compact('stocks'));
     }
 
     /**
      * Memproses penambahan stok (QTY IN)
+     * Digunakan oleh semua mode (Main, Scan, dan Manual)
      */
     public function updateStockIn(Request $request)
     {
@@ -47,14 +65,13 @@ class StockEngineeringController extends Controller
             $stock = StockEng::findOrFail($request->stock_id);
             
             $oldQty = $stock->qty;
-            // Menambah qty yang sudah ada dengan input qty baru
             $stock->qty = $oldQty + $request->qty_in;
             $stock->save();
 
-            // Flash session untuk memunculkan angka penambahan di history (opsional)
             session()->flash('last_in_' . $stock->id, $request->qty_in);
 
-            return redirect()->back()->with('success', "Stok {$stock->no_nozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
+            // Redirect ke halaman history (Main IN) setelah berhasil
+            return redirect()->route('eng.in')->with('success', "Stok {$stock->no_nozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
 
         } catch (\Exception $e) {
             Log::error("Gagal update stok IN: " . $e->getMessage());
@@ -75,7 +92,6 @@ class StockEngineeringController extends Controller
                 'category'  => 'nullable',
             ]);
         
-            // Cara simpan manual (lebih aman untuk debugging)
             $stock = new StockEng();
             $stock->rak_id = $request->rak_id;
             $stock->no_nozzle = $request->no_nozzle;
@@ -89,10 +105,8 @@ class StockEngineeringController extends Controller
             return redirect()->back()->with('success', 'Data Nozzle Berhasil Disimpan!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Kalau "geter" doang, berarti error validasi nyangkut di sini
             return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            // Log error ke storage/logs/laravel.log jika ada masalah database
             Log::error("Gagal simpan nozzle: " . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
@@ -104,7 +118,6 @@ class StockEngineeringController extends Controller
             'nama_rak' => 'required|unique:raks,nama_rak',
         ]);
 
-        // Berdasarkan screenshot lu, kolomnya adalah 'lokasi'
         Rak::create([
             'nama_rak' => $request->nama_rak,
             'lokasi'   => $request->lokasi ?? '-' 
@@ -116,7 +129,6 @@ class StockEngineeringController extends Controller
     public function update(Request $request, $id)
     {
         $stock = StockEng::findOrFail($id);
-        // Pastikan model StockEng punya $fillable untuk update()
         $stock->update($request->all());
         return redirect()->back()->with('success', 'Data Berhasil Diupdate');
     }
@@ -160,7 +172,6 @@ class StockEngineeringController extends Controller
             }
             fclose($file);
         };
-
         
         return response()->stream($callback, 200, $headers);
     }

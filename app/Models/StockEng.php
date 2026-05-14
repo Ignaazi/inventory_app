@@ -21,13 +21,11 @@ class StockEng extends Model
         'min_stock'
     ];
 
-    /**
-     * Relasi ke Model Rak
-     * Satu data stock ini dimiliki oleh satu Rak
-     */
+    
     public function rak()
     {
         // Pastikan nanti nama modelnya adalah 'Rak'
         return $this->belongsTo(Rak::class, 'rak_id');
     }
+    
 }

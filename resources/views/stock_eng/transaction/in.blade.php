@@ -1,165 +1,144 @@
 @extends('admin')
 
 @section('content')
-<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
-    
-    <!-- HEADER AREA -->
-    <div class="mb-8">
-        <h2 class="text-3xl font-bold text-slate-800 dark:text-white">Transaction: Stock In</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 italic">Modul penambahan stok untuk Staff & SPV Engineering.</p>
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+  <!-- Header Section -->
+  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-white/90">
+        Stock In Activities
+      </h2>
+      <p class="text-sm text-gray-500">Track your recent sparepart incoming activities</p>
     </div>
 
-    <!-- MODE SWITCHER -->
-    <div class="mb-8 inline-flex p-1 bg-slate-200 dark:bg-slate-800 rounded-2xl shadow-inner">
-        <button id="btn-scan" class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm dark:bg-boxdark dark:text-white">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h2M4 8h16" stroke-width="2" stroke-linecap="round"/></svg>
-            SCAN BARCODE
+    <div class="flex items-center gap-3">
+      <a href="{{ route('eng.in.scan') }}"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+      >
+        <i class="fas fa-qrcode"></i> Scan IN
+      </a>
+      <a href="{{ route('eng.in.manual') }}"
+        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-opacity-90"
+      >
+        <i class="fas fa-keyboard"></i> Manual IN
+      </a>
+    </div>
+  </div>
+
+  <!-- Table Card Section -->
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+    <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Recent History
+        </h3>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        >
+          <svg class="stroke-current" width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.29004 5.90393H17.7067" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M17.7075 14.0961H2.29085" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331 12.0826 3.33331Z" stroke-width="1.5" />
+            <path d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z" stroke-width="1.5" />
+          </svg>
+          Filter
         </button>
-        <button id="btn-manual" class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all text-slate-600 dark:text-slate-400">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7" stroke-width="2" stroke-linecap="round"/></svg>
-            PILIH MANUAL
-        </button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- LEFT COLUMN: INPUT & SCANNER (8 COLS) -->
-        <div class="lg:col-span-8 space-y-6">
-            
-            <!-- 1. SCANNER AREA -->
-            <div id="wrapper-scan" class="overflow-hidden rounded-3xl bg-black shadow-2xl border-4 border-white dark:border-slate-800 relative group">
-                <div id="reader" style="width: 100%"></div>
-                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    <button id="start-cam" class="bg-indigo-600 text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-indigo-700 transition-all">START CAMERA</button>
-                    <button id="stop-cam" class="bg-rose-500 text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-rose-600 transition-all">STOP</button>
-                </div>
-            </div>
-
-            <!-- 2. FORM DATA -->
-            <form action="{{ route('stock.eng.in.update') }}" method="POST" id="form-stock-in" class="bg-white dark:bg-boxdark p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
-                @csrf
-                <input type="hidden" name="stock_id" id="stock_id_final">
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <!-- Dropdown Manual (Hidden by default) -->
-                    <div id="wrapper-manual" class="hidden col-span-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Pilih Item (Manual)</label>
-                        <select id="select-manual" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-indigo-500">
-                            <option value="">-- Cari Nozzle / Part No --</option>
-                            @foreach($stocks as $item)
-                                <option value="{{ $item->id }}" data-sap="{{ $item->sap_code }}" data-qty="{{ $item->qty }}" data-name="{{ $item->no_nozzle }}">
-                                    {{ $item->no_nozzle }} | {{ $item->sap_code }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Read-only Info -->
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">SAP Code</label>
-                        <input type="text" id="view_sap" readonly placeholder="---" class="w-full bg-transparent border-b border-slate-200 py-2 font-bold text-slate-800 dark:text-white focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Current Stock</label>
-                        <input type="text" id="view_qty" readonly placeholder="0" class="w-full bg-transparent border-b border-slate-200 py-2 font-bold text-indigo-600 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="mb-8">
-                    <label class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2 block text-center">Jumlah Stok Masuk (QTY IN)</label>
-                    <input type="number" name="qty_in" required min="1" placeholder="0" class="w-full text-center text-6xl font-black bg-slate-50 dark:bg-slate-800 rounded-3xl p-6 focus:ring-4 focus:ring-emerald-500/20 transition-all">
-                </div>
-
-                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-6 rounded-3xl text-xl font-black shadow-xl shadow-emerald-500/20 transition-all hover:-translate-y-1">
-                    SUBMIT STOCK ENTRY
-                </button>
-            </form>
-        </div>
-
-        <!-- RIGHT COLUMN: INFO & RECENT (4 COLS) -->
-        <div class="lg:col-span-4 space-y-6">
-            <div class="bg-indigo-600 p-8 rounded-3xl text-white shadow-xl shadow-indigo-500/20">
-                <h4 class="font-bold text-lg mb-2">Instruksi Entry</h4>
-                <p class="text-sm text-indigo-100 leading-relaxed">Gunakan scanner untuk meminimalkan kesalahan input data. Jika label rusak, gunakan mode manual untuk mencari berdasarkan Part Number.</p>
-            </div>
-
-            <div class="bg-white dark:bg-boxdark p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Update Terakhir</h4>
-                <div class="space-y-4">
-                    @foreach($recent_logs as $log)
-                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                        <div>
-                            <div class="text-xs font-bold">{{ $log->no_nozzle }}</div>
-                            <div class="text-[9px] text-slate-400 uppercase">{{ $log->updated_at->diffForHumans() }}</div>
-                        </div>
-                        <div class="text-emerald-500 font-bold">+{{ session('last_in_'.$log->id) ?? '?' }}</div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
+    <div class="w-full overflow-x-auto">
+      <table class="min-w-full text-left border-collapse">
+        <thead>
+          <tr class="border-gray-100 border-y dark:border-gray-800">
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">NO</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">DATE</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">NIK</th>
+            <!-- Kolom yang sudah dipecah -->
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">No Nozzle</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">Part No</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">SAP Code</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">Category</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">Qty IN</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">Status</th>
+            <th class="py-3 px-2 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">Remark</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @foreach($history as $key => $log)
+          <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+            <td class="py-3 px-2 text-theme-sm text-gray-500 dark:text-gray-400">
+              {{ $history->firstItem() + $key }}
+            </td>
+            <td class="py-3 px-2 text-theme-sm text-gray-500 dark:text-gray-400">
+              {{ $log->created_at->format('d/m/Y') }}
+            </td>
+            <td class="py-3 px-2 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+              {{ $log->nik }}
+            </td>
+            <!-- Data ditarik via relasi stockEng -->
+            <td class="py-3 px-2 text-theme-sm font-bold text-gray-800 dark:text-white/90">
+              {{ $log->stockEng->no_nozzle ?? '-' }}
+            </td>
+            <td class="py-3 px-2 text-theme-sm text-gray-500 dark:text-gray-400 font-mono">
+              {{ $log->stockEng->part_no ?? '-' }}
+            </td>
+            <td class="py-3 px-2 text-theme-sm text-gray-500 dark:text-gray-400 font-mono">
+              {{ $log->stockEng->sap_code ?? '-' }}
+            </td>
+            <td class="py-3 px-2 text-theme-sm text-gray-500 dark:text-gray-400">
+              {{ $log->stockEng->category ?? '-' }}
+            </td>
+            <td class="py-3 px-2">
+              <p class="text-success-600 font-black text-theme-sm dark:text-success-500">
+                +{{ $log->qty_added }}
+              </p>
+            </td>
+            <td class="py-3 px-2">
+              <p class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold 
+                @if($log->status == 'Success') bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500 
+                @elseif($log->status == 'Pending') bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400
+                @else bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500 @endif">
+                {{ strtoupper($log->status) }}
+              </p>
+            </td>
+            <td class="py-3 px-2 text-theme-xs italic text-gray-400 dark:text-gray-500">
+              {{ $log->remark ?? '-' }}
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
     </div>
+
+    <!-- Pagination Footer -->
+    <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+      <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+        Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} entries
+      </p>
+      <div class="flex items-center">
+        {{ $history->links() }}
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- SCRIPTS -->
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    const html5QrCode = new Html5Qrcode("reader");
-    const btnScan = document.getElementById('btn-scan');
-    const btnManual = document.getElementById('btn-manual');
-    const wrapperScan = document.getElementById('wrapper-scan');
-    const wrapperManual = document.getElementById('wrapper-manual');
-
-    // Toggle Mode
-    btnScan.addEventListener('click', () => {
-        btnScan.classList.add('bg-white', 'text-indigo-600', 'shadow-sm', 'dark:bg-boxdark', 'dark:text-white');
-        btnManual.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm', 'dark:bg-boxdark', 'dark:text-white');
-        wrapperScan.classList.remove('hidden');
-        wrapperManual.classList.add('hidden');
-    });
-
-    btnManual.addEventListener('click', () => {
-        btnManual.classList.add('bg-white', 'text-indigo-600', 'shadow-sm', 'dark:bg-boxdark', 'dark:text-white');
-        btnScan.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm', 'dark:bg-boxdark', 'dark:text-white');
-        wrapperManual.classList.remove('hidden');
-        wrapperScan.classList.add('hidden');
-        stopScanner();
-    });
-
-    // Manual Selection
-    document.getElementById('select-manual').addEventListener('change', function() {
-        const opt = this.options[this.selectedIndex];
-        if(this.value) {
-            document.getElementById('stock_id_final').value = this.value;
-            document.getElementById('view_sap').value = opt.dataset.sap;
-            document.getElementById('view_qty').value = opt.dataset.qty;
-        }
-    });
-
-    // Scanner Logic
-    const onScanSuccess = (decodedText) => {
-        const stocks = @json($stocks);
-        const item = stocks.find(s => s.sap_code == decodedText);
-
-        if(item) {
-            document.getElementById('stock_id_final').value = item.id;
-            document.getElementById('view_sap').value = item.sap_code;
-            document.getElementById('view_qty').value = item.qty;
-            Swal.fire({ icon: 'success', title: 'Item Found', text: item.no_nozzle, timer: 1500, didOpen: () => { document.querySelector('.swal2-container').style.zIndex = '10000'; } });
-            stopScanner();
-        } else {
-            Swal.fire({ icon: 'error', title: 'Not Found', text: 'SAP: ' + decodedText, didOpen: () => { document.querySelector('.swal2-container').style.zIndex = '10000'; } });
-        }
-    };
-
-    const stopScanner = () => html5QrCode.stop().catch(() => {});
-    document.getElementById('start-cam').addEventListener('click', () => html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess));
-    document.getElementById('stop-cam').addEventListener('click', stopScanner);
-
-    // SweetAlert Success/Error handling (Global)
-    @if(session('success'))
-        Swal.fire({ icon: 'success', title: 'Succeed!', text: "{{ session('success') }}", didOpen: () => { document.querySelector('.swal2-container').style.zIndex = '10000'; } });
-    @endif
-</script>
+<style>
+  /* Menyamakan style pagination Laravel dengan TailAdmin */
+  nav[role="navigation"] svg {
+    width: 18px;
+    height: 18px;
+    display: inline;
+  }
+  nav[role="navigation"] div:first-child {
+    display: none; /* Sembunyikan text "Showing..." bawaan laravel karena sudah kita buat custom di atas */
+  }
+  .pagination .page-item.active .page-link {
+    background-color: #3C50E0 !important;
+    border-color: #3C50E0 !important;
+    color: white !important;
+  }
+</style>
 @endsection
