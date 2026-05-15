@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-  <!-- Header Section -->
   <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 class="text-xl font-bold text-slate-950 dark:text-white">
@@ -25,16 +24,33 @@
     </div>
   </div>
 
-  <!-- Table Card Section -->
   <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
-    <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h3 class="text-base font-bold text-slate-950 dark:text-white">
           Recent History
         </h3>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
+            All
+          </button>
+          <button type="button" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Success
+          </button>
+          <button type="button" onclick="filterTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Pending
+          </button>
+          <button type="button" onclick="filterTable('manual in', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Manual In
+          </button>
+          <button type="button" onclick="filterTable('scan in', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Scan In
+          </button>
+        </div>
+
         <button
           class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         >
@@ -50,7 +66,7 @@
     </div>
 
     <div class="w-full overflow-x-auto">
-      <table class="min-w-full text-left border-collapse">
+      <table class="min-w-full text-left border-collapse" id="history-table">
         <thead>
           <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
@@ -67,7 +83,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
           @foreach($history as $key => $log)
-          <tr class="hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
+          <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
             <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
               {{ $history->firstItem() + $key }}
             </td>
@@ -90,14 +106,12 @@
               {{ $log->stockEng->category ?? '-' }}
             </td>
             <td class="py-3 px-3 text-center">
-              <!-- Qty IN Badge: Gold (Smaller) -->
               <span class="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
                 +{{ $log->qty_added }}
               </span>
             </td>
             <td class="py-3 px-3 text-center">
-              <!-- Status Badge (Smaller) -->
-              <span class="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
+              <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
                 @if($log->status == 'Success') bg-emerald-50 text-emerald-700 
                 @elseif($log->status == 'Pending') bg-orange-50 text-orange-700
                 @else bg-rose-50 text-rose-700 @endif">
@@ -105,14 +119,13 @@
               </span>
             </td>
             <td class="py-3 px-3 text-center">
-              <!-- Remark Badge: Manual (Blue) vs Scan (Purple) (Smaller) -->
               @php
                 $remarkLower = strtolower($log->remark);
                 $isManual = str_contains($remarkLower, 'manual');
                 $isScan = str_contains($remarkLower, 'scan');
               @endphp
 
-              <span class="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold italic tracking-tight
+              <span class="remark-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
                 @if($isManual) bg-blue-50 text-blue-700 border border-blue-100
                 @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100
                 @else bg-slate-50 text-slate-600 border border-slate-100 @endif">
@@ -125,7 +138,6 @@
       </table>
     </div>
 
-    <!-- Pagination Footer -->
     <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
       <p class="text-xs font-bold text-slate-950 dark:text-white">
         Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} entries
@@ -160,4 +172,45 @@
     padding: 4px 8px;
   }
 </style>
+
+<script>
+  function filterTable(criteria, element) {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+    });
+
+    if (element) {
+      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+    }
+
+    const rows = document.querySelectorAll('.table-row-item');
+    
+    rows.forEach(row => {
+      if (criteria === 'all') {
+        row.style.display = '';
+        return;
+      }
+
+      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
+      const remarkText = row.querySelector('.remark-cell').textContent.trim().toLowerCase();
+
+      if (criteria === 'success' || criteria === 'pending') {
+        if (statusText === criteria) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      } else if (criteria === 'manual in' || criteria === 'scan in') {
+        if (remarkText.includes(criteria) || remarkText.includes(criteria.replace(' ', ''))) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+  }
+</script>
 @endsection

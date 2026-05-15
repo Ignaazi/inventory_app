@@ -127,7 +127,7 @@
         </ul>
       </div>
 
-      <div class="mb-8" x-data="{ openEngTrans: false }">
+      <div class="mb-8" x-data="{ openEngTrans: false, openBarcodeParse: false }">
         <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           ENGINEERING
         </h3>
@@ -192,12 +192,45 @@
             </ul>
           </li>
 
-          <li>
-            <a href="/eng/barcode-parsing" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Barcode Parsing</span>
-            </a>
+          <li class="relative">
+            <button 
+              @click="openBarcodeParse = !openBarcodeParse" 
+              @click.away="if(sidebarToggle && window.innerWidth >= 1024) openBarcodeParse = false"
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Barcode Parsing</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openBarcodeParse ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <ul 
+              x-show="openBarcodeParse" 
+              x-transition 
+              :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'"
+              class="flex flex-col gap-1"
+            >
+              <li>
+                <a href="{{ route('barcode.parsing') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 0v2m0-2h2m-2 0H10m11 3.055A9.001 9.001 0 1111.054 3v2.055h1a6 6 0 106 6v-1h2z"/></svg>
+                  <span>Create Barcode</span>
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('barcode.db') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                  <span>DB Barcode</span>
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('barcode.type') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span>Type Barcode</span>
+                </a>
+              </li>
+            </ul>
           </li>
+
           <li>
             <a href="/eng/approval" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
               <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

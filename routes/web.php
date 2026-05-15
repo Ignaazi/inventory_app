@@ -11,9 +11,11 @@ use App\Http\Controllers\Production\TransactionProdController;
 use App\Http\Controllers\Costing\CostingOverviewController;
 use App\Http\Controllers\Costing\ApprovalController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\BarcodeParsingController;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\StockInEngineeringController;
+use App\Http\Controllers\EngOverview\BarcodeParsingController;
+use App\Http\Controllers\EngOverview\DbBarcodeController;
+use App\Http\Controllers\EngOverview\TypeBarcodeController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -131,4 +133,37 @@ Route::middleware('auth')->group(function () {
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::prefix('eng-overview')->group(function () {
+        Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
+        Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
+        Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
+    });
+
+    Route::prefix('eng-overview')->group(function () {
+        // Halaman 1: Barcode Customizer (Yang kemaren kita buat)
+        Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
+        Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
+        Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
+    
+        // Halaman 2: HALAMAN DB BARCODE (BARU)
+        Route::get('/db-barcode', [DbBarcodeController::class, 'index'])->name('barcode.db');
+        Route::delete('/db-barcode/{id}', [DbBarcodeController::class, 'destroy'])->name('barcode.db.delete');
+    });
+
+    Route::prefix('eng-overview')->group(function () {
+        // 1. Page Create Barcode Customizer
+        Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
+        Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
+        Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
+    
+        // 2. Page DB Barcode (Final Content)
+        Route::get('/db-barcode', [DbBarcodeController::class, 'index'])->name('barcode.db');
+        Route::delete('/db-barcode/{id}', [DbBarcodeController::class, 'destroy'])->name('barcode.db.delete');
+    
+        // 3. Page Type Barcode (Struktur Komponen) - BARU
+        Route::get('/type-barcode', [TypeBarcodeController::class, 'index'])->name('barcode.type');
+        Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
+    });
+
 });
