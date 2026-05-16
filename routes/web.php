@@ -9,13 +9,14 @@ use App\Http\Controllers\Engineering\ListSparepartEngController;
 use App\Http\Controllers\Production\ProductionOverviewController;
 use App\Http\Controllers\Production\TransactionProdController;
 use App\Http\Controllers\Costing\CostingOverviewController;
-use App\Http\Controllers\Costing\ApprovalController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Costing\ApprovalController;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\StockInEngineeringController;
 use App\Http\Controllers\EngOverview\BarcodeParsingController;
 use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
+use App\Http\Controllers\Engineering\ApprovalEngController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -58,8 +59,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
     });
 
-    // --- ADDED: APPROVAL SYSTEM (Baru) ---
-    Route::get('/eng/approval', [App\Http\Controllers\Engineering\ApprovalEngController::class, 'index'])->name('eng.approval');
+    // --- APPROVAL SYSTEM (Disatukan & Diberikan Route POST Aksinya di Sini) ---
+    Route::get('/eng/approval', [ApprovalEngController::class, 'index'])->name('eng.approval');
+    Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
+    Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
     
     // --- ADDED: PURCHASE REQUEST (Baru) ---
     Route::get('/eng/purchase-request', [App\Http\Controllers\Engineering\PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
@@ -67,14 +70,20 @@ Route::middleware('auth')->group(function () {
     // --- PRODUCTION OVERVIEW ---
     Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
 
+    // --- FIXED: COSTING SYSTEM ROUTES (DITAMBAHKAN BIAR SIDEBAR GAK ERROR) ---
+    Route::get('/costing/overview', [CostingOverviewController::class, 'index'])->name('costing.overview');
+    Route::get('/costing/incoming-pr', [CostingOverviewController::class, 'incomingPr'])->name('costing.incoming.pr');
+    Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
+
     // --- ADDED: LIST SPAREPART PRODUCTION (Baru) ---
     Route::get('/prod/list-sparepart', [App\Http\Controllers\Production\ListSparepartProdController::class, 'index'])->name('prod.list');
 
     // --- ADDED: STOCK PRODUCTION (Baru) ---
     Route::get('/prod/stock', [App\Http\Controllers\Production\StockProdController::class, 'index'])->name('prod.stock.index');
 
-    // --- ADDED: REQUEST SPAREPART PRODUCTION (Baru) ---
     Route::get('/prod/request', [App\Http\Controllers\Production\RequestProdController::class, 'index'])->name('prod.request.index');
+    Route::post('/prod/request/store', [App\Http\Controllers\Production\RequestProdController::class, 'store'])->name('prod.request.store');
+
 
     // Struktur Grouping Production Transaction
     Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
@@ -82,21 +91,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/out', [TransactionProdController::class, 'stockOut'])->name('out');
         Route::post('/store', [TransactionProdController::class, 'store'])->name('store');
     });
-
-    // --- COSTING MODULE ---
-    Route::prefix('costing')->name('costing.')->group(function () {
-        Route::get('/overview', [CostingOverviewController::class, 'index'])->name('overview');
-        Route::get('/incoming-pr', [ApprovalController::class, 'index'])->name('incoming.pr');
-        Route::post('/incoming-pr/{id}/action', [ApprovalController::class, 'update'])->name('incoming.action');
-        Route::get('/material-received', [App\Http\Controllers\Costing\MaterialReceivedController::class, 'index'])->name('material.received');
-    });
-
+    
     // --- MODULE LAINNYA ---
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/production-dashboard', function () {
         return view('dashboard'); 
     })->name('production.dashboard');
 
+    // Barcode Parsing & Scanning
     Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
     Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
@@ -128,8 +130,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/in/update', 'updateStockIn')->name('stock.eng.in.update');
     });
     
-        Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
-        Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
+    Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
+    Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -141,7 +143,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('eng-overview')->group(function () {
-        // Halaman 1: Barcode Customizer (Yang kemaren kita buat)
+        // Halaman 1: Barcode Customizer
         Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
         Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
         Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
@@ -165,5 +167,4 @@ Route::middleware('auth')->group(function () {
         Route::get('/type-barcode', [TypeBarcodeController::class, 'index'])->name('barcode.type');
         Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
     });
-
 });

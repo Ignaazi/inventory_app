@@ -1,119 +1,140 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-screen">
-    <div class="p-10">
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-black uppercase text-slate-800 dark:text-white">Database Barcode</h1>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Engineering / Registered Barcode Logs</p>
-            </div>
-            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-black px-5 py-3 rounded-xl transition-all uppercase text-xs tracking-widest">
-                ← Back To Customizer
-            </a>
-        </div>
-
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-xl font-bold text-xs uppercase tracking-wide">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-slate-100 dark:border-strokedark flex items-center justify-between">
-                <h2 class="text-sm font-black uppercase text-slate-800 dark:text-white">All Registered Composite Data</h2>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-meta-4 border-b border-slate-100 dark:border-strokedark">
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-16">ID</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-28 text-center">Visual</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-40">Barcode Type</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-32">Dimension</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500">Final Composite Content</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-40">Saved At</th>
-                            <th class="p-4 text-[10px] font-black uppercase text-slate-500 w-24 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-strokedark">
-                        @forelse($barcodes as $barcode)
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/20 transition-all">
-                            <td class="p-4 text-xs font-black text-slate-400">#{{ $barcode->id }}</td>
-                            
-                            <td class="p-4 text-center">
-                                <div class="flex items-center justify-center">
-                                    <div id="render_thumb_{{ $barcode->id }}" 
-                                         onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', {{ $barcode->barcode_size ?? 10 }})"
-                                         title="Click to view large"
-                                         class="w-[60px] h-[60px] bg-white border border-slate-200 p-1 rounded-lg shadow-sm flex items-center justify-center cursor-pointer hover:scale-105 hover:border-indigo-500 transition-all overflow-hidden bg-center bg-no-repeat">
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td class="p-4">
-                                <span class="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black px-2.5 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800 uppercase tracking-wide">
-                                    {{ $barcode->barcode_type }}
-                                </span>
-                            </td>
-                            
-                            <td class="p-4 text-xs font-black text-slate-600 dark:text-slate-300">
-                                {{ $barcode->barcode_size }}mm × {{ $barcode->barcode_size }}mm
-                            </td>
-
-                            <td class="p-4">
-                                <div class="bg-slate-50 dark:bg-slate-800/60 font-mono font-black text-xs text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl border border-slate-100 dark:border-strokedark break-all inline-block max-w-xs shadow-sm">
-                                    {{ $barcode->final_content }}
-                                </div>
-                            </td>
-
-                            <td class="p-4 text-xs text-slate-400 font-bold">
-                                {{ \Carbon\Carbon::parse($barcode->created_at)->format('Y-m-d H:i') }}
-                            </td>
-
-                            <td class="p-4 text-center">
-                                <form action="{{ route('barcode.db.delete', $barcode->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data barcode ini dari database?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-black px-3 py-2 rounded-lg transition-all text-[10px] uppercase tracking-wider border border-rose-100">
-                                        Delete
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="p-12 text-center text-xs font-black uppercase text-slate-400">
-                                No Barcode Registered in Database
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-xl font-bold text-slate-950 dark:text-white">
+        Database Barcode
+      </h2>
+      <p class="text-xs font-medium text-slate-600">Track and manage your registered barcode configurations</p>
     </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{{ route('barcode.parsing') }}"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      >
+        ← Back To Customizer
+      </a>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+    
+    <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="text-base font-bold text-slate-950 dark:text-white">
+          All Registered Composite Data
+        </h3>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterBarcodeTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
+            All
+          </button>
+          <button type="button" onclick="filterBarcodeTable('qr code', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            QR Code
+          </button>
+          <button type="button" onclick="filterBarcodeTable('data matrix', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Data Matrix
+          </button>
+          <button type="button" onclick="filterBarcodeTable('2d code', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            2D Code
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full overflow-x-auto">
+      <table class="min-w-full text-left border-collapse" id="barcode-table">
+        <thead>
+          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-24">VISUAL</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">BARCODE TYPE</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">DIMENSION</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">FINAL COMPOSITE CONTENT</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">SAVED AT</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-24">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @forelse($barcodes as $key => $barcode)
+          <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+              {{ $loop->iteration }}
+            </td>
+            
+            <td class="py-3 px-3 text-center">
+              <div class="flex items-center justify-center">
+                <div id="render_thumb_{{ $barcode->id }}" 
+                     onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', {{ $barcode->barcode_size ?? 10 }})"
+                     title="Click to view large"
+                     class="w-[45px] h-[45px] bg-white border border-gray-200 p-0.5 rounded shadow-sm flex items-center justify-center cursor-pointer hover:scale-105 hover:border-primary transition-all overflow-hidden bg-center bg-no-repeat dark:border-gray-700">
+                </div>
+              </div>
+            </td>
+
+            <td class="py-3 px-3">
+              <span class="type-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900">
+                {{ $barcode->barcode_type }}
+              </span>
+            </td>
+            
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+              {{ $barcode->barcode_size }}mm × {{ $barcode->barcode_size }}mm
+            </td>
+
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white font-mono break-all max-w-xs">
+              {{ $barcode->final_content }}
+            </td>
+
+            <td class="py-3 px-3 text-xs font-bold text-slate-600 dark:text-gray-400">
+              {{ \Carbon\Carbon::parse($barcode->created_at)->format('d/m/Y H:i') }}
+            </td>
+
+            <td class="py-3 px-3 text-center">
+              <form action="{{ route('barcode.db.delete', $barcode->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data barcode ini dari database?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-wider border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          @empty
+          <tr>
+            <td colspan="7" class="p-12 text-center text-xs font-bold uppercase text-slate-400">
+              No Barcode Registered in Database
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div id="barcodeModal" class="fixed inset-0 z-99999 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300 ease-in-out" onclick="closeBarcodeModal(event)">
-    <div class="relative bg-white dark:bg-boxdark rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-strokedark max-w-lg w-full transform scale-90 transition-transform duration-300 ease-in-out" onclick="event.stopPropagation()">
+    <div class="relative bg-white dark:bg-boxdark rounded-2xl p-8 shadow-2xl border border-gray-200 dark:border-gray-800 max-w-lg w-full transform scale-90 transition-transform duration-300 ease-in-out" onclick="event.stopPropagation()">
         
         <button onclick="closeBarcodeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 font-bold text-2xl transition-colors">&times;</button>
 
         <div class="text-center mb-6">
-            <h3 id="modal_header_type" class="text-indigo-600 font-black text-xs uppercase tracking-widest mb-1"></h3>
+            <h3 id="modal_header_type" class="text-primary font-bold text-sm uppercase tracking-widest mb-1"></h3>
             <p id="modal_header_size" class="text-slate-500 text-[10px] font-bold uppercase"></p>
         </div>
 
-        <div class="bg-slate-50 dark:bg-meta-4 p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-strokedark flex items-center justify-center min-h-[250px] mb-6">
+        <div class="bg-gray-50 dark:bg-meta-4 p-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center min-h-[250px] mb-6">
             <div id="modal_render_area" class="flex flex-col items-center justify-center"></div>
         </div>
 
         <div class="text-center space-y-5">
-            <p id="modal_content_text" class="text-xs font-mono font-black text-slate-700 dark:text-white break-all bg-slate-100 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-100 dark:border-strokedark"></p>
+            <p id="modal_content_text" class="text-xs font-mono font-bold text-slate-700 dark:text-white break-all bg-gray-100 dark:bg-gray-800/60 p-3 rounded-lg border border-gray-200 dark:border-gray-700"></p>
             
-            <button id="modal_download_btn" type="button" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest shadow-lg shadow-emerald-200 dark:shadow-none">
+            <button id="modal_download_btn" type="button" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest shadow-md">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
                 </svg>
@@ -127,7 +148,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
 
 <script>
-    // 1. ENGINE RENDER THUMBNAIL (DI TABEL)
+    // 1. ENGINE AUTOMATIC RENDER FOR TABLE ROW DISPLAY
     document.addEventListener("DOMContentLoaded", function() {
         @foreach($barcodes as $b)
             renderThumbnail({{ $b->id }}, '{{ $b->barcode_type }}', '{{ $b->final_content }}');
@@ -139,49 +160,73 @@
         if (!targetDiv) return;
 
         if (type === 'QR CODE') {
-            new QRCode(targetDiv, { text: content, width: 50, height: 50, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+            new QRCode(targetDiv, { text: content, width: 38, height: 38, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
             setTimeout(() => {
                 const img = targetDiv.querySelector('img');
-                if(img) { img.style.width = "50px"; img.style.height = "50px"; }
+                if(img) { img.style.width = "38px"; img.style.height = "38px"; }
             }, 50);
         } else if (type === 'DATA MATRIX') {
             const canvas = document.createElement('canvas'); targetDiv.appendChild(canvas);
-            try { bwipjs.toCanvas(canvas, { bcid: 'datamatrix', text: content, scale: 2, include0: true }); canvas.style.maxWidth = "50px"; canvas.style.maxHeight = "50px";
+            try { bwipjs.toCanvas(canvas, { bcid: 'datamatrix', text: content, scale: 1.5, include0: true }); canvas.style.maxWidth = "38px"; canvas.style.maxHeight = "38px";
             } catch (e) { targetDiv.innerText = "Err"; }
         } else if (type === '2D CODE') {
             const canvas = document.createElement('canvas'); targetDiv.appendChild(canvas);
-            try { bwipjs.toCanvas(canvas, { bcid: 'pdf417', text: content, scale: 1, height: 10, columns: 3 }); canvas.style.maxWidth = "55px";
+            try { bwipjs.toCanvas(canvas, { bcid: 'pdf417', text: content, scale: 1, height: 8, columns: 3 }); canvas.style.maxWidth = "40px";
             } catch (e) { targetDiv.innerText = "Err"; }
         } else if (type === '3D CODE') {
-            const canvas = document.createElement('canvas'); canvas.width = 50; canvas.height = 50; const ctx = canvas.getContext('2d'); ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 0, 50, 50); ctx.fillStyle = "#10b981"; ctx.fillRect(8, 8, 34, 34); targetDiv.appendChild(canvas);
+            const canvas = document.createElement('canvas'); canvas.width = 38; canvas.height = 38; const ctx = canvas.getContext('2d'); ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 0, 38, 38); ctx.fillStyle = "#10b981"; ctx.fillRect(6, 6, 26, 26); targetDiv.appendChild(canvas);
         }
     }
 
-    // ================== LOGIC MODAL & DOWNLOAD ==================
-    let currentDownloadData = null; // Temporary storage for download logic
+    // 2. LIVE FILTER LOGIC USING TABS (SAMAKAN MECHANISM SEPERTI HISTORY LO)
+    function filterBarcodeTable(criteria, element) {
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(btn => {
+            btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+            btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+        });
+
+        if (element) {
+            element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+            element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+        }
+
+        const rows = document.querySelectorAll('.table-row-item');
+        rows.forEach(row => {
+            if (criteria === 'all') {
+                row.style.display = '';
+                return;
+            }
+            const typeText = row.querySelector('.type-cell').textContent.trim().toLowerCase();
+            if (typeText === criteria) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // 3. INTERACTIVE POPUP MODAL ENGINE & DOWNLOAD Scaling
+    let currentDownloadData = null;
 
     function openBarcodeModal(id, type, content, sizeMm) {
         const modal = document.getElementById('barcodeModal');
         const renderArea = document.getElementById('modal_render_area');
         
-        // Reset Modal State
         modal.classList.remove('hidden');
         renderArea.innerHTML = '';
         
-        // Animate In
         setTimeout(() => {
             modal.classList.add('opacity-100');
             modal.firstElementChild.classList.remove('scale-90');
         }, 10);
 
-        // Fill Metadata
         document.getElementById('modal_header_type').innerText = `${type} VISUALIZATION`;
         document.getElementById('modal_header_size').innerText = `TARGET PHYSICAL SIZE: ${sizeMm}mm x ${sizeMm}mm`;
         document.getElementById('modal_content_text').innerText = content;
 
-        // Render High-Res Version in Modal (Using physical scale logic from customizer)
         let renderPixelSize = 100 + ((sizeMm - 1) * 10.5); 
-        currentDownloadData = { url: '', filename: '' }; // Reset
+        currentDownloadData = { url: '', filename: '' };
 
         if (type === 'QR CODE') {
             new QRCode(renderArea, {
@@ -215,31 +260,26 @@
 
     function closeBarcodeModal(event) {
         if (event && event.target !== document.getElementById('barcodeModal')) return;
-        
         const modal = document.getElementById('barcodeModal');
         modal.classList.remove('opacity-100');
         modal.firstElementChild.classList.add('scale-90');
-        
         setTimeout(() => {
             modal.classList.add('hidden');
-            currentDownloadData = null; // Clear data
+            currentDownloadData = null;
         }, 300);
     }
 
-    // Prepare filename and URL but don't trigger download yet
     function prepareDownload(dataUrl, type, content) {
         const safeName = content.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         currentDownloadData.url = dataUrl;
         currentDownloadData.filename = `db_barcode_${type.replace(/\s+/g, '_').toLowerCase()}_${safeName}.png`;
     }
 
-    // Set up click handler for the download button inside modal
     document.getElementById('modal_download_btn').addEventListener('click', function() {
         if (!currentDownloadData || !currentDownloadData.url) {
             alert("Gambar barcode belum siap diunduh.");
             return;
         }
-        
         const link = document.createElement('a');
         link.href = currentDownloadData.url;
         link.download = currentDownloadData.filename;
