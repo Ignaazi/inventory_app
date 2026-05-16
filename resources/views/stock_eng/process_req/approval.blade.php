@@ -7,11 +7,11 @@
         
         <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-slate-900 dark:text-white">
             <div>
-                <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Engineering Approval</h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Engineering Approval List</h1>
                 <nav class="flex text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
                     <span>Engineering</span>
                     <span class="mx-2 text-slate-300">/</span>
-                    <span class="text-indigo-600 font-bold uppercase">Production Requests</span>
+                    <span class="text-indigo-600 font-bold uppercase">List Approval</span>
                 </nav>
             </div>
             <div class="text-left sm:text-right">
@@ -30,14 +30,14 @@
             
             <div class="p-4 md:p-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-slate-100 dark:border-strokedark">
                 <div class="w-full xl:w-auto">
-                    <h3 class="text-base md:text-lg font-bold uppercase leading-tight">Production Line Requests</h3>
+                    <h3 class="text-base md:text-lg font-bold uppercase leading-tight">Production Line Requests Queue</h3>
                     <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Verify and approve nozzle/sparepart requests from production lines.</p>
                 </div>
                 <div class="flex items-center gap-3 w-full xl:w-auto">
-                    <button class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-[10px] font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase tracking-widest">
+                    <a href="/eng/approval/history" class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-[10px] font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase tracking-widest">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2a4 4 0 00-4-4H5m14 4v2a4 4 0 004 4h1m-4-4a4 4 0 01-8 0v-5h8v5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         History
-                    </button>
+                    </a>
                 </div>
             </div>
 
@@ -120,13 +120,35 @@
 </div>
 
 <div id="signatureModal" class="fixed inset-0 z-9999 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-boxdark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-strokedark overflow-hidden">
+    <div class="bg-white dark:bg-boxdark w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-strokedark overflow-hidden transition-all duration-300">
         <div class="bg-slate-50 dark:bg-meta-4/30 p-4 border-b border-slate-100 dark:border-strokedark flex justify-between items-center">
             <div>
                 <h3 class="text-sm font-black uppercase text-slate-800 dark:text-white">Engineering Authorization</h3>
                 <p id="modalReqNo" class="text-[10px] font-bold text-indigo-600 tracking-widest uppercase mt-0.5"></p>
             </div>
             <button type="button" onclick="closeApprovalModal()" class="text-slate-400 hover:text-slate-600 text-sm font-black">✕</button>
+        </div>
+        
+        <div class="px-6 pt-6 pb-2 bg-slate-50/50 dark:bg-meta-4/10 border-b border-slate-100 dark:border-strokedark">
+            <div class="flex items-center justify-between max-w-xs mx-auto relative mb-6">
+                <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 dark:bg-slate-700 z-0 rounded-full"></div>
+                <div class="absolute left-0 w-1/2 top-1/2 -translate-y-1/2 h-1 bg-indigo-600 z-0 rounded-full"></div>
+
+                <div class="flex flex-col items-center relative z-10">
+                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black ring-4 ring-white dark:ring-boxdark">1</div>
+                    <span class="text-[9px] font-black uppercase tracking-tight text-slate-500 mt-1">Requested</span>
+                </div>
+
+                <div class="flex flex-col items-center relative z-10">
+                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black ring-4 ring-indigo-100 dark:ring-indigo-950/50 animate-pulse">2</div>
+                    <span class="text-[9px] font-black uppercase tracking-tight text-indigo-600 mt-1">Verification</span>
+                </div>
+
+                <div class="flex flex-col items-center relative z-10">
+                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center text-xs font-black ring-4 ring-white dark:ring-boxdark">3</div>
+                    <span class="text-[9px] font-black uppercase tracking-tight text-slate-400 mt-1">Completed</span>
+                </div>
+            </div>
         </div>
         
         <form id="approveForm" method="POST">
@@ -145,7 +167,7 @@
                         <button type="button" onclick="clearCanvas()" class="text-[9px] font-bold text-rose-600 uppercase tracking-wider hover:underline">Clear Canvas</button>
                     </div>
                     <div class="border-[1.5px] border-dashed border-slate-300 dark:border-strokedark bg-slate-50 dark:bg-form-input rounded-xl flex justify-center p-2 bg-white">
-                        <canvas id="signaturePad" width="360" height="150" class="cursor-crosshair border border-slate-200 rounded-lg"></canvas>
+                        <canvas id="signaturePad" width="420" height="150" class="cursor-crosshair border border-slate-200 rounded-lg max-w-full"></canvas>
                     </div>
                 </div>
             </div>

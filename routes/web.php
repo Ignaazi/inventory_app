@@ -17,6 +17,7 @@ use App\Http\Controllers\EngOverview\BarcodeParsingController;
 use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
+use App\Http\Controllers\Engineering\HistoryApprovalController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -167,4 +168,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/type-barcode', [TypeBarcodeController::class, 'index'])->name('barcode.type');
         Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
     });
+
+    //routes history approval
+    Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
+
 });

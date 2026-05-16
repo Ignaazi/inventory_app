@@ -127,7 +127,7 @@
         </ul>
       </div>
 
-      <div class="mb-8" x-data="{ openEngTrans: false, openBarcodeParse: false }">
+      <div class="mb-8" x-data="{ openEngTrans: false, openBarcodeParse: false, openEngApproval: false }">
         <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           ENGINEERING
         </h3>
@@ -231,12 +231,39 @@
             </ul>
           </li>
 
-          <li>
-            <a href="{{ route('eng.approval') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Approval</span>
-            </a>
+          <li class="relative">
+            <button 
+              @click="openEngApproval = !openEngApproval" 
+              @click.away="if(sidebarToggle && window.innerWidth >= 1024) openEngApproval = false"
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Approval</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openEngApproval ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <ul 
+              x-show="openEngApproval" 
+              x-transition 
+              :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'"
+              class="flex flex-col gap-1"
+            >
+              <li>
+                <a href="{{ route('eng.approval') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                  <span>List Approval</span>
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('approval.history') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>History Approval</span>
+                </a>
+              </li>
+            </ul>
           </li>
+
           <li>
             <a href="/eng/purchase-request" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
               <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
