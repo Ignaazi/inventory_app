@@ -3,268 +3,281 @@
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)]">
-    
-    <div class="p-4 md:p-8 2xl:p-10">
-        
-        {{-- Header Section --}}
-        <div class="mb-6 px-2 text-slate-900 dark:text-white">
-            <h1 class="text-2xl font-black tracking-tight uppercase">Spareparts</h1>
-            <nav class="flex text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-1">
-                <span>Engineering</span>
-                <span class="mx-2 text-slate-300">/</span>
-                <span class="text-indigo-600">Master Data Sparepart</span>
-            </nav>
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
+
+    <div class="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 shadow-sm transition-all dark:bg-emerald-950/20 dark:border-emerald-900/50">
+        <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p class="text-sm font-medium text-emerald-800 dark:text-emerald-400">
+            <span class="uppercase font-bold mr-1">MASTER DATA:</span> 
+            Total {{ $spareparts->total() }} sparepart items registered in engineering database.
+        </p>
+    </div>
+
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Master Data Spareparts</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Engineering Specification Database</p>
         </div>
 
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden">
+        <div class="flex flex-wrap items-center gap-2">
+            <button class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+                CSV EXPORT
+            </button>
             
-            {{-- Action Header --}}
-            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-100 dark:border-strokedark">
-                <div>
-                    <h3 class="text-lg font-black text-slate-900 dark:text-white uppercase">Spareparts List</h3>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1 italic">Manage and monitor engineering sparepart stock.</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button class="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 dark:border-strokedark rounded-xl text-[10px] font-black text-slate-900 dark:text-white hover:bg-slate-50 transition-all uppercase tracking-widest">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Export
-                    </button>
-                    <button onclick="openAddModal()" class="flex items-center justify-center gap-2 px-5 py-2 bg-indigo-600 rounded-xl text-[10px] font-black text-white hover:bg-indigo-700 shadow-md transition-all uppercase tracking-widest">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Add Sparepart
-                    </button>
-                </div>
-            </div>
+            <button onclick="openModal('add')" class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                ADD SPAREPART
+            </button>
+        </div>
+    </div>
 
-            {{-- Search Section --}}
-            <div class="p-6">
-                <div class="relative w-full md:w-80">
-                    <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                    <form action="{{ url()->current() }}" method="GET">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="SEARCH SPAREPART..." class="w-full pl-11 pr-4 py-3 border border-slate-200 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all dark:bg-meta-4 text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">
-                    </form>
-                </div>
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-boxdark overflow-hidden">
+        
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
+            <div class="relative w-full max-w-md">
+                <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <form action="{{ url()->current() }}" method="GET">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
+                </form>
             </div>
+        </div>
 
-            {{-- Table Content --}}
-            <div class="max-w-full overflow-x-auto">
-                <table class="w-full text-left border-collapse table-fixed min-w-[1100px]">
-                    <thead>
-                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20 font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest text-[10px]">
-                            <th class="px-6 py-4 w-16">No.</th>
-                            <th class="px-2 py-4 w-12">Sparepart Name</th>
-                            <th class="px-2 py-4 text-center w-36">Image</th>
-                            <th class="px-6 py-4 text-center w-36">Category</th>
-                            <th class="px-6 py-4 text-center w-24">Qty</th>
-                            <th class="px-6 py-4 text-center w-44">Create At</th>
-                            <th class="px-6 py-4 text-center w-40">Update At</th>
-                            <th class="px-6 py-4 text-center w-32">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark">
-                        @forelse($spareparts as $index => $item)
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all font-black uppercase text-slate-900 dark:text-white text-[11px]">
-                            <td class="px-6 py-6">{{ $spareparts->firstItem() + $index }}</td>
-                            <td class="px-2 py-6">
-                                <div class="truncate tracking-tight" title="{{ $item->name }}">
-                                    {{ $item->name }}
+        <div class="max-w-full overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse" id="sparepartTable">
+                <thead>
+                    <tr class="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+                        <th class="px-4 py-4 text-center">NO</th>
+                        <th class="px-4 py-4">Sparepart Name</th>
+                        <th class="px-4 py-4 text-center">Image</th>
+                        <th class="px-4 py-4 text-center">Category</th>
+                        <th class="px-4 py-4 text-center">Length</th>
+                        <th class="px-4 py-4 text-center">Width</th>
+                        <th class="px-4 py-4 text-center">Thickness</th>
+                        <th class="px-4 py-4">Create At</th>
+                        <th class="px-4 py-4">Update At</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-slate-900 dark:text-white divide-y divide-slate-50 dark:divide-slate-700">
+                    @forelse($spareparts as $index => $item)
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all精密">
+                        <td class="px-4 py-4 text-center">{{ $spareparts->firstItem() + $index }}</td>
+                        <td class="px-4 py-4 font-bold">{{ $item->name }}</td>
+                        <td class="px-4 py-2">
+                            <div class="flex justify-center">
+                                <div class="w-14 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    @if($item->image)
+                                        <img src="{{ asset('storage/' . $item->image) }}" class="w-full h-full object-cover">
+                                    @else
+                                        <span class="text-[8px] text-slate-400 font-bold">NO PIC</span>
+                                    @endif
                                 </div>
-                            </td>
-                            <td class="px-2 py-6">
-                                <div class="flex justify-center">
-                                    <div class="w-15 h-12 rounded-xl bg-slate-50 dark:bg-meta-4 flex items-center justify-center overflow-hidden border border-slate-200 shadow-sm">
-                                        @if($item->image)
-                                            <img src="{{ asset('storage/' . $item->image) }}" class="w-full h-full object-cover">
-                                        @else
-                                            <span class="text-[8px] text-slate-300">NO PIC</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <div>  {{ $item->category }}</div>
-                            </td>
-                            <td class="px-6 py-6 text-center text-sm font-black">{{ $item->qty }}</td>
-                            <td class="px-6 py-6 text-center">
-                                <div>{{ $item->created_at->format('d M Y') }}</div>
-                                <div class="text-[9px] text-slate-400 mt-1">{{ $item->created_at->format('H:i') }}</div>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <div>{{ $item->updated_at->format('d M Y') }}</div>
-                                <div class="text-[9px] text-slate-400 mt-1">{{ $item->updated_at->format('H:i') }}</div>
-                            </td>
-                            <td class="px-9 py-8">
-                                <div class="flex justify-end gap-2 items-center">
-                                    {{-- Edit Kuning --}}
-                                    <button onclick="openEditModal({{ $item }})" class="p-2 bg-amber-400 hover:bg-amber-500 text-white rounded-xl shadow-sm transition-all transform hover:scale-110">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2.5 2.5 0 113.536 3.536L12 17.207l-4 1 1-4 9.586-9.586z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 text-center"><span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-bold text-[10px]">{{ $item->category }}</span></td>
+                        <td class="px-4 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">{{ $item->length ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-amber-600 dark:text-amber-400">{{ $item->width ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400">{{ $item->thickness ?? '-' }}</td>
+                        <td class="px-4 py-4 font-bold text-[10px] text-slate-500">{{ $item->created_at->format('d/m/Y H:i') }}</td>
+                        <td class="px-4 py-4 font-bold text-[10px] text-slate-500">{{ $item->updated_at->format('d/m/Y H:i') }}</td>
+                        
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="openModal('edit', {{ json_encode($item) }})" 
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
+                                    title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                        <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                        
+                                <form action="{{ route('list-sparepart.destroy', $item->id) }}" method="POST" class="inline form-delete">
+                                    @csrf @method('DELETE')
+                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
                                     </button>
-                                    {{-- Delete Merah --}}
-                                    <form action="{{ route('list-sparepart.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Delete Component?')" class="inline">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-sm transition-all transform hover:scale-110">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8" class="text-center py-20 text-slate-400 font-black tracking-widest">Data Sparepart Kosong</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="10" class="py-12 text-center text-slate-400 italic">Data not found.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-            {{-- Footer / Pagination --}}
-            <div class="p-6 border-t border-slate-100 dark:border-strokedark bg-slate-50/20 flex flex-col md:flex-row justify-between items-center gap-4 font-black uppercase text-[10px]">
-                <p class="text-slate-500 tracking-widest italic">Showing <span class="text-indigo-600">{{ $spareparts->firstItem() }} to {{ $spareparts->lastItem() }}</span> of {{ $spareparts->total() }} Units</p>
-                <div>{{ $spareparts->links() }}</div>
+        <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
+            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                Showing {{ $spareparts->firstItem() }} to {{ $spareparts->lastItem() }} of {{ $spareparts->total() }} Entries
+            </p>
+            <div class="flex items-center gap-2">
+                {{ $spareparts->links() }}
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL (Style sama dengan table) --}}
-<div id="modal-sparepart" class="fixed inset-0 z-[999] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-boxdark w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-strokedark">
-        <div class="px-10 py-8 bg-slate-50 dark:bg-meta-4/30 border-b border-slate-100 dark:border-strokedark flex justify-between items-center">
-            <div>
-                <h3 id="modal-title" class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Sparepart Form</h3>
-                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em] mt-1 italic">Engineering Database</p>
-            </div>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+{{-- MODAL FORM SPAREPART --}}
+<div id="modalSparepart" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-800 dark:text-white">Add Sparepart</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
-
-        <form id="sparepart-form" action="" method="POST" enctype="multipart/form-data" class="p-10">
+        <form id="sparepartForm" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf
-            <div id="method-field"></div>
-            <div class="grid grid-cols-1 gap-6">
-                <div class="space-y-2">
-                    <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Sparepart Name</label>
-                    <input type="text" name="name" id="field-name" class="w-full px-6 py-4 border-2 border-slate-100 rounded-2xl dark:bg-meta-4 text-xs font-black uppercase focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all dark:text-white" required>
+            <div id="methodField"></div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-3">
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Sparepart Name</label>
+                    <input type="text" name="name" id="name" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                 </div>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Category</label>
-                        <select name="category" id="field-category" class="w-full px-6 py-4 border-2 border-slate-100 rounded-2xl dark:bg-meta-4 text-xs font-black uppercase outline-none focus:border-indigo-500 transition-all dark:text-white" required>
-                            <option value="NOZZLE">NOZZLE</option>
-                            <option value="FEEDER">FEEDER</option>
-                            <option value="MOTOR">MOTOR</option>
-                            <option value="OTHER">OTHER</option>
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Quantity</label>
-                        <input type="number" name="qty" id="field-qty" class="w-full px-6 py-4 border-2 border-slate-100 rounded-2xl dark:bg-meta-4 text-xs font-black uppercase outline-none focus:border-indigo-500 transition-all dark:text-white" required>
-                    </div>
+                <div class="col-span-3">
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Category</label>
+                    <select name="category" id="category" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                        <option value="NOZZLE">NOZZLE</option>
+                        <option value="FEEDER">FEEDER</option>
+                        <option value="MOTOR">MOTOR</option>
+                        <option value="OTHER">OTHER</option>
+                    </select>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Photo Upload</label>
-                    <input type="file" name="image" class="w-full px-6 py-4 border-2 border-slate-100 border-dashed rounded-2xl text-[10px] font-black text-slate-400 uppercase">
+                
+                <div>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Length</label>
+                    <input type="number" step="0.01" name="length" id="length" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Width</label>
+                    <input type="number" step="0.01" name="width" id="width" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Thickness</label>
+                    <input type="number" step="0.01" name="thickness" id="thickness" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                </div>
+
+                <div class="col-span-3 mt-2">
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Photo Upload</label>
+                    <input type="file" name="image" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200 hover:file:bg-slate-200">
                 </div>
             </div>
-            <div class="mt-12 flex gap-4">
-                <button type="button" onclick="closeModal()" class="flex-1 px-8 py-4 border-2 border-slate-100 rounded-2xl text-[11px] font-black uppercase text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
-                <button type="submit" id="btn-submit" class="flex-[2] px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase shadow-xl hover:bg-indigo-700 transition-all">Save Data</button>
+            <div class="mt-8 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all">Save Data</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    const modal = document.getElementById('modal-sparepart');
-    const form = document.getElementById('sparepart-form');
-    const title = document.getElementById('modal-title');
-    const methodField = document.getElementById('method-field');
-    const btnSubmit = document.getElementById('btn-submit');
-
-    function openAddModal() {
-        title.innerText = 'Add New Sparepart';
-        form.action = "{{ route('list-sparepart.store') }}";
-        methodField.innerHTML = '';
-        form.reset();
-        btnSubmit.innerText = 'Save Sparepart';
+    function openModal(mode, data = null) {
+        const modal = document.getElementById('modalSparepart');
+        const form = document.getElementById('sparepartForm');
+        const methodField = document.getElementById('methodField');
+        
         modal.classList.remove('hidden');
-    }
-
-    function openEditModal(item) {
-        title.innerText = 'Edit Sparepart';
-        form.action = `/eng/list-sparepart/${item.id}`;
-        methodField.innerHTML = '@method("PUT")';
-        document.getElementById('field-name').value = item.name;
-        document.getElementById('field-category').value = item.category;
-        document.getElementById('field-qty').value = item.qty;
-        btnSubmit.innerText = 'Update Changes';
-        modal.classList.remove('hidden');
-    }
-
-    function closeModal() { modal.classList.add('hidden'); }
-
-    @if(session('success'))
-        Swal.fire({
-            title: 'SUCCESS!',
-            text: "{{ session('success') }}",
-            icon: 'success',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#4f46e5', // Warna indigo sesuai tema lu
-            borderRadius: '2rem',
-            customClass: {
-                popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
-                title: 'text-slate-900 tracking-tighter',
-                confirmButton: 'rounded-xl px-10 py-3 text-[10px] tracking-widest'
-            }
-        });
-    @endif
-
-    // Popup untuk Error Message
-    @if(session('error'))
-        Swal.fire({
-            title: 'ERROR!',
-            text: "{{ session('error') }}",
-            icon: 'error',
-            confirmButtonText: 'TRY AGAIN',
-            confirmButtonColor: '#f43f5e',
-            customClass: {
-                popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
-                confirmButton: 'rounded-xl px-10 py-3 text-[10px] tracking-widest'
-            }
-        });
-    @endif
-
-    // Intercept Form Delete agar pakai Popup Cantik
-    document.querySelectorAll('form[onsubmit]').forEach(form => {
-        form.onsubmit = function(e) {
-            e.preventDefault(); // Stop confirm bawaan browser
+        
+        if (mode === 'edit') {
+            document.getElementById('modalTitle').innerText = 'Edit Sparepart Data';
+            form.action = "/eng/list-sparepart/" + data.id;
+            methodField.innerHTML = '<input type="hidden" name="_method" value="PUT">';
             
+            document.getElementById('name').value = data.name;
+            document.getElementById('category').value = data.category;
+            document.getElementById('length').value = data.length;
+            document.getElementById('width').value = data.width;
+            document.getElementById('thickness').value = data.thickness;
+        } else {
+            document.getElementById('modalTitle').innerText = 'Add New Sparepart';
+            form.action = "{{ route('list-sparepart.store') }}";
+            form.reset();
+            methodField.innerHTML = '';
+        }
+    }
+
+    function closeModal() { document.getElementById('modalSparepart').classList.add('hidden'); }
+
+    // Intercept Konfirmasi Delete SweetAlert2
+    document.querySelectorAll('.btn-delete').forEach(button => {
+        button.addEventListener('click', function(e) {
+            let form = this.closest('.form-delete');
             Swal.fire({
-                title: 'ARE YOU SURE?',
-                text: "THIS ACTION WILL PERMANENTLY DELETE THE COMPONENT!",
+                title: 'Yakin mau hapus?',
+                text: "Data sparepart yang dihapus tidak bisa dikembalikan!",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#f43f5e', // Rose/Merah
-                cancelButtonColor: '#64748b', // Slate
-                confirmButtonText: 'YES, DELETE IT!',
-                cancelButtonText: 'CANCEL',
-                customClass: {
-                    popup: 'rounded-[2rem] border-2 border-slate-100 uppercase font-black',
-                    confirmButton: 'rounded-xl px-6 py-3 text-[10px] tracking-widest',
-                    cancelButton: 'rounded-xl px-6 py-3 text-[10px] tracking-widest'
-                }
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    this.submit(); // Jalankan hapus jika klik Yes
+                    form.submit();
                 }
             });
-        };
+        });
     });
 
+    // Intercept Konfirmasi Submit (Store/Update)
+    document.getElementById('sparepartForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        let form = this;
+        let method = document.getElementById('methodField').innerHTML;
+        let isEdit = method.includes('PUT');
+
+        Swal.fire({
+            title: isEdit ? 'Yakin simpan perubahan?' : 'Yakin tambah data?',
+            text: "Pastikan data spesifikasi dimensi sudah tepat",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Proses!',
+            cancelButtonText: 'Cek Lagi'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Sedang memproses...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading() }
+                });
+                form.submit();
+            }
+        });
+    });
+
+    // Flash Session Popups Bawaan
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+
+    @if($errors->any())
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: "{{ $errors->first() }}",
+        });
+    @endif
 </script>
 
-
+<style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .swal2-container { z-index: 10000 !important; }
+</style>
 @endsection

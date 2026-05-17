@@ -30,7 +30,7 @@ class StockInEngineeringController extends Controller
         // Ambil data history supaya tabel di bawah form manual tidak error
         $history = StockInEng::with('stockEng')
                     ->latest()
-                    ->paginate(10); // Kita batasi 10 saja untuk form manual
+                    ->paginate(10); 
 
         return view('stock_eng.transaction.in_manual', compact('stocks', 'history'));
     }
@@ -40,22 +40,23 @@ class StockInEngineeringController extends Controller
      */
     public function scan()
     {
-        // Jika di halaman scan lo juga memanggil tabel history, ambil datanya di sini
+        $stocks = StockEng::orderBy('no_nozzle', 'asc')->get();
+
         $history = StockInEng::with('stockEng')
                     ->latest()
                     ->paginate(10);
 
-        return view('stock_eng.transaction.in_scan', compact('history'));
+        return view('stock_eng.transaction.in_scan', compact('stocks', 'history'));
     }
 
     public function store(Request $request)
     {
-        // 1. Validasi input
+        // 1. Validasi input (Ditambahkan aturan untuk 'comment')
         $request->validate([
             'stock_eng_id' => 'required|exists:stock_engs,id',
             'qty_in' => 'required|integer|min:1',
             'remark' => 'nullable|string',
-            'source' => 'nullable|string'
+            'comment' => 'nullable|string' // FIX 1: Validasi kolom comment baru
         ]);
 
         // 2. Update Stok Utama
@@ -76,13 +77,14 @@ class StockInEngineeringController extends Controller
         }
 
         // 4. Catat transaksi ke tabel Log (StockInEng)
-        // Menggunakan NIM sesuai spek skripsi lo
+        // Kolom 'remark' otomatis dari sistem, 'comment' berisi catatan dari user
         StockInEng::create([
             'stock_eng_id' => $stock->id,
             'nik' => Auth::user()->nim, 
             'qty_added' => $request->qty_in,
             'status' => 'Success',
             'remark' => $finalRemark,
+            'comment' => $request->comment, // FIX 2: Simpan data komentar ke DB
         ]);
 
         return redirect()->route('eng.in')->with('success', 'Stock In Berhasil dicatat!');

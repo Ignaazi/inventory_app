@@ -15,7 +15,8 @@ class StockInEng extends Model
         'nik', 
         'qty_added', 
         'status', 
-        'remark'
+        'remark',
+        'comment'
     ];
 
     // Relasi balik ke tabel master Stock Engineering

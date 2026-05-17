@@ -7,24 +7,24 @@
       <h2 class="text-xl font-bold text-slate-950 dark:text-white">
         Stock In Activities
       </h2>
-      <p class="text-xs font-medium text-slate-600">Track your recent sparepart incoming activities</p>
+      <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Track your recent sparepart incoming activities</p>
     </div>
 
     <div class="flex items-center gap-3">
       <a href="{{ route('eng.in.scan') }}"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        class="inline-flex items-center gap-2 rounded-lg border border-transparent bg-gradient-to-r from-purple-600 to-red-500 px-3 py-2 text-xs font-bold text-white shadow-sm"
       >
         <i class="fas fa-qrcode text-primary"></i> Scan IN
       </a>
       <a href="{{ route('eng.in.manual') }}"
-        class="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white shadow-md hover:bg-opacity-90"
+        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-amber-500 px-3 py-2 text-xs font-bold text-white shadow-md"
       >
         <i class="fas fa-keyboard"></i> Manual IN
       </a>
     </div>
   </div>
 
-  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-slate-900 sm:px-6">
     <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h3 class="text-base font-bold text-slate-950 dark:text-white">
@@ -33,8 +33,8 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
             All
           </button>
           <button type="button" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
@@ -52,7 +52,7 @@
         </div>
 
         <button
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700/50"
         >
           <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M2.29004 5.90393H17.7067" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -68,7 +68,7 @@
     <div class="w-full overflow-x-auto">
       <table class="min-w-full text-left border-collapse" id="history-table">
         <thead>
-          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
+          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50 dark:bg-slate-800/40">
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">DATE</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NIK</th>
@@ -79,6 +79,7 @@
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Qty IN</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Status</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Remark</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">Comment</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -106,31 +107,35 @@
               {{ $log->stockEng->category ?? '-' }}
             </td>
             <td class="py-3 px-3 text-center">
-              <span class="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+              <span class="inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
                 +{{ $log->qty_added }}
               </span>
             </td>
             <td class="py-3 px-3 text-center">
               <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if($log->status == 'Success') bg-emerald-50 text-emerald-700 
-                @elseif($log->status == 'Pending') bg-orange-50 text-orange-700
-                @else bg-rose-50 text-rose-700 @endif">
-                {{ $log->status == 'Success' ? 'Success' : ($log->status == 'Pending' ? 'Pending' : strtoupper($log->status)) }}
+                @if(strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400
+                @elseif(strtolower($log->status) == 'pending') bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400
+                @else bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 @endif">
+                {{ $log->status }}
               </span>
             </td>
             <td class="py-3 px-3 text-center">
               @php
-                $remarkLower = strtolower($log->remark);
+                $remarkText = $log->remark ?? '';
+                $remarkLower = strtolower($remarkText);
                 $isManual = str_contains($remarkLower, 'manual');
                 $isScan = str_contains($remarkLower, 'scan');
               @endphp
 
               <span class="remark-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if($isManual) bg-blue-50 text-blue-700 border border-blue-100
-                @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100
-                @else bg-slate-50 text-slate-600 border border-slate-100 @endif">
-                {{ $log->remark ?? '-' }}
+                @if($isManual) bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
+                @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
+                @else bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
+                {{ $remarkText ? $log->remark : '-' }} 
               </span>
+            </td>
+            <td class="py-3 px-3 text-xs font-medium text-slate-700 dark:text-gray-300 max-w-[200px] truncate" title="{{ $log->comment }}">
+              {{ $log->comment ?? '-' }}
             </td>
           </tr>
           @endforeach
@@ -150,14 +155,8 @@
 </div>
 
 <style>
-  nav[role="navigation"] svg {
-    width: 16px;
-    height: 16px;
-    display: inline;
-  }
-  nav[role="navigation"] div:first-child {
-    display: none;
-  }
+  nav[role="navigation"] svg { width: 16px; height: 16px; display: inline; }
+  nav[role="navigation"] div:first-child { display: none; }
   .pagination .page-item.active .page-link {
     background-color: #3C50E0 !important;
     border-color: #3C50E0 !important;
@@ -165,11 +164,17 @@
     font-weight: bold;
     font-size: 12px;
   }
+  /* ADJUSTED FOR PAGINATION IN DARK MODE */
   .pagination .page-link {
-    color: #0f172a !important; 
+    color: inherit !important;
     font-weight: 700;
     font-size: 12px;
     padding: 4px 8px;
+  }
+  .dark .pagination .page-item:not(.active) .page-link {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
   }
 </style>
 
@@ -203,8 +208,14 @@
         } else {
           row.style.display = 'none';
         }
-      } else if (criteria === 'manual in' || criteria === 'scan in') {
-        if (remarkText.includes(criteria) || remarkText.includes(criteria.replace(' ', ''))) {
+      } else if (criteria === 'manual in') {
+        if (remarkText.includes('manual')) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      } else if (criteria === 'scan in') {
+        if (remarkText.includes('scan')) {
           row.style.display = '';
         } else {
           row.style.display = 'none';

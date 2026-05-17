@@ -6,13 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class ListSparepartEng extends Model
 {
-    // Paksa model menggunakan nama tabel ini
-    protected $table = 'list_sparepart_engs';
+    // KUNCI NAMA TABELNYA DI SINI, BRO!
+    protected $table = 'spareparts'; 
 
+    // Pastikan fillable sudah pakai kolom dimensi baru
     protected $fillable = [
         'name',
-        'image',
         'category',
-        'qty'
+        'image',
+        'length',
+        'width',
+        'thickness',
     ];
 }
