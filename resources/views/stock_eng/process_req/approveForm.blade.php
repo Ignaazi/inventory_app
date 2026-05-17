@@ -21,7 +21,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black tracking-tight text-slate-950 dark:text-white">PT. SIIX EMS KARAWANG</h1>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ELECTRONIC MANUFACTURING SERVICES DEPARTMENT</p>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ELECTRONIC MANUFACTURING SERVICES</p>
                 </div>
             </div>
             <div class="border-2 border-slate-950 dark:border-slate-500 p-2 text-center min-w-[200px]">
@@ -34,19 +34,19 @@
             <table class="w-full border-collapse text-left text-xs uppercase font-bold">
                 <tbody>
                     <tr class="border-b border-slate-950 dark:border-slate-700">
-                        <td class="w-1/3 px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">NAMA PELAPOR (REQUESTOR)</td>
+                        <td class="w-1/3 px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">NAME</td>
                         <td class="px-4 py-3 font-black text-slate-950 dark:text-white">{{ $req->requestor }}</td>
                     </tr>
                     <tr class="border-b border-slate-950 dark:border-slate-700">
-                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">TARGET LINE / MESIN (LINE MACHINE)</td>
+                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">LINE</td>
                         <td class="px-4 py-3 font-black text-slate-950 dark:text-white">{{ $req->line_machine }}</td>
                     </tr>
                     <tr class="border-b border-slate-950 dark:border-slate-700">
-                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">NAMA SPAREPART / NOZZLE NAME</td>
+                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">NO NOZLE</td>
                         <td class="px-4 py-3 font-black text-indigo-600 dark:text-indigo-400 text-sm">{{ $req->sparepart_name }}</td>
                     </tr>
                     <tr class="border-b border-slate-950 dark:border-slate-700">
-                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">SAP CODE / BARCODE ITEM</td>
+                        <td class="px-4 py-3 bg-slate-50 dark:bg-meta-4/30 border-r border-slate-950 dark:border-slate-700 font-black tracking-wide">SAP CODE</td>
                         <td class="px-4 py-3 font-mono font-black text-slate-950 dark:text-white tracking-widest">{{ $req->sap_code }}</td>
                     </tr>
                     <tr>
@@ -57,9 +57,6 @@
             </table>
         </div>
 
-        <div class="text-right text-[8px] font-mono text-slate-400 italic mb-6">
-            Generated via System on: {{ $req->created_at ? $req->created_at->format('d-M-Y H:i') : date('d-M-Y H:i') }} WIB | PT. SIIX Automation Tracking
-        </div>
 
         <div class="border border-slate-950 dark:border-slate-700 overflow-hidden">
             

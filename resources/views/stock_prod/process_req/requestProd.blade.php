@@ -1,25 +1,35 @@
 @extends('admin')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6" x-data="signatureFormHandler()">
     
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
             <h2 class="text-lg font-extrabold text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
                 <span class="h-5 w-1.5 bg-primary rounded-full"></span>
-                New Sparepart Request
+                FORM REQUEST SPAREPART
             </h2>
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Production Department Form</p>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">PT SIIX EMS KARAWANG</p>
         </div>
         
         <div class="self-start sm:self-center">
-            <button type="button" @click="generatePDF()" class="flex items-center gap-2 bg-[#A61C3C] hover:bg-[#8B1430] text-white rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            <button type="button" @click="generatePDF()" class="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-all shadow-sm shadow-red-600/10 active:scale-95">
+                
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4C4 2.89543 4.89543 2 6 2H14L20 8V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4Z" fill="#E2E8F0"/>
+                    <path d="M14 2V8H20L14 2Z" fill="#CBD5E1"/>
+                    
+                    <rect x="3" y="11" width="14" height="8" rx="1.5" fill="#EF4444"/>
+                    
+                    <text x="4.5" y="17" fill="white" font-size="5.5" font-family="sans-serif" font-weight="900" letter-spacing="-0.2">PDF</text>
                 </svg>
-                Export PDF
+                
+                DOWNLOAD PDF
             </button>
         </div>
+
     </div>
 
     @if(session('success'))
@@ -32,9 +42,10 @@
     @endif
 
     <div class="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-xl shadow-md overflow-hidden print:hidden mb-10">
-        <form action="{{ route('prod.request.store') }}" method="POST" @submit="prepareSubmit($event)">
+        <form id="requestForm" action="{{ route('prod.request.store') }}" method="POST" @submit.prevent="handleFormAction($event)">
             @csrf
             
+            <input type="hidden" name="action_type" x-model="actionType">
             <input type="hidden" name="signature_data" x-bind:value="signatureImg">
             <input type="hidden" name="stamp_data" x-bind:value="stampImg">
 
@@ -43,33 +54,30 @@
                     
                     <div class="flex flex-col gap-4">
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Nama Pelapor (Requestor)</label>
-                            <input type="text" name="requestor" x-model="requestor" placeholder="Contoh: Muhammad Ignazi" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white" required>
+                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Name</label>
+                            <input type="text" name="requestor" x-model="requestor" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Target Line / Mesin (Line Machine)</label>
-                            <input type="text" name="line_machine" x-model="line_machine" placeholder="Contoh: Line 04 - SMT" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white" required>
+                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Line</label>
+                            <input type="text" name="line_machine" x-model="line_machine" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Nama Sparepart (Sparepart Name)</label>
-                            <input type="text" name="sparepart_name" x-model="sparepart_name" placeholder="Contoh: Nozzle Fuji NXT H01 1.0mm" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white" required>
+                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">No Nozle</label>
+                            <input type="text" name="sparepart_name" x-model="sparepart_name" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2 flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">SAP Code / Barcode Item</label>
+                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">SAP Code</label>
                                 <div class="relative">
-                                    <input type="text" name="sap_code" x-model="sap_code" placeholder="Scan barcode atau ketik kode SAP" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input" required>
-                                    <span class="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 dark:text-slate-500">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h.01M16 20h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    </span>
+                                    <input type="text" name="sap_code" x-model="sap_code" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Qty Req</label>
-                                <input type="number" name="qty_req" x-model="qty_req" min="1" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white" required>
+                                <input type="number" name="qty_req" x-model="qty_req" min="1" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                             </div>
                         </div>
                     </div>
@@ -119,14 +127,31 @@
                     </div>
                 </div>
 
-                <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:justify-end border-t border-stroke dark:border-strokedark pt-5">
-                    <button type="reset" @click="resetAll" class="flex justify-center rounded-lg border border-stroke dark:border-strokedark py-2.5 px-6 text-xs font-bold uppercase text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                        Reset Form
+                <div class="mt-8 flex flex-col sm:flex-row gap-2.5 sm:justify-end border-t border-stroke dark:border-strokedark pt-5">
+                    
+                    <button type="button" @click="resetAll" class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 px-4 text-xs font-bold uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                        Reset
                     </button>
-                    <button type="submit" class="flex justify-center rounded-lg bg-primary py-2.5 px-8 text-xs font-bold uppercase text-white hover:bg-opacity-90 shadow-md transition-all active:scale-95">
-                        Submit Request
+                    
+                    <button type="button" @click="submitAs('draft')" class="flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 text-xs font-bold uppercase tracking-wide shadow-sm transition-all duration-150 active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                        </svg>
+                        Draft
                     </button>
+
+                    <button type="button" @click="submitAs('submit')" class="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 text-xs font-bold uppercase tracking-wide shadow-sm transition-all duration-150 active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                        </svg>
+                        Submit
+                    </button>
+
                 </div>
+
             </div>
         </form>
     </div>
@@ -134,19 +159,19 @@
     <div id="print-target-box" class="print:m-0 print:p-0">
         <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-2 print:hidden">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            Live Preview Form Template (Formal Document)
+            Live Preview Form 
         </h3>
         
         <div class="bg-white text-black p-8 sm:p-12 border border-slate-300 rounded-xl shadow-sm print:border-none print:shadow-none print:p-0 font-sans">
             
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
                 <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 bg-slate-100 border border-dashed border-slate-400 rounded flex flex-col items-center justify-center text-center p-1 print:border-solid print:border-black">
-                        <span class="text-[7px] font-bold text-slate-400 leading-tight uppercase print:text-black">SIIX<br>LOGO</span>
-                    </div>
+                    <div class="w-16 h-16 flex items-center justify-center overflow-hidden">
+                        <img src="/images/logo-siix.png" class="max-h-full max-w-full object-contain" alt="Logo SIIX">
+                    </div>  
                     <div>
                         <h1 class="text-lg font-black uppercase tracking-tight text-black">PT. SIIX EMS KARAWANG</h1>
-                        <p class="text-[9px] font-bold text-slate-500 tracking-wider uppercase">Electronic Manufacturing Services Department</p>
+                        <p class="text-[9px] font-bold text-slate-500 tracking-wider uppercase">Electronic Manufacturing Services </p>
                     </div>
                 </div>
                 <div class="text-right">
@@ -159,19 +184,19 @@
                 <table class="w-full border-collapse text-xs border border-black">
                     <tbody>
                         <tr class="border-b border-black">
-                            <td class="w-1/3 py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Nama Pelapor (Requestor)</td>
+                            <td class="w-1/3 py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Nama</td>
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="requestor || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="w-1/3 py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Target Line / Mesin (Line Machine)</td>
+                            <td class="w-1/3 py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">LINE</td>
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="line_machine || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Nama Sparepart / Nozzle Name</td>
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">NO NOZLE</td>
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="sparepart_name || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">SAP Code / Barcode Item</td>
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">SAP CODE   </td>
                             <td class="py-2.5 px-4 font-mono font-bold text-black tracking-wider" x-text="sap_code || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
@@ -182,9 +207,6 @@
                 </table>
             </div>
 
-            <div class="text-[8px] text-slate-400 font-semibold mb-6 text-right italic font-mono">
-                Generated via System on: {{ date('d-M-Y H:i') }} WIB | PT. SIIX Automation Tracking
-            </div>
 
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
                 
@@ -211,14 +233,14 @@
                     </div>
 
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( Nama Peminta )'">( Nama Peminta )</p>
+                        <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( _________________ )'">( Nama Peminta )</p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Department</p>
                     </div>
                 </div>
 
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Checked By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( Pending Engineering Data )</div>
+                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-bold uppercase text-black">( _________________ )</p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Staff Engineering</p>
@@ -227,7 +249,7 @@
 
                 <div class="flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Approved By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( Waiting Approval )</div>
+                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-bold uppercase text-black">( _________________ )</p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">SPV Engineering</p>
@@ -257,6 +279,7 @@ function signatureFormHandler() {
         signatureImg: null, 
         stampImg: null,     
         ctx: null,
+        actionType: 'submit', // Default mode submit [cite: 2026-02-21]
 
         init() {
             this.$nextTick(() => {
@@ -301,12 +324,11 @@ function signatureFormHandler() {
             const pos = this.getMousePos(e);
             this.ctx.lineTo(pos.x, pos.y);
             this.ctx.stroke();
-            // Pindah konversi ke event stopDrawing agar tidak melambatkan UI
         },
         stopDrawing() {
             if (this.isDrawing) {
                 this.isDrawing = false;
-                this.updateLivePreview(); // FIX: Konversi base64 dipastikan jalan saat mouse diangkat
+                this.updateLivePreview(); 
             }
         },
         getMousePos(e) {
@@ -362,20 +384,80 @@ function signatureFormHandler() {
             }
         },
 
-        // FIX LOGIC UTAMA: Tangkap paksa keadaan canvas paling update tepat sebelum form dikirim
-        prepareSubmit(e) {
+        // Trigger perubahan tipe aksi (Draft vs Submit) dari tombol luar
+        submitAs(type) {
+            this.actionType = type;
+            // Secara manual jalankan trigger submit form HTML
+            document.getElementById('requestForm').dispatchEvent(new Event('submit'));
+        },
+
+        // VALIDASI UTAMA DENGAN POPUP ALERT SWEETALERT2
+        handleFormAction(e) {
+            // Pastikan data canvas paling baru tersalin
             if (this.activeTab === 'draw' && this.$refs.canvas) {
-                // Buat canvas pembanding kosong untuk verifikasi coretan
                 const blankCanvas = document.createElement('canvas');
                 blankCanvas.width = this.$refs.canvas.width;
                 blankCanvas.height = this.$refs.canvas.height;
-                
-                // Jika canvas saat ini tidak sama dengan canvas kosong, berarti ada tanda tangan
                 if (this.$refs.canvas.toDataURL() !== blankCanvas.toDataURL()) {
                     this.signatureImg = this.$refs.canvas.toDataURL();
                 } else {
                     this.signatureImg = null;
                 }
+            }
+
+            // 1. Cek jika data forms kosong (Validasi Ketat Sebelum Submit/Draft) [cite: 2026-02-21]
+            if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.sap_code || !this.qty_req) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Data Belum Lengkap!',
+                    text: 'Semua kolom input data sparepart wajib diisi terlebih dahulu, coy!',
+                    confirmButtonColor: '#3C50E0'
+                });
+                return false;
+            }
+
+            // 2. Alur validasi spesifik berdasarkan pilihan tombol (Draft vs Submit) [cite: 2026-02-21]
+            if (this.actionType === 'draft') {
+                Swal.fire({
+                    title: 'Simpan sebagai Draft?',
+                    text: "Data akan disimpan di list internal dan status masih DRAFT.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#4A5568',
+                    cancelButtonColor: '#cbd5e1',
+                    confirmButtonText: 'Ya, Simpan Draft!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('requestForm').submit();
+                    }
+                });
+            } else {
+                // Alur Submit Resmi (Butuh konfirmasi & verifikasi tanda tangan jika diperlukan) [cite: 2026-02-21]
+                if (!this.signatureImg && !this.stampImg) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Otorisasi Kosong!',
+                        text: 'Harap berikan Tanda Tangan atau Upload Stampel dulu sebelum melakukan Submit Request.',
+                        confirmButtonColor: '#3C50E0'
+                    });
+                    return false;
+                }
+
+                Swal.fire({
+                    title: 'Kirim Request Sekarang?',
+                    text: "Request akan langsung dikirim ke antrean antrean Engineering Staff.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3C50E0',
+                    cancelButtonColor: '#f43f5e',
+                    confirmButtonText: 'Ya, Kirim!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('requestForm').submit();
+                    }
+                });
             }
         }
     }
@@ -383,7 +465,6 @@ function signatureFormHandler() {
 </script>
 
 <style>
-/* CSS Page control logic to guarantee strict portrait configuration */
 @page {
     size: portrait;
     margin: 10mm;
