@@ -10,10 +10,15 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        // Tambahan method 'then' untuk ngeload route custom terpisah lu
+        // Tambahan method 'then' untuk ngeload semua route custom terpisah lu
         then: function () {
+            // 1. Route Custom Production (Bawaan lu yang sudah ada)
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/production/production.php');
+
+            // 2. 🌟 TAMBAHAN: Route Custom Engineering untuk Add Rak
+            Route::middleware('web')
+                ->group(__DIR__.'/../routes/engineering/add_rak.php');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

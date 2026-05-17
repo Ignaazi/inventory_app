@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\StockEng;
+use App\Models\StockEng; 
 use App\Models\Rak; 
+use App\Models\ListSparepartEng; // 🌟 1. Pastikan Model Master Data Lu Di-import di Sini
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 
@@ -14,8 +15,12 @@ class StockEngineeringController extends Controller
     {
         $raks = Rak::all();
         $stocks = StockEng::with('rak')->orderBy('created_at', 'desc')->paginate(25);
+        
+        // 🌟 2. KEMBALI NORMAL & RIEL: Ambil data master langsung dari table ListSparepartEng
+        $ListSparepartEng = ListSparepartEng::orderBy('name', 'asc')->get(); 
 
-        return view('stock_eng.index', compact('stocks', 'raks'));
+        // 🌟 3. SINKRONISASI: Samakan nama variabel di compact dengan yang dipanggil oleh @foreach di Blade
+        return view('stock_eng.index', compact('stocks', 'raks', 'ListSparepartEng'));
     }
 
     /**
@@ -24,35 +29,30 @@ class StockEngineeringController extends Controller
      */
     public function indexIn()
     {
-        // Mengambil 10 data yang baru saja diupdate untuk history
         $recent_logs = StockEng::orderBy('updated_at', 'desc')->take(10)->get();
-
         return view('stock_eng.transaction.in', compact('recent_logs'));
     }
 
     /**
      * Menampilkan halaman Mode Scanner
-     * File: resources/views/stock_eng/transaction/in_scan.blade.php
      */
     public function inScan()
     {
-        $stocks = StockEng::all(); // Dibutuhkan untuk pencarian JS di scanner
+        $stocks = StockEng::all(); 
         return view('stock_eng.transaction.in_scan', compact('stocks'));
     }
 
     /**
      * Menampilkan halaman Mode Manual
-     * File: resources/views/stock_eng/transaction/in_manual.blade.php
      */
     public function inManual()
     {
-        $stocks = StockEng::all(); // Dibutuhkan untuk dropdown select manual
+        $stocks = StockEng::all(); 
         return view('stock_eng.transaction.in_manual', compact('stocks'));
     }
 
     /**
      * Memproses penambahan stok (QTY IN)
-     * Digunakan oleh semua mode (Main, Scan, dan Manual)
      */
     public function updateStockIn(Request $request)
     {
@@ -70,7 +70,6 @@ class StockEngineeringController extends Controller
 
             session()->flash('last_in_' . $stock->id, $request->qty_in);
 
-            // Redirect ke halaman history (Main IN) setelah berhasil
             return redirect()->route('eng.in')->with('success', "Stok {$stock->no_nozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
 
         } catch (\Exception $e) {
@@ -84,7 +83,7 @@ class StockEngineeringController extends Controller
         try {
             $request->validate([
                 'rak_id'    => 'required|exists:raks,id',
-                'no_nozzle' => 'required',
+                'no_nozzle' => 'required', 
                 'qty'       => 'required|numeric',
                 'min_stock' => 'required|numeric',
                 'part_no'   => 'nullable',
@@ -124,6 +123,28 @@ class StockEngineeringController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Rak Baru Berhasil Ditambahkan');
+    }
+
+    /**
+     * Menangani delete rak samping add rak
+     */
+    public function destroyRak($id)
+    {
+        try {
+            $rak = Rak::findOrFail($id);
+            
+            // Cek apakah rak masih digunakan oleh data stock_engs
+            $checkUsage = StockEng::where('rak_id', $id)->exists();
+            if ($checkUsage) {
+                return redirect()->back()->with('error', 'Rak gagal dihapus karena masih ada nozzle di dalamnya!');
+            }
+
+            $rak->delete();
+            return redirect()->back()->with('success', 'Rak Berhasil Dihapus!');
+        } catch (\Exception $e) {
+            Log::error("Gagal hapus rak: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal hapus rak: ' . $e->getMessage());
+        }
     }
 
     public function update(Request $request, $id)

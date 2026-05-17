@@ -20,12 +20,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <button class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all active:scale-95">
+            {{-- 🌟 UPDATE: Ubah ke EXCEL EXPORT agar support import gambar --}}
+            <a href="{{ route('list-sparepart.export') }}" class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                 </svg>
-                CSV EXPORT
-            </button>
+                EXCEL EXPORT
+            </a>
             
             <button onclick="openModal('add')" class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -44,7 +45,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
                 <form action="{{ url()->current() }}" method="GET">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
                 </form>
             </div>
         </div>
@@ -53,23 +54,26 @@
             <table class="w-full text-left border-collapse" id="sparepartTable">
                 <thead>
                     <tr class="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-                        <th class="px-4 py-4 text-center">NO</th>
-                        <th class="px-4 py-4">Sparepart Name</th>
-                        <th class="px-4 py-4 text-center">Image</th>
-                        <th class="px-4 py-4 text-center">Category</th>
-                        <th class="px-4 py-4 text-center">Length</th>
-                        <th class="px-4 py-4 text-center">Width</th>
-                        <th class="px-4 py-4 text-center">Thickness</th>
-                        <th class="px-4 py-4">Create At</th>
-                        <th class="px-4 py-4">Update At</th>
-                        <th class="px-6 py-4 text-right">Action</th>
+                        <th class="px-3 py-4 text-center w-12">NO</th>
+                        <th class="px-4 py-4 text-center w-12">No Nozzle</th>
+                        <th class="px-4 py-4 text-center w-20">Image</th>
+                        <th class="px-4 py-4 text-center w-24">Category</th>
+                        <th class="px-3 py-4 text-center w-20">Length</th>
+                        <th class="px-3 py-4 text-center w-20">Width</th>
+                        <th class="px-3 py-4 text-center w-20">Thickness</th>
+                        <th class="px-4 py-4 text-center w-28">Create At</th>
+                        <th class="px-4 py-4 text-center w-28">Update At</th>
+                        <th class="px-6 py-4 text-center w-36">Action</th> {{-- 🌟 Header Action di-center --}}
                     </tr>
                 </thead>
                 <tbody class="text-xs text-slate-900 dark:text-white divide-y divide-slate-50 dark:divide-slate-700">
                     @forelse($spareparts as $index => $item)
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all精密">
-                        <td class="px-4 py-4 text-center">{{ $spareparts->firstItem() + $index }}</td>
-                        <td class="px-4 py-4 font-bold">{{ $item->name }}</td>
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
+                        <td class="px-3 py-4 text-center">{{ $spareparts->firstItem() + $index }}</td>
+                        
+                        {{-- 🌟 No Nozzle text-center agar sejajar dengan header --}}
+                        <td class="px-4 py-4 font-bold max-w-[200px] truncate text-center" title="{{ $item->name }}">{{ $item->name }}</td>
+                        
                         <td class="px-4 py-2">
                             <div class="flex justify-center">
                                 <div class="w-14 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -82,14 +86,34 @@
                             </div>
                         </td>
                         <td class="px-4 py-4 text-center"><span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-bold text-[10px]">{{ $item->category }}</span></td>
-                        <td class="px-4 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">{{ $item->length ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-amber-600 dark:text-amber-400">{{ $item->width ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400">{{ $item->thickness ?? '-' }}</td>
-                        <td class="px-4 py-4 font-bold text-[10px] text-slate-500">{{ $item->created_at->format('d/m/Y H:i') }}</td>
-                        <td class="px-4 py-4 font-bold text-[10px] text-slate-500">{{ $item->updated_at->format('d/m/Y H:i') }}</td>
+                        <td class="px-3 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">{{ $item->length ?? '-' }}</td>
+                        <td class="px-3 py-4 text-center font-bold text-amber-600 dark:text-amber-400">{{ $item->width ?? '-' }}</td>
+                        <td class="px-3 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400">{{ $item->thickness ?? '-' }}</td>
                         
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
+                        {{-- 🌟 Kolom Create At & Update At di-set text-center agar seimbang --}}
+                        <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
+                            {{ $item->created_at->format('d/m/y') }}
+                            <br><span class="text-[9px] text-slate-400 font-medium">{{ $item->created_at->format('H:i') }} WIB</span>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
+                            {{ $item->updated_at->format('d/m/y') }}
+                            <br><span class="text-[9px] text-slate-400 font-medium">{{ $item->updated_at->format('H:i') }} WIB</span>
+                        </td>
+                        
+                        <td class="px-6 py-4">
+                            {{-- 🌟 Diubah ke justify-center agar 3 tombol berjejer rapi tepat di tengah-tengah kolom --}}
+                            <div class="flex items-center justify-center gap-1.5">
+                                {{-- ACTION 1: PREVIEW IMAGE (BLUE) --}}
+                                <button onclick="previewImage('{{ $item->image ? asset('storage/' . $item->image) : '' }}', '{{ $item->name }}')" 
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white transition-all hover:bg-blue-600 active:scale-90 shadow-sm" 
+                                    title="Preview Image">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+            
+                                {{-- ACTION 2: EDIT (YELLOW) --}}
                                 <button onclick="openModal('edit', {{ json_encode($item) }})" 
                                     class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
                                     title="Edit">
@@ -98,9 +122,10 @@
                                     </svg>
                                 </button>
                         
+                                {{-- ACTION 3: DELETE (RED) --}}
                                 <form action="{{ route('list-sparepart.destroy', $item->id) }}" method="POST" class="inline form-delete">
                                     @csrf @method('DELETE')
-                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete">
+                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete" title="Delete">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -179,6 +204,31 @@
 </div>
 
 <script>
+    function previewImage(imageUrl, itemName) {
+        if (!imageUrl) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Image Available',
+                text: 'Sparepart ini belum memiliki foto spesifikasi.',
+                confirmButtonColor: '#3b82f6'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: itemName,
+            text: 'Specification Image Preview',
+            imageUrl: imageUrl,
+            imageWidth: 450,
+            imageHeight: 300,
+            imageAlt: itemName,
+            animation: true,
+            showCloseButton: true,
+            confirmButtonColor: '#3b82f6', // Menyesuaikan warna konfirmasi dengan Biru
+            confirmButtonText: 'Close Preview'
+        });
+    }
+
     function openModal(mode, data = null) {
         const modal = document.getElementById('modalSparepart');
         const form = document.getElementById('sparepartForm');

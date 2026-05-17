@@ -55,6 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('eng')->group(function () {
         Route::get('/out', [TransactionController::class, 'indexOut'])->name('eng.out');
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
+        Route::get('/list-sparepart/export', [App\Http\Controllers\StockEngineeringController::class, 'export'])
+         ->name('list-sparepart.export');
     });
 
     // --- APPROVAL SYSTEM (Disatukan & Diberikan Route POST Aksinya di Sini) ---
@@ -140,5 +142,5 @@ Route::middleware('auth')->group(function () {
     
     // Routes history approval
     Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
-
+    
 });

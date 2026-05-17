@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ListSparepartEng;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\SparepartExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ListSparepartEngController extends Controller
 {
@@ -84,4 +86,8 @@ class ListSparepartEngController extends Controller
         $sparepart->delete();
         return back()->with('success', 'Sparepart deleted successfully');
     }
+    public function export() 
+{
+    return Excel::download(new SparepartExport, 'master_spareparts_' . date('d_m_y') . '.xlsx');
+}
 }
