@@ -19,6 +19,12 @@ class RequestProd extends Model
         'line_machine',
         'requestor',
         'status',
-        'reject_remark'
+        'production_signature', 
+        'production_stamp',
+        'approved_by',
+        'signature_path',
+        'reject_remark',
+        'created_at',
+        'update_At'
     ];
 }

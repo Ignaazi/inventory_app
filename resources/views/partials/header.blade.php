@@ -1,6 +1,6 @@
 <header
   x-data="{ dropdownOpen: false, notifyOpen: false, profileModalOpen: false }"
-  class="sticky top-0 z-999 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+  class="sticky top-0 z-50 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
 >
   <div class="flex w-full items-center justify-between px-4 py-3 sm:px-5 lg:px-9">
     

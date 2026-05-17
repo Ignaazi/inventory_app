@@ -279,12 +279,12 @@
         </ul>
       </div>
 
-      <div class="mb-8" x-data="{ openProdTrans: false }">
+      <div class="mb-8" x-data="{ openProdTrans: false, openProdReq: false }">
         <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           PRODUCTION
         </h3>
         <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">PROD</div>
-
+      
         <ul class="flex flex-col gap-1.5">
           <li>
             <a href="/prod/overview" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
@@ -304,11 +304,44 @@
               <span x-show="!sidebarToggle || window.innerWidth < 1024">Stock Prod</span>
             </a>
           </li>
-          <li>
-            <a href="{{ route('prod.request.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Request</span>
-            </a>
+      
+          <li class="relative">
+            <button 
+              @click="openProdReq = !openProdReq" 
+              @click.away="if(sidebarToggle && window.innerWidth >= 1024) openProdReq = false"
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Request Nozzle</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openProdReq ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <ul 
+              x-show="openProdReq" 
+              x-transition 
+              :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'"
+              class="flex flex-col gap-1"
+            >
+              <li>
+                <a href="{{ route('prod.request.index') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Create Request</span>
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('prod.request.index') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                  <span>List Request</span>
+                </a>
+              </li>
+              <li>
+                <a href="/prod/history" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>History Request</span>
+                </a>
+              </li>
+            </ul>
           </li>
           
           <li class="relative">
@@ -343,7 +376,7 @@
               </li>
             </ul>
           </li>
-
+      
           <li>
             <a href="/prod/history" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
               <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

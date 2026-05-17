@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
 
     // --- APPROVAL SYSTEM (Disatukan & Diberikan Route POST Aksinya di Sini) ---
     Route::get('/eng/approval', [ApprovalEngController::class, 'index'])->name('eng.approval');
+    Route::get('/eng/approval/review/{id}', [ApprovalEngController::class, 'review'])->name('eng.approval.review');
     Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
     Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
     

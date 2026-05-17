@@ -98,9 +98,10 @@
                                         </button>
                                     </form>
 
-                                    <button type="button" onclick="openApprovalModal('{{ $req->id }}', '{{ $req->request_no }}')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md border border-emerald-600">
+                                    <a href="{{ route('eng.approval.review', $req->id) }}" 
+                                       class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md border border-emerald-600 text-center inline-block">
                                         Approve
-                                    </button>
+                                    </a>
 
                                 </div>
                             </td>
@@ -115,155 +116,14 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
-</div>
-
-<div id="signatureModal" class="fixed inset-0 z-9999 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-boxdark w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-strokedark overflow-hidden transition-all duration-300">
-        <div class="bg-slate-50 dark:bg-meta-4/30 p-4 border-b border-slate-100 dark:border-strokedark flex justify-between items-center">
-            <div>
-                <h3 class="text-sm font-black uppercase text-slate-800 dark:text-white">Engineering Authorization</h3>
-                <p id="modalReqNo" class="text-[10px] font-bold text-indigo-600 tracking-widest uppercase mt-0.5"></p>
-            </div>
-            <button type="button" onclick="closeApprovalModal()" class="text-slate-400 hover:text-slate-600 text-sm font-black">✕</button>
-        </div>
-        
-        <div class="px-6 pt-6 pb-2 bg-slate-50/50 dark:bg-meta-4/10 border-b border-slate-100 dark:border-strokedark">
-            <div class="flex items-center justify-between max-w-xs mx-auto relative mb-6">
-                <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 dark:bg-slate-700 z-0 rounded-full"></div>
-                <div class="absolute left-0 w-1/2 top-1/2 -translate-y-1/2 h-1 bg-indigo-600 z-0 rounded-full"></div>
-
-                <div class="flex flex-col items-center relative z-10">
-                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black ring-4 ring-white dark:ring-boxdark">1</div>
-                    <span class="text-[9px] font-black uppercase tracking-tight text-slate-500 mt-1">Requested</span>
-                </div>
-
-                <div class="flex flex-col items-center relative z-10">
-                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black ring-4 ring-indigo-100 dark:ring-indigo-950/50 animate-pulse">2</div>
-                    <span class="text-[9px] font-black uppercase tracking-tight text-indigo-600 mt-1">Verification</span>
-                </div>
-
-                <div class="flex flex-col items-center relative z-10">
-                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center text-xs font-black ring-4 ring-white dark:ring-boxdark">3</div>
-                    <span class="text-[9px] font-black uppercase tracking-tight text-slate-400 mt-1">Completed</span>
-                </div>
-            </div>
-        </div>
-        
-        <form id="approveForm" method="POST">
-            @csrf
-            <input type="hidden" id="signature_base64" name="signature_image">
             
-            <div class="p-6 flex flex-col gap-4">
-                <div class="flex flex-col gap-1.5 text-slate-800 dark:text-white">
-                    <label class="text-[10px] font-black uppercase tracking-wider text-slate-500">Nama Staff / Leader / SPV *</label>
-                    <input type="text" name="approved_by" placeholder="Masukkan Nama Lengkap Anda" class="w-full rounded-xl border-[1.5px] border-stroke bg-transparent py-2.5 px-4 text-xs font-semibold outline-none transition focus:border-primary dark:border-strokedark dark:bg-form-input" required>
+            @if($requests->hasPages())
+                <div class="p-4 border-t border-slate-100 dark:border-strokedark bg-white dark:bg-boxdark">
+                    {{ $requests->links() }}
                 </div>
+            @endif
 
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-center">
-                        <label class="text-[10px] font-black uppercase tracking-wider text-slate-500">Goreskan Tanda Tangan Asli *</label>
-                        <button type="button" onclick="clearCanvas()" class="text-[9px] font-bold text-rose-600 uppercase tracking-wider hover:underline">Clear Canvas</button>
-                    </div>
-                    <div class="border-[1.5px] border-dashed border-slate-300 dark:border-strokedark bg-slate-50 dark:bg-form-input rounded-xl flex justify-center p-2 bg-white">
-                        <canvas id="signaturePad" width="420" height="150" class="cursor-crosshair border border-slate-200 rounded-lg max-w-full"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-slate-50 dark:bg-meta-4/30 border-t border-slate-100 dark:border-strokedark flex justify-end gap-2">
-                <button type="button" onclick="closeApprovalModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white">Cancel</button>
-                <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black uppercase tracking-wider">Confirm Approve</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
-
-<script>
-    const modal = document.getElementById('signatureModal');
-    const canvas = document.getElementById('signaturePad');
-    const ctx = canvas.getContext('2d');
-    const approveForm = document.getElementById('approveForm');
-    let isDrawing = false;
-    let isSigned = false; // Flag baru untuk validasi tanda tangan
-
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-
-    function openApprovalModal(id, reqNo) {
-        // FIX 2: Menyesuaikan URL target action form agar cocok dengan rute approve di Controller lo
-        approveForm.action = `/eng/approval/approve/${id}`;
-        document.getElementById('modalReqNo').innerText = reqNo;
-        modal.classList.remove('hidden');
-        clearCanvas();
-    }
-
-    function closeApprovalModal() {
-        modal.classList.add('hidden');
-    }
-
-    function getMousePos(canvasDom, event) {
-        const rect = canvasDom.getBoundingClientRect();
-        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
-    }
-
-    // Event handler menggambar pada canvas
-    canvas.addEventListener('mousedown', (e) => { 
-        isDrawing = true; 
-        isSigned = true; 
-        const pos = getMousePos(canvas, e); 
-        ctx.beginPath(); 
-        ctx.moveTo(pos.x, pos.y); 
-    });
-    canvas.addEventListener('mousemove', (e) => { 
-        if (!isDrawing) return; 
-        const pos = getMousePos(canvas, e); 
-        ctx.lineTo(pos.x, pos.y); 
-        ctx.stroke(); 
-    });
-    canvas.addEventListener('mouseup', () => isDrawing = false);
-    
-    // Support layar sentuh (Mobile/Tablet/Trackpad Mac)
-    canvas.addEventListener('touchstart', (e) => { 
-        isDrawing = true; 
-        isSigned = true; 
-        const pos = getMousePos(canvas, e); 
-        ctx.beginPath(); 
-        ctx.moveTo(pos.x, pos.y); 
-        e.preventDefault(); 
-    });
-    canvas.addEventListener('touchmove', (e) => { 
-        if (!isDrawing) return; 
-        const pos = getMousePos(canvas, e); 
-        ctx.lineTo(pos.x, pos.y); 
-        ctx.stroke(); 
-        e.preventDefault(); 
-    });
-    canvas.addEventListener('touchend', () => isDrawing = false);
-
-    function clearCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        document.getElementById('signature_base64').value = "";
-        isSigned = false;
-    }
-
-    // Proses Submit Form Validation
-    approveForm.addEventListener('submit', function(e) {
-        // FIX 3: Menggunakan flag isSigned yang 100% akurat mencegah macet akibat kesalahan kalkulasi string base64 kosong
-        if (!isSigned) {
-            alert('Tanda tangan wajib diisi sebelum menyetujui request!');
-            e.preventDefault();
-            return;
-        }
-        
-        document.getElementById('signature_base64').value = canvas.toDataURL();
-    });
-</script>
 @endsection
