@@ -1,148 +1,223 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)] font-sans">
-    
-    <div class="p-4 md:p-8 2xl:p-10">
-        
-        <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-slate-900 dark:text-white">
-            <div>
-                <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Approval History</h1>
-                <nav class="flex text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-                    <span>Engineering</span>
-                    <span class="mx-2 text-slate-300">/</span>
-                    <span class="text-indigo-600 font-bold uppercase">History Approval</span>
-                </nav>
-            </div>
-            <div class="text-left sm:text-right">
-                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Logged Records</p>
-                <p class="text-xs md:text-sm font-bold text-slate-700 dark:text-white uppercase">{{ date('d M Y') }}</p>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden text-slate-900 dark:text-white">
-            
-            <div class="p-4 md:p-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-slate-100 dark:border-strokedark">
-                <div class="w-full xl:w-auto">
-                    <h3 class="text-base md:text-lg font-bold uppercase leading-tight">Archived Verification Logs</h3>
-                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Review previously approved or rejected sparepart requests.</p>
-                </div>
-            </div>
-
-            <div class="p-4 md:p-6 bg-white dark:bg-boxdark border-b border-slate-50 dark:border-strokedark">
-                <form action="{{ route('approval.history') }}" method="GET" class="relative w-full lg:w-96">
-                    <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="SEARCH REQ NUMBER OR LINE..." class="w-full pl-11 pr-4 py-3 border border-slate-200 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all dark:bg-meta-4 text-[11px] font-black uppercase">
-                </form>
-            </div>
-
-            <div class="max-w-full overflow-x-auto scrollbar-hide">
-                <table class="w-full text-left border-collapse min-w-[1100px]">
-                    <thead>
-                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">REQ No.</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sparepart Info</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Qty</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Machine/Line</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Requestor</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Approver / Action By</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Signature</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Processed Date</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark font-bold">
-                        @forelse($history as $log)
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all">
-                            <td class="px-6 py-4 text-[11px] text-slate-400 font-black tracking-widest uppercase">
-                                {{ $log->request_no }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-meta-4 flex-shrink-0 flex items-center justify-center border border-slate-100 dark:border-strokedark text-slate-500">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-xs font-black uppercase leading-none text-slate-700 dark:text-white">{{ $log->sparepart_name }}</span>
-                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">{{ $log->sap_code }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-center text-xs font-black uppercase text-indigo-600">
-                                {{ sprintf("%02d", $log->qty_req) }} PCS
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="text-[10px] font-black uppercase tracking-tight">{{ $log->line_machine }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-center uppercase text-[10px] text-slate-500 font-black tracking-widest">
-                                {{ $log->requestor }}
-                            </td>
-                            <td class="px-6 py-4 text-center uppercase text-[10px] text-slate-700 dark:text-white font-black tracking-widest">
-                                {{ $log->approved_by }}
-                            </td>
-                            <td class="px-6 py-2 text-center">
-                                @if($log->signature_image)
-                                    <div class="inline-block bg-white p-1 rounded border border-slate-100 dark:border-strokedark">
-                                        <img src="{{ $log->signature_image }}" alt="Signature" class="h-8 w-auto max-w-[100px] object-contain mix-blend-multiply">
-                                    </div>
-                                @else
-                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">—</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($log->status === 'APPROVED')
-                                    <span class="inline-flex px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-[9px] font-black tracking-wider uppercase">
-                                        Approved
-                                    </span>
-                                @else
-                                    <span class="inline-flex px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 text-[9px] font-black tracking-wider uppercase">
-                                        Rejected
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center text-[10px] text-slate-400 font-black uppercase whitespace-nowrap">
-                                {{ $log->processed_at->format('d M Y H:i') }}
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="9" class="p-12 text-center text-xs font-bold uppercase text-slate-400 tracking-widest">
-                                No history records found.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($history->hasPages())
-            <div class="p-4 border-t border-slate-100 dark:border-strokedark flex justify-between items-center bg-slate-50/50 dark:bg-meta-4/20 text-xs font-bold text-slate-500 uppercase">
-                <div>
-                    Showing {{ $history->firstItem() }} to {{ $history->lastItem() }} of {{ $history->total() }} Records
-                </div>
-                <div class="flex items-center gap-2">
-                    @if ($history->onFirstPage())
-                        <span class="p-2 bg-slate-100 dark:bg-meta-4 text-slate-300 rounded-lg cursor-not-allowed">❮</span>
-                    @else
-                        <a href="{{ $history->previousPageUrl() }}" class="p-2 bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark hover:bg-slate-50 rounded-lg text-slate-700 dark:text-white">❮</a>
-                    @endif
-
-                    @if ($history->hasMorePages())
-                        <a href="{{ $history->nextPageUrl() }}" class="p-2 bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark hover:bg-slate-50 rounded-lg text-slate-700 dark:text-white">❯</a>
-                    @else
-                        <span class="p-2 bg-slate-100 dark:bg-meta-4 text-slate-300 rounded-lg cursor-not-allowed">❯</span>
-                    @endif
-                </div>
-            </div>
-            @endif
-
-        </div>
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
+  
+  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight">
+        Approval History
+      </h2>
+      <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Review previously processed sparepart and nozzle requests</p>
     </div>
+  </div>
+
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+    
+    <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+      
+      <form action="{{ route('approval.history') }}" method="GET" class="relative w-full lg:w-72">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+        </span>
+        <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Search History..." class="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-semibold text-xs outline-none transition-all focus:border-indigo-500 text-slate-950 dark:text-white placeholder-slate-400">
+      </form>
+
+      <div class="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
+            All
+          </button>
+          <button type="button" onclick="filterTable('approved', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Approved
+          </button>
+          <button type="button" onclick="filterTable('rejected', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Rejected
+          </button>
+        </div>
+
+        <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+          <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.29004 5.90393H17.7067" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M17.7075 14.0961H2.29085" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331 12.0826 3.33331Z" stroke-width="1.5" />
+            <path d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z" stroke-width="1.5" />
+          </svg>
+          Filter
+        </button>
+      </div>
+    </div>
+
+    <div class="w-full overflow-x-auto">
+      <table class="min-w-full text-left border-collapse" id="history-table">
+        <thead>
+          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">REQ No.</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">No Nozzle</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">SAP Code</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Qty</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Machine/Line</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Requestor</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Sign Prod</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Approver</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Sign Eng</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Status</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Processed Date</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 font-medium text-slate-950 dark:text-white">
+          @forelse($history as $log)
+          <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
+            
+            <td class="py-3 px-3 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">
+              {{ $log->request_no }}
+            </td>
+            
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white uppercase whitespace-nowrap">
+              {{ $log->sparepart_name }}
+            </td>
+
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white font-mono uppercase whitespace-nowrap">
+              {{ $log->sap_code }}
+            </td>
+            
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white">
+              {{ sprintf("%02d", $log->qty_req) }} PCS
+            </td>
+            
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase whitespace-nowrap">
+              {{ $log->line_machine }}
+            </td>
+            
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase tracking-wider">
+              {{ $log->requestor }}
+            </td>
+
+            <td class="py-2 px-3 text-center">
+              @if(!empty($log->production_signature))
+                <div class="inline-block bg-white p-0.5 rounded border border-gray-200 dark:border-gray-700">
+                  <img src="{{ $log->production_signature }}" alt="Sign Prod" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
+                </div>
+              @elseif($log->productionRequest && !empty($log->productionRequest->production_signature))
+                <div class="inline-block bg-white p-0.5 rounded border border-gray-200 dark:border-gray-700">
+                  <img src="{{ $log->productionRequest->production_signature }}" alt="Sign Prod" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
+                </div>
+              @else
+                <span class="text-[10px] text-slate-400 font-bold uppercase">—</span>
+              @endif
+            </td>
+
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase tracking-wider">
+              {{ $log->approved_by ?? '—' }}
+            </td>
+
+            <td class="py-2 px-3 text-center">
+              @if(!empty($log->signature_image))
+                <div class="inline-block bg-white p-0.5 rounded border border-gray-200 dark:border-gray-700">
+                  @if(str_starts_with($log->signature_image, 'http') || str_starts_with($log->signature_image, 'data:'))
+                    <img src="{{ $log->signature_image }}" alt="Sign Eng" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
+                  @else
+                    <img src="{{ asset('storage/' . $log->signature_image) }}" alt="Sign Eng" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
+                  @endif
+                </div>
+              @else
+                <span class="text-[10px] text-slate-400 font-bold uppercase">—</span>
+              @endif
+            </td>
+
+            <td class="py-3 px-3 text-center">
+              <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
+                @if(strtolower($log->status) == 'approved' || strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
+                @else bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40 @endif">
+                {{ strtolower($log->status) == 'approved' || strtolower($log->status) == 'success' ? 'Approved' : 'Rejected' }}
+              </span>
+            </td>
+
+            <td class="py-3 px-3 text-center text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
+              {{ $log->processed_at ? $log->processed_at->format('d M Y H:i') : ($log->created_at ? $log->created_at->format('d M Y H:i') : '—') }}
+            </td>
+
+          </tr>
+          @empty
+          <tr>
+            <td colspan="11" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
+              No History Records Found.
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+      <p class="text-xs font-bold text-slate-950 dark:text-white">
+        Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} entries
+      </p>
+      <div class="flex items-center">
+        {{ $history->links() }}
+      </div>
+    </div>
+
+  </div>
 </div>
+
+<style>
+  nav[role="navigation"] svg {
+    width: 16px;
+    height: 16px;
+    display: inline;
+  }
+  nav[role="navigation"] div:first-child {
+    display: none;
+  }
+  .pagination .page-item.active .page-link {
+    background-color: #3C50E0 !important;
+    border-color: #3C50E0 !important;
+    color: white !important;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .pagination .page-link {
+    color: #0f172a !important; 
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+</style>
+
+<script>
+  function filterTable(criteria, element) {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+    });
+
+    if (element) {
+      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+    }
+
+    const rows = document.querySelectorAll('.table-row-item');
+    
+    rows.forEach(row => {
+      if (criteria === 'all') {
+        row.style.display = '';
+        return;
+      }
+
+      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
+
+      if (criteria === 'approved' && (statusText === 'approved' || statusText === 'success')) {
+         row.style.display = '';
+      } else if (criteria === 'rejected' && statusText === 'rejected') {
+         row.style.display = '';
+      } else {
+         row.style.display = 'none';
+      }
+    });
+  }
+</script>
 @endsection

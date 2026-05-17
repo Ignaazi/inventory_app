@@ -19,8 +19,9 @@ class HistoryApproval extends Model
         'qty_req',
         'line_machine',
         'requestor',
+        'production_signature', // Tetap terdaftar di fillable
         'approved_by',
-        'signature_image',
+        'signature_image',      // Untuk tanda tangan Engineering
         'status',
         'processed_at'
     ];
@@ -28,4 +29,14 @@ class HistoryApproval extends Model
     protected $casts = [
         'processed_at' => 'datetime',
     ];
+
+    /**
+     * RELASI BARU (SUDAH DIUPDATE)
+     * Menghubungkan tabel history_approvals ke tabel production_requests via model RequestProd
+     */
+    public function productionRequest()
+    {
+        // Diarahkan langsung ke namespace model RequestProd lu yang benar!
+        return $this->belongsTo('App\Models\Production\RequestProd', 'request_no', 'request_no');
+    }
 }

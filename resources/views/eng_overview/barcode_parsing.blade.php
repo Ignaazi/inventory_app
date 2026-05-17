@@ -10,12 +10,6 @@
                 <h1 class="text-2xl font-black uppercase text-slate-800 dark:text-white">Barcode Customizer</h1>
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Engineering / Configuration</p>
             </div>
-            <button type="button" onclick="openImportModal()" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-black px-5 py-3 rounded-xl transition-all uppercase text-xs tracking-widest">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 16.5V3"></path>
-                </svg>
-                Import Configuration
-            </button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -44,7 +38,7 @@
                             <input type="text" id="char_value" placeholder="Type here..." class="w-full bg-slate-50 dark:bg-meta-4 border border-slate-200 dark:border-strokedark rounded-lg px-4 py-3 font-bold text-sm outline-none focus:border-indigo-500">
                         </div>
 
-                        <button type="button" onclick="addComponent()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-3 rounded-xl transition-all uppercase text-xs tracking-widest">
+                        <button type="button" onclick="addComponent()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest border-none outline-none">
                             + Add To Composite
                         </button>
                     </div>
@@ -88,10 +82,10 @@
                         </div>
 
                         <div class="flex gap-2">
-                            <button type="button" onclick="clearComposite()" class="w-1/3 bg-rose-100 hover:bg-rose-200 text-rose-600 font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest">
+                            <button type="button" onclick="clearComposite()" class="w-1/3 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:from-red-600 hover:via-orange-600 hover:to-yellow-600 text-white font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest border-none outline-none">
                                 Clear
                             </button>
-                            <button type="button" onclick="submitToDatabase()" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest shadow-lg shadow-indigo-200 dark:shadow-none">
+                            <button type="button" onclick="submitToDatabase()" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest">
                                 Generate & Save
                             </button>
                         </div>
@@ -101,7 +95,17 @@
 
             <div class="lg:col-span-2 flex flex-col gap-6">
                 <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm p-6">
-                    <h2 class="text-sm font-black uppercase mb-4 text-slate-800 dark:text-white">Composite Structure List</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm font-black uppercase text-slate-800 dark:text-white">Composite Structure List</h2>
+                        
+                        <button type="button" onclick="openImportModal()" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black px-3.5 py-2 rounded-lg transition-all uppercase text-[10px] tracking-wider border-none outline-none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 16.5V3"></path>
+                            </svg>
+                            Import Config
+                        </button>
+                    </div>
+                    
                     <div id="composite_list" class="flex flex-wrap gap-2 min-h-[50px] p-3 bg-slate-50 dark:bg-meta-4 rounded-xl border border-dashed border-slate-200 dark:border-strokedark items-center">
                         <p id="empty_list_msg" class="text-[10px] font-black uppercase text-slate-400 mx-auto">No components added yet</p>
                     </div>
@@ -116,7 +120,7 @@
                         <p id="info_type" class="text-indigo-600 font-black text-xs uppercase mb-1"></p>
                         <p id="info_content" class="text-slate-500 font-bold text-sm break-all max-w-md mb-6"></p>
                         
-                        <button type="button" onclick="downloadBarcode()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest">
+                        <button type="button" onclick="downloadBarcode()" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-amber-400 hover:from-emerald-600 hover:to-amber-500 text-white font-black px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest border-none outline-none">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
                             </svg>
@@ -212,7 +216,6 @@
         document.getElementById('barcode_info').classList.add('hidden');
     }
 
-    // ================= INTEGRASI DATABASE AJAX =================
     async function submitToDatabase() {
         const type = document.getElementById('barcode_type').value;
         const content = document.getElementById('barcode_content').value;
@@ -225,7 +228,6 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         try {
-            // Kirim data struktur & data final ke backend Laravel
             const response = await fetch('/eng-overview/barcode-parsing/store', {
                 method: 'POST',
                 headers: {
@@ -236,14 +238,14 @@
                     barcode_type: type,
                     barcode_size: sizeMm,
                     final_content: content,
-                    components: compositeComponents // Mengirim seluruh array struktur list
+                    components: compositeComponents
                 })
             });
 
             const result = await response.json();
             if (result.success) {
                 alert("SUKSES: Data tersimpan ke DB Barcode & Type Barcode!");
-                generatePreview(); // Render visual setelah sukses save
+                generatePreview();
             } else {
                 alert("GAGAL: " + result.message);
             }
@@ -253,7 +255,6 @@
         }
     }
 
-    // Modal Controller untuk Import Config
     async function openImportModal() {
         document.getElementById('importModal').classList.remove('hidden');
         const modalList = document.getElementById('modal_config_list');
@@ -292,14 +293,12 @@
     }
 
     function applyConfig(componentsJson) {
-        // Load data lama dari database ke struktur aktif
         compositeComponents = JSON.parse(componentsJson);
         renderComposite();
         closeImportModal();
         alert("Konfigurasi struktur berhasil di-import!");
     }
 
-    // ================= GENERATE & DOWNLOAD VIEW ENGINE =================
     function generatePreview() {
         const type = document.getElementById('barcode_type').value;
         const content = document.getElementById('barcode_content').value;
