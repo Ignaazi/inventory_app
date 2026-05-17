@@ -12,10 +12,18 @@ class RequestProdController extends Controller
      * Menampilkan semua daftar request (Form List)
      * UPDATE: Sekarang mengarah ke file listRequestProd.blade.php
      */
+    public function index() {
+        // Ganti ->get() jadi ->paginate(25)
+        $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25); 
+        
+        return view('nama_folder.nama_file_blade', compact('requests'));
+    }
+
     public function listRequest()
     {
         // Mengambil semua data dari tabel production_requests, urut dari yang terbaru
-        $requests = RequestProd::orderBy('created_at', 'desc')->get();
+        // KODE BARU (Ganti get() menjadi paginate(25))
+    $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25);
         
         // Mengarah ke file listRequestProd di dalam folder view lu
         return view('stock_prod.process_req.listRequestProd', compact('requests'));
