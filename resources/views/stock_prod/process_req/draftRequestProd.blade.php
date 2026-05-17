@@ -8,8 +8,8 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
             <h2 class="text-lg font-extrabold text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <span class="h-5 w-1.5 bg-primary rounded-full"></span>
-                <span x-text="draft_id ? 'EDIT DRAFT SPAREPART REQUEST' : 'FORM REQUEST SPAREPART'"></span>
+                <span class="h-5 w-1.5 bg-amber-500 rounded-full"></span>
+                <span>EDIT DRAFT SPAREPART REQUEST</span>
             </h2>
             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">PT SIIX EMS KARAWANG</p>
         </div>
@@ -37,11 +37,11 @@
     @endif
 
     <div class="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-xl shadow-md overflow-hidden print:hidden mb-10">
-        <form id="requestForm" action="{{ route('prod.request.store') }}" method="POST" @submit.prevent="handleFormAction($event)">
+        <form id="requestForm" action="{{ route('prod.request.update_draft', $requestData->id) }}" method="POST" @submit.prevent="handleFormAction($event)">
             @csrf
+            @method('PUT')
             
             <input type="hidden" name="action_type" x-model="actionType">
-            <input type="hidden" name="draft_id" x-model="draft_id">
             <input type="hidden" name="signature_data" x-bind:value="signatureImg">
             <input type="hidden" name="stamp_data" x-bind:value="stampImg">
 
@@ -51,24 +51,24 @@
                     <div class="flex flex-col gap-4">
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Name</label>
-                            <input type="text" name="requestor" x-model="requestor" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
+                            <input type="text" name="requestor" x-model="requestor" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Line</label>
-                            <input type="text" name="line_machine" x-model="line_machine" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
+                            <input type="text" name="line_machine" x-model="line_machine" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">No Nozle</label>
-                            <input type="text" name="sparepart_name" x-model="sparepart_name" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
+                            <input type="text" name="sparepart_name" x-model="sparepart_name" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2 flex flex-col gap-1.5">
                                 <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">SAP Code</label>
                                 <div class="relative">
-                                    <input type="text" name="sap_code" x-model="sap_code" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
+                                    <input type="text" name="sap_code" x-model="sap_code" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -125,27 +125,26 @@
 
                 <div class="mt-8 flex flex-col sm:flex-row gap-2.5 sm:justify-end border-t border-stroke dark:border-strokedark pt-5">
                     
-                    <button type="button" @click="resetAll" class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 px-4 text-xs font-bold uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95">
+                    <a href="{{ route('prod.request.list') }}" class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 px-4 text-xs font-bold uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                         </svg>
-                        Reset
-                    </button>
+                        Batal
+                    </a>
                     
                     <button type="button" @click="submitAs('draft')" class="flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 text-xs font-bold uppercase tracking-wide shadow-sm transition-all duration-150 active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                         </svg>
-                        Draft
+                        Update Draft
                     </button>
 
                     <button type="button" @click="submitAs('submit')" class="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 text-xs font-bold uppercase tracking-wide shadow-sm transition-all duration-150 active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                         </svg>
-                        Submit
+                        Kirim Request
                     </button>
-
                 </div>
 
             </div>
@@ -172,7 +171,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-sm font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide">FORM REQUEST NOZZLE</h2>
-                    <p class="text-[8px] text-slate-500 font-mono mt-1" x-text="request_no ? 'Doc No: ' + request_no : 'Doc No: FORM/SEK/REQ/{{ date('Y/m') }}/XXXX'"></p>
+                    <p class="text-[8px] text-slate-500 font-mono mt-1" x-text="'Doc No: ' + request_no"></p>
                 </div>
             </div>
 
@@ -227,7 +226,7 @@
                     </div>
 
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( _________________ )'">( Nama Peminta )</p>
+                        <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( _________________ )'"></p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Department</p>
                     </div>
                 </div>
@@ -262,24 +261,22 @@
 <script>
 function signatureFormHandler() {
     return {
-        // PERUBAHAN UTAMA: Membaca data kiriman dari Controller saat klik Edit Draft
+        // UPDATE: Bind langsung data lama hasil kiriman dari Controller
         requestor: '{{ old('requestor', $requestData->requestor ?? '') }}',
         line_machine: '{{ old('line_machine', $requestData->line_machine ?? '') }}',
         sparepart_name: '{{ old('sparepart_name', $requestData->sparepart_name ?? '') }}',
         sap_code: '{{ old('sap_code', $requestData->sap_code ?? '') }}',
         qty_req: {{ old('qty_req', $requestData->qty_req ?? 1) }},
-        
-        // Simpan data ID draf dan nomor request lama
-        draft_id: '{{ $requestData->id ?? '' }}',
         request_no: '{{ $requestData->request_no ?? '' }}',
 
         activeTab: 'draw', 
         isDrawing: false,
-        // Pasang kembali tanda tangan & stempel lama jika ada di database draft
+        
+        // UPDATE: Tarik tanda tangan & stempel lama dari database draf jika ada
         signatureImg: '{{ $requestData->production_signature ?? '' }}' || null, 
         stampImg: '{{ $requestData->production_stamp ?? '' }}' || null,     
         ctx: null,
-        actionType: 'submit',
+        actionType: 'draft', // Default set ke draft untuk amannya
 
         init() {
             this.$nextTick(() => {
@@ -304,6 +301,7 @@ function signatureFormHandler() {
                 this.ctx.lineWidth = 2.5;         
                 this.ctx.lineCap = 'round';
                 
+                // Menggambar ulang tanda tangan draf lama ke dalam canvas baru
                 if (this.signatureImg) {
                     const img = new Image();
                     img.onload = () => this.ctx.drawImage(img, 0, 0);
@@ -371,21 +369,6 @@ function signatureFormHandler() {
             window.print();
         },
 
-        resetAll() {
-            this.requestor = '';
-            this.line_machine = '';
-            this.sparepart_name = '';
-            this.sap_code = '';
-            this.qty_req = 1;
-            this.signatureImg = null;
-            this.stampImg = null;
-            this.draft_id = '';
-            this.request_no = '';
-            if (this.activeTab === 'draw') {
-                this.clearCanvas();
-            }
-        },
-
         submitAs(type) {
             this.actionType = type;
             document.getElementById('requestForm').dispatchEvent(new Event('submit'));
@@ -405,21 +388,21 @@ function signatureFormHandler() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Data Belum Lengkap!',
-                    text: 'Semua kolom input data sparepart wajib diisi terlebih dahulu, coy!',
-                    confirmButtonColor: '#3C50E0'
+                    text: 'Semua kolom input data draf wajib diisi terlebih dahulu, coy!',
+                    confirmButtonColor: '#F59E0B'
                 });
                 return false;
             }
 
             if (this.actionType === 'draft') {
                 Swal.fire({
-                    title: 'Simpan sebagai Draft?',
-                    text: "Data akan disimpan di list internal dan status masih DRAFT.",
+                    title: 'Update sebagai Draft?',
+                    text: "Perubahan akan disimpan ulang sebagai dokumen DRAFT internal.",
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#4A5568',
+                    confirmButtonColor: '#F59E0B',
                     cancelButtonColor: '#cbd5e1',
-                    confirmButtonText: 'Ya, Simpan Draft!',
+                    confirmButtonText: 'Ya, Update Draft!',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -430,21 +413,21 @@ function signatureFormHandler() {
                 if (!this.signatureImg && !this.stampImg) {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Otorisasi Kosong!',
-                        text: 'Harap berikan Tanda Tangan atau Upload Stampel dulu sebelum melakukan Submit Request.',
+                        title: 'Otorisasi Wajib!',
+                        text: 'Harap berikan Tanda Tangan atau Upload Stampel dulu sebelum mengajukan permohonan resmi.',
                         confirmButtonColor: '#3C50E0'
                     });
                     return false;
                 }
 
                 Swal.fire({
-                    title: 'Kirim Request Sekarang?',
-                    text: "Request akan langsung dikirim ke antrean antrean Engineering Staff.",
+                    title: 'Kirim Request Resmi?',
+                    text: "Dokumen draf ini akan dikunci dan langsung dikirim ke Engineering Dept.",
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3C50E0',
                     cancelButtonColor: '#f43f5e',
-                    confirmButtonText: 'Ya, Kirim!',
+                    confirmButtonText: 'Ya, Kirim Sekarang!',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {

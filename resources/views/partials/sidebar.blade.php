@@ -324,13 +324,13 @@
               class="flex flex-col gap-1"
             >
               <li>
-                <a href="{{ route('prod.request.index') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <a href="{{ route('prod.request.create') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
                   <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                   <span>Create Request</span>
                 </a>
               </li>
               <li>
-                <a href="{{ route('prod.request.index') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <a href="{{ route('prod.request.list') }}" class="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
                   <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
                   <span>List Request</span>
                 </a>
