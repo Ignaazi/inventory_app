@@ -1,128 +1,258 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)] font-sans">
-    
-    <div class="p-4 md:p-8 2xl:p-10">
-        
-        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-slate-900 dark:text-white">
-            <div>
-                <h1 class="text-2xl font-black tracking-tight uppercase">Transaction Out</h1>
-                <nav class="flex text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-                    <span>Engineering</span>
-                    <span class="mx-2 text-slate-300">/</span>
-                    <span class="text-rose-500 font-black">Stock Dispatch</span>
-                </nav>
-            </div>
-            <div class="text-right hidden md:block">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operator Session</p>
-                <p class="text-sm font-bold text-slate-700 dark:text-white uppercase">{{ date('d M Y') }}</p>
-            </div>
-        </div>
-
-        <div class="mb-6 bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm p-6 text-slate-900 dark:text-white">
-            <div class="flex flex-col md:flex-row items-center gap-6">
-                <div class="w-full md:w-1/4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-rose-100 dark:border-strokedark rounded-2xl bg-rose-50/30 dark:bg-meta-4/10">
-                    <svg class="w-16 h-16 text-rose-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M17 12H7m10 0l-4-4m4 4l-4 4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="text-[10px] font-black uppercase text-rose-400 tracking-widest">Scanner Ready</span>
-                </div>
-
-                <div class="w-full md:w-3/4 flex flex-col gap-4">
-                    <div>
-                        <label class="block text-xs font-black uppercase text-slate-500 mb-2 tracking-widest">Scan SAP Code for Stock Out</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-4 flex items-center text-rose-500">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 17h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
-                            <input type="text" autofocus placeholder="SCAN BARCODE TO REDUCE STOCK..." 
-                                class="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-meta-4 border border-slate-100 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all text-sm font-black uppercase tracking-widest">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 font-black">
-                        <div class="bg-slate-50 dark:bg-meta-4 p-3 rounded-xl border border-slate-100 dark:border-strokedark">
-                            <p class="text-[9px] text-slate-400 uppercase">Part Name</p>
-                            <p class="text-xs text-slate-700 dark:text-white uppercase mt-1">---</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-meta-4 p-3 rounded-xl border border-slate-100 dark:border-strokedark">
-                            <p class="text-[9px] text-slate-400 uppercase">Available</p>
-                            <p class="text-xs text-slate-700 dark:text-white uppercase mt-1">0</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-meta-4 p-3 rounded-xl border border-slate-100 dark:border-strokedark">
-                            <p class="text-[9px] text-slate-400 uppercase">Target Line</p>
-                            <p class="text-xs text-slate-700 dark:text-white uppercase mt-1">---</p>
-                        </div>
-                        <button class="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-rose-100 dark:shadow-none transition-all">
-                            Confirm Out
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden text-slate-900 dark:text-white">
-            
-            <div class="p-6 border-b border-slate-100 dark:border-strokedark flex justify-between items-center bg-white dark:bg-boxdark">
-                <div>
-                    <h3 class="text-lg font-black uppercase tracking-tight">Recent Transactions Out</h3>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Log dispatching sparepart to production line.</p>
-                </div>
-                <button class="px-4 py-2 bg-slate-50 dark:bg-meta-4 border border-slate-100 dark:border-strokedark rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all text-slate-600 dark:text-white">
-                    Export Log
-                </button>
-            </div>
-
-            <div class="max-w-full overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[800px]">
-                    <thead>
-                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20">
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Time</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Sparepart Info</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">SAP Code</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Qty Out</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Dest. Line</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark font-bold">
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/5 transition-all">
-                            <td class="px-6 py-6 text-[10px] text-slate-400 font-black uppercase tracking-tighter">
-                                08:15:22<br><span class="text-[8px]">31 Mar 2026</span>
-                            </td>
-                            <td class="px-6 py-6">
-                                <div class="flex flex-col">
-                                    <span class="text-sm font-black text-slate-800 dark:text-white uppercase">Nozzle Yamaha 221</span>
-                                    <span class="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Replacement Part</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 px-3 py-1 rounded text-[10px] font-black">SAP-NOZ-YMH01</span>
-                            </td>
-                            <td class="px-6 py-6 text-center text-sm font-black text-rose-600">
-                                - 2 PCS
-                            </td>
-                            <td class="px-6 py-6 text-center uppercase text-[10px] text-slate-600 dark:text-slate-300 font-black tracking-widest">
-                                LINE SMT 04
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="px-3 py-1 rounded-full text-[9px] font-black bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-widest">Dispatched</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-50 dark:border-strokedark bg-white dark:bg-boxdark">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Showing <span class="text-slate-900 dark:text-white">1 to 5</span> Entries</p>
-                <div class="flex items-center gap-1.5">
-                    <button class="w-8 h-8 flex items-center justify-center border border-slate-100 dark:border-strokedark rounded-lg text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    <button class="w-8 h-8 flex items-center justify-center bg-rose-600 rounded-lg text-white text-[10px] font-black shadow-md shadow-rose-100">1</button>
-                    <button class="w-8 h-8 flex items-center justify-center border border-slate-100 dark:border-strokedark rounded-lg text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                </div>
-            </div>
-        </div>
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+  {{-- HEADER SECTION & NAV BUTTONS --}}
+  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight">
+        Stock Out Activities
+      </h2>
+      <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Track your recent sparepart outgoing and dispatch activities</p>
     </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{{ route('eng.out.scan') }}"
+        class="inline-flex items-center gap-2 rounded-lg border border-transparent bg-gradient-to-r from-rose-600 to-orange-500 px-3 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-opacity uppercase tracking-wider"
+      >
+        <i class="fas fa-qrcode"></i> Scan OUT
+      </a>
+      
+      <a href="{{ route('eng.out.manual') }}"
+        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-amber-500 px-3 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider"
+      >
+        <i class="fas fa-keyboard"></i> Manual OUT
+      </a>
+    </div>
+  </div>
+
+  {{-- FLASH MESSAGES NOTIFICATION LOGS --}}
+  @if(session('success'))
+    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+      <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+    </div>
+  @endif
+
+  @if(session('error'))
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+      <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
+    </div>
+  @endif
+
+  {{-- CONTAINER DATA TABLE --}}
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-slate-900 sm:px-6">
+    {{-- TABLE FILTER CONTROL --}}
+    <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="text-base font-bold text-slate-950 dark:text-white uppercase tracking-tight">
+          Recent History Out
+        </h3>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
+            All
+          </button>
+          <button type="button" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Success
+          </button>
+          <button type="button" onclick="filterTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Pending
+          </button>
+          <button type="button" onclick="filterTable('manual out', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Manual Out
+          </button>
+          <button type="button" onclick="filterTable('scan out', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Scan Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {{-- MAIN TABLE LOG OUT --}}
+    <div class="w-full overflow-x-auto">
+      <table class="min-w-full text-left border-collapse" id="history-table">
+        <thead>
+          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50 dark:bg-slate-800/40">
+            {{-- NAMA HEADER SUDAH DIUBAH BIAR RAPI DAN PROFESIONAL, GA MANUT DATABASE AGAR MUDAH DIBACA --}}
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">TRANSACTION OUT ID</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NIK</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REQ SPAREPART ID</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">BARCODE ID</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STOCK ENG ID</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">QTY OUT</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STATUS</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REMARK</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">COMMENT</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">CREATED AT</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">UPDATED AT</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @forelse($history as $key => $log)
+          <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
+            {{-- 1. NO --}}
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+              {{ $history->firstItem() + $key }}
+            </td>
+            {{-- 2. TRANSACTION OUT ID --}}
+            <td class="py-3 px-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 font-mono text-center">
+              {{ $log->transaction_out_id }}
+            </td>
+            {{-- 3. NIK --}}
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+              {{ $log->nik }}
+            </td>
+            {{-- 4. REQUEST SPAREPART ID --}}
+            <td class="py-3 px-3 text-xs font-semibold text-slate-600 dark:text-gray-300 text-center font-mono">
+              {{ $log->request_sparepart_id ?? '-' }}
+            </td>
+            {{-- 5. BARCODE ID --}}
+            <td class="py-3 px-3 text-xs font-semibold text-slate-600 dark:text-gray-300 text-center font-mono">
+              {{ $log->barcode_id ?? '-' }}
+            </td>
+            {{-- 6. STOCK ENG ID --}}
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
+              {{ $log->stock_eng_id }}
+            </td>
+            {{-- 7. QTY OUT --}}
+            <td class="py-3 px-3 text-center">
+              <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
+                -{{ $log->qty_out }}
+              </span>
+            </td>
+            {{-- 8. STATUS --}}
+            <td class="py-3 px-3 text-center">
+              <span class="status-cell inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-tight uppercase
+                @if(strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400
+                @elseif(strtolower($log->status) == 'pending') bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400
+                @else bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 @endif">
+                {{ $log->status }}
+              </span>
+            </td>
+            {{-- 9. REMARK --}}
+            <td class="py-3 px-3 text-center">
+              @php
+                $remarkText = $log->remark ?? '';
+                $remarkLower = strtolower($remarkText);
+                $isManual = str_contains($remarkLower, 'manual');
+                $isScan = str_contains($remarkLower, 'scan');
+              @endphp
+
+              <span class="remark-cell inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-tight uppercase
+                @if($isManual) bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400
+                @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-500/10 dark:text-purple-400
+                @else bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-700/50 dark:text-slate-300 @endif">
+                {{ $remarkText ? $log->remark : '-' }} 
+              </span>
+            </td>
+            {{-- 10. COMMENT --}}
+            <td class="py-3 px-3 text-xs font-medium text-slate-700 dark:text-gray-300 max-w-[150px] truncate" title="{{ $log->comment }}">
+              {{ $log->comment ?? '-' }}
+            </td>
+            {{-- 11. CREATED AT (DATE) --}}
+            <td class="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-400 text-center font-mono">
+              {{ $log->created_at ? $log->created_at->format('d/m/Y H:i') : '-' }}
+            </td>
+            {{-- 12. UPDATED AT --}}
+            <td class="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-400 text-center font-mono">
+              {{ $log->updated_at ? $log->updated_at->format('d/m/Y H:i') : '-' }}
+            </td>
+          </tr>
+          @empty
+          <tr>
+            <td colspan="12" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              No recent stock out logs found.
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+
+    {{-- PAGINATION INTERFACE --}}
+    <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+      <p class="text-xs font-bold text-slate-950 dark:text-white">
+        Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} entries
+      </p>
+      <div class="flex items-center">
+        {{ $history->links() }}
+      </div>
+    </div>
+  </div>
 </div>
+
+{{-- CSS OVERRIDES PAGINATION --}}
+<style>
+  nav[role="navigation"] svg { width: 16px; height: 16px; display: inline; }
+  nav[role="navigation"] div:first-child { display: none; }
+  .pagination .page-item.active .page-link {
+    background-color: #E11D48 !important;
+    border-color: #E11D48 !important;
+    color: white !important;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .pagination .page-link {
+    color: inherit !important;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  .dark .pagination .page-item:not(.active) .page-link {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+  }
+</style>
+
+{{-- JAVASCRIPT REALTIME ROW FILTER --}}
+<script>
+  function filterTable(criteria, element) {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+    });
+
+    if (element) {
+      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+    }
+
+    const rows = document.querySelectorAll('.table-row-item');
+    
+    rows.forEach(row => {
+      if (criteria === 'all') {
+        row.style.display = '';
+        return;
+      }
+
+      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
+      const remarkText = row.querySelector('.remark-cell').textContent.trim().toLowerCase();
+
+      if (criteria === 'success' || criteria === 'pending') {
+        if (statusText === criteria) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      } else if (criteria === 'manual out') {
+        if (remarkText.includes('manual')) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      } else if (criteria === 'scan out') {
+        if (remarkText.includes('scan')) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+  }
+</script>
 @endsection
