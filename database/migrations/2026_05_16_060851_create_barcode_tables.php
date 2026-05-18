@@ -8,22 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Tabel Type Barcode (Halaman Struktur Komponen)
+        // Tabel Type Barcode (Struktur Komponen Pembuat Barcode)
         Schema::create('type_barcodes', function (Blueprint $table) {
             $table->id();
-            $table->string('char_type'); // TEXT, NUMBER, CODE, dll.
-            $table->integer('char_length'); // 1-999
-            $table->string('char_value'); // Potongan nilainya
-            $table->json('components_json'); // Menyimpan full snapshot struktur untuk fitur import template
+            $table->string('char_type'); 
+            $table->integer('char_length'); 
+            $table->string('char_value'); 
+            $table->json('components_json'); 
             $table->timestamps();
         });
 
-        // Tabel DB Barcode (Halaman Final Barcode Data)
+        // Tabel DB Barcode (Halaman Final Barcode Data - Sekali Pakai)
         Schema::create('db_barcodes', function (Blueprint $table) {
-            $table->id();
-            $table->string('barcode_type'); // QR CODE, DATA MATRIX, dll.
-            $table->string('barcode_size'); // Ukuran mm
-            $table->text('final_content'); // Hasil gabungan composite
+            $table->id(); // Ini auto increment angka bawaan (1, 2, 3 untuk primary key internal)
+            
+            // 🌟 REVISI BARU: Kolom Kode Unik Barcode Custom Lu (SIIXENG001, SIIXENG002, dst.)
+            $table->string('barcode_id')->unique(); 
+            
+            $table->string('barcode_type')->default('QR CODE'); 
+            $table->string('barcode_size')->default('40x40 mm'); 
+            $table->text('final_content'); // Hasil teks/content di dalam barcodenya
+            
+            // Status Siklus Barcode Sekali Pakai
+            $table->enum('current_lifecycle', ['AVAILABLE', 'USED_IN', 'USED_OUT', 'RETURNED', 'DISPOSAL'])->default('AVAILABLE');
             $table->timestamps();
         });
     }

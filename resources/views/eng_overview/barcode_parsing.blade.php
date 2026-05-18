@@ -1,6 +1,8 @@
 @extends('admin')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <div class="-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-screen">
@@ -59,18 +61,18 @@
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">Size Barcode (PCB Standard)</label>
+                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">SIZE BARCODE</label>
                             <select id="barcode_size" class="w-full bg-slate-50 dark:bg-meta-4 border border-slate-200 dark:border-strokedark rounded-lg px-4 py-3 font-bold text-sm outline-none focus:border-indigo-500">
-                                <option value="1">Extreme Micro Laser (1mm x 1mm)</option>
-                                <option value="2">Micro Sub-mini (2mm x 2mm)</option>
-                                <option value="3">Micro Trace Space (3mm x 3mm)</option>
-                                <option value="4">Micro Component (4mm x 4mm)</option>
-                                <option value="5">Micro Slim (5mm x 5mm)</option>
-                                <option value="8">PCB Ultra Small (8mm x 8mm)</option>
-                                <option value="10" selected>PCB Standard Small (10mm x 10mm)</option>
-                                <option value="15">PCB Medium Component (15mm x 15mm)</option>
-                                <option value="20">PCB Large Area (20mm x 20mm)</option>
-                                <option value="25">Sub-Assembly Max (25mm x 25mm)</option>
+                                <option value="1">Size 1mm x 1mm</option>
+                                <option value="2">Size 2mm x 2mm</option>
+                                <option value="3">Size 3mm x 3mm</option>
+                                <option value="4">Size 4mm x 4mm</option>
+                                <option value="5">Size 5mm x 5mm</option>
+                                <option value="8">Size 8mm x 8mm</option>
+                                <option value="10" selected>Size 10mm x 10mm</option>
+                                <option value="15">Size 15mm x 15mm</option>
+                                <option value="20">Size 20mm x 20mm</option>
+                                <option value="25">Size 25mm x 25mm</option>
                             </select>
                         </div>
 
@@ -81,12 +83,15 @@
                                 placeholder="Composite result will appear here..."></textarea>
                         </div>
 
-                        <div class="flex gap-2">
-                            <button type="button" onclick="clearComposite()" class="w-1/3 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:from-red-600 hover:via-orange-600 hover:to-yellow-600 text-white font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest border-none outline-none">
+                        <div class="flex items-center justify-center gap-1.5 pt-2">
+                            <button type="button" onclick="clearComposite()" class="flex-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:from-red-600 hover:via-orange-600 hover:to-yellow-600 text-white font-black py-2.5 rounded-xl transition-all uppercase text-[10px] tracking-wider border-none outline-none text-center shadow-sm">
                                 Clear
                             </button>
-                            <button type="button" onclick="submitToDatabase()" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl transition-all uppercase text-xs tracking-widest">
-                                Generate & Save
+                            <button type="button" onclick="triggerPreviewOnly()" class="flex-1 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-950 text-white font-black py-2.5 rounded-xl transition-all uppercase text-[10px] tracking-wider border-none outline-none text-center shadow-sm">
+                                Preview
+                            </button>
+                            <button type="button" onclick="submitToDatabase()" class="flex-1 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black py-2.5 rounded-xl transition-all uppercase text-[10px] tracking-wider border-none outline-none text-center shadow-sm">
+                                Save
                             </button>
                         </div>
                     </form>
@@ -157,8 +162,12 @@
         const charLength = parseInt(document.getElementById('char_length').value) || 0;
         let charValue = document.getElementById('char_value').value;
 
-        if (charLength < 1 || charLength > 999) { return alert("PANJANG KARAKTER HARUS ANTARA 1 - 999!"); }
-        if (!charValue.trim()) { return alert("INPUT VALUE TIDAK BOLEH KOSONG!"); }
+        if (charLength < 1 || charLength > 999) { 
+            return Swal.fire({ icon: 'error', title: 'Batas Karakter', text: 'PANJANG KARAKTER HARUS ANTARA 1 - 999!' }); 
+        }
+        if (!charValue.trim()) { 
+            return Swal.fire({ icon: 'warning', title: 'Input Kosong', text: 'INPUT VALUE TIDAK BOLEH KOSONG!' }); 
+        }
 
         let regex;
         let errorMsg = "";
@@ -166,16 +175,26 @@
         else if (charType === "NUMBER") { regex = /^[0-9]+$/; errorMsg = "Hanya karakter ANGKA/NUMBER!"; }
         else if (charType === "CODE") { regex = /^[\!@#\$%\^&\*\(\)\-\_\+=\[\]\{\};':",\./<>\?\\\|`~]+$/; errorMsg = "Hanya karakter SYMBOL/CODE!"; }
 
-        if (regex && !regex.test(charValue)) { return alert(errorMsg); }
+        if (regex && !regex.test(charValue)) { 
+            return Swal.fire({ icon: 'error', title: 'Format Salah', text: errorMsg }); 
+        }
 
         if (charValue.length > charLength) {
-            alert(`Value dipotong otomatis menjadi ${charLength} karakter!`);
+            Swal.fire({ icon: 'info', title: 'Informasi', text: `Value dipotong otomatis menjadi ${charLength} karakter!` });
             charValue = charValue.substring(0, charLength);
         }
 
         compositeComponents.push({ type: charType, length: charLength, value: charValue });
         document.getElementById('char_value').value = '';
         renderComposite();
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            text: 'Komponen berhasil ditambahkan ke list composite!',
+            timer: 1500,
+            showConfirmButton: false
+        });
     }
 
     function renderComposite() {
@@ -216,14 +235,37 @@
         document.getElementById('barcode_info').classList.add('hidden');
     }
 
+    function triggerPreviewOnly() {
+        const content = document.getElementById('barcode_content').value;
+        if (!content.trim() || compositeComponents.length === 0) {
+            return Swal.fire({ icon: 'error', title: 'Preview Gagal', text: 'Struktur composite masih kosong! Tambahkan komponen dulu.' });
+        }
+        generatePreview();
+    }
+
     async function submitToDatabase() {
         const type = document.getElementById('barcode_type').value;
         const content = document.getElementById('barcode_content').value;
-        const sizeMm = document.getElementById('barcode_size').value;
+        
+        const sizeSelect = document.getElementById('barcode_size');
+        const sizeText = sizeSelect.options[sizeSelect.selectedIndex].text;
 
         if (!content.trim() || compositeComponents.length === 0) {
-            return alert("STRUKTUR COMPOSITE MASIH KOSONG!");
+            return Swal.fire({ icon: 'error', title: 'Simpan Gagal', text: 'Struktur composite masih kosong! Tidak ada data untuk disimpan.' });
         }
+
+        const resultConfirm = await Swal.fire({
+            title: 'Apakah anda yakin?',
+            text: "Silahkan check lagi data composite anda sebelum menekan tombol simpan.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#dc2626',
+            confirmButtonText: 'Ya, Simpan!',
+            cancelButtonText: 'Cek Lagi'
+        });
+
+        if (!resultConfirm.isConfirmed) return;
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -232,26 +274,33 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify({
                     barcode_type: type,
-                    barcode_size: sizeMm,
+                    barcode_size: sizeText, 
                     final_content: content,
                     components: compositeComponents
                 })
             });
 
+            if (response.redirected) {
+                await Swal.fire({ icon: 'success', title: 'Sukses', text: 'Barcode Berhasil Dibuat dan Disimpan!' });
+                generatePreview();
+                return;
+            }
+
             const result = await response.json();
-            if (result.success) {
-                alert("SUKSES: Data tersimpan ke DB Barcode & Type Barcode!");
+            if (result.success || response.status === 200) {
+                await Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data berhasil di-generate dan masuk ke database!' });
                 generatePreview();
             } else {
-                alert("GAGAL: " + result.message);
+                Swal.fire({ icon: 'error', title: 'Gagal Validasi', text: result.message || 'Periksa log validasi controller!' });
             }
         } catch (error) {
-            console.error(error);
-            alert("Terjadi kesalahan sistem koneksi database!");
+            Swal.fire({ icon: 'error', title: 'Error Sistem', text: 'Terjadi kegagalan saat menghubungi server database.' });
+            generatePreview();
         }
     }
 
@@ -296,7 +345,7 @@
         compositeComponents = JSON.parse(componentsJson);
         renderComposite();
         closeImportModal();
-        alert("Konfigurasi struktur berhasil di-import!");
+        Swal.fire({ icon: 'success', title: 'Import Sukses', text: 'Konfigurasi struktur berhasil di-import!', timer: 1500, showConfirmButton: false });
     }
 
     function generatePreview() {
@@ -314,7 +363,14 @@
         let renderPixelSize = 100 + ((sizeMm - 1) * 10.5);
 
         if (type === 'QR CODE') {
-            new QRCode(previewArea, { text: content, width: renderPixelSize, height: renderPixelSize, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+            new QRCode(previewArea, { 
+                text: content, 
+                width: renderPixelSize, 
+                height: renderPixelSize, 
+                colorDark : "#000000", 
+                colorLight : "#ffffff", 
+                correctLevel : QRCode.CorrectLevel.H 
+            });
         } else if (type === 'DATA MATRIX') {
             const canvas = document.createElement('canvas');
             previewArea.appendChild(canvas);
@@ -353,7 +409,7 @@
         } else if (img && img.src) {
             triggerDownload(img.src, barcodeType, contentText);
         } else {
-            alert("Gagal mengunduh barcode!");
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal mengunduh barcode!' });
         }
     }
 

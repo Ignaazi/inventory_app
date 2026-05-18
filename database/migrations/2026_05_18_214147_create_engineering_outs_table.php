@@ -8,25 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // NAMA TABEL RESMI DIUBAH MENJADI stock_out_logs
         Schema::create('stock_out_logs', function (Blueprint $table) {
-            $table->id(); 
-            $table->string('transaction_out_id')->unique(); // ENGOUT001, ENGOUT002, dst.
-            $table->string('nik'); // Menangkap NIK/NIM Akun yang Login
+            $table->id(); // Primary Key internal transaksi
+            $table->string('transaction_out_id')->unique(); // ENGOUT001, ENGOUT002
+            $table->string('nik'); // NIK/NIM operator yang login
             
-            // Relasi-relasi Database
+            // RELASI DATABASE
             $table->unsignedBigInteger('request_sparepart_id')->nullable(); 
-            $table->unsignedBigInteger('barcode_id')->nullable(); 
-            $table->unsignedBigInteger('stock_eng_id'); // Terhubung ke DB Master Stock Eng
+            
+            // 🌟 KUNCI: barcode_id ini terhubung ke id internal tabel db_barcodes
+            $table->unsignedBigInteger('barcode_id'); 
+            
+            $table->unsignedBigInteger('stock_eng_id'); // Terhubung ke Master Stock Eng
             
             $table->integer('qty_out'); 
             $table->enum('status', ['SUCCESS', 'PENDING'])->default('SUCCESS');
             $table->enum('remark', ['SCAN OUT', 'MANUAL OUT']);
             $table->text('comment')->nullable(); 
-            $table->timestamps(); // Menghasilkan created_at (DATE)
+            $table->timestamps(); // Menghasilkan created_at dan updated_at
 
-            // Foreign Key Constraint ke tabel master stock_engs
+            // FOREIGN KEY CONSTRAINTS
             $table->foreign('stock_eng_id')->references('id')->on('stock_engs')->onDelete('cascade');
+            
+            // 🌟 HUBUNGKAN KE TABEL db_barcodes
+            $table->foreign('barcode_id')->references('id')->on('db_barcodes')->onDelete('cascade');
         });
     }
 

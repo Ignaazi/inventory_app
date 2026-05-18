@@ -52,8 +52,9 @@
           <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-24">VISUAL</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">BARCODE ID</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">BARCODE TYPE</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">DIMENSION</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">DIMENSION / CONFIG</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">FINAL COMPOSITE CONTENT</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">SAVED AT</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-24">ACTION</th>
@@ -69,11 +70,15 @@
             <td class="py-3 px-3 text-center">
               <div class="flex items-center justify-center">
                 <div id="render_thumb_{{ $barcode->id }}" 
-                     onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', {{ $barcode->barcode_size ?? 10 }})"
+                     onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', '{{ $barcode->barcode_size }}')"
                      title="Click to view large"
                      class="w-[45px] h-[45px] bg-white border border-gray-200 p-0.5 rounded shadow-sm flex items-center justify-center cursor-pointer hover:scale-105 hover:border-primary transition-all overflow-hidden bg-center bg-no-repeat dark:border-gray-700">
                 </div>
               </div>
+            </td>
+
+            <td class="py-3 px-3 text-xs font-black text-indigo-600 dark:text-indigo-400 font-mono">
+              {{ $barcode->barcode_id }}
             </td>
 
             <td class="py-3 px-3">
@@ -82,8 +87,8 @@
               </span>
             </td>
             
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
-              {{ $barcode->barcode_size }}mm × {{ $barcode->barcode_size }}mm
+            <td class="py-3 px-3 text-xs font-bold text-slate-900 dark:text-white max-w-[150px] truncate" title="{{ $barcode->barcode_size }}">
+              {{ $barcode->barcode_size }}
             </td>
 
             <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white font-mono break-all max-w-xs">
@@ -106,7 +111,7 @@
           </tr>
           @empty
           <tr>
-            <td colspan="7" class="p-12 text-center text-xs font-bold uppercase text-slate-400">
+            <td colspan="8" class="p-12 text-center text-xs font-bold uppercase text-slate-400">
               No Barcode Registered in Database
             </td>
           </tr>
@@ -114,6 +119,12 @@
         </tbody>
       </table>
     </div>
+
+    @if(method_exists($barcodes, 'links'))
+    <div class="mt-4 px-3">
+        {{ $barcodes->links() }}
+    </div>
+    @endif
   </div>
 </div>
 
@@ -148,7 +159,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
 
 <script>
-    // 1. ENGINE AUTOMATIC RENDER FOR TABLE ROW DISPLAY
     document.addEventListener("DOMContentLoaded", function() {
         @foreach($barcodes as $b)
             renderThumbnail({{ $b->id }}, '{{ $b->barcode_type }}', '{{ $b->final_content }}');
@@ -178,7 +188,6 @@
         }
     }
 
-    // 2. LIVE FILTER LOGIC USING TABS (SAMAKAN MECHANISM SEPERTI HISTORY LO)
     function filterBarcodeTable(criteria, element) {
         const buttons = document.querySelectorAll('.filter-btn');
         buttons.forEach(btn => {
@@ -206,10 +215,10 @@
         });
     }
 
-    // 3. INTERACTIVE POPUP MODAL ENGINE & DOWNLOAD Scaling
     let currentDownloadData = null;
 
-    function openBarcodeModal(id, type, content, sizeMm) {
+    // 🚀 PENYESUAIAN 7: Perbaikan fungsi Ekstraksi Ukuran Angka MM dari Teks Deskripsi Panjang
+    function openBarcodeModal(id, type, content, sizeString) {
         const modal = document.getElementById('barcodeModal');
         const renderArea = document.getElementById('modal_render_area');
         
@@ -221,8 +230,12 @@
             modal.firstElementChild.classList.remove('scale-90');
         }, 10);
 
+        // Ekstrak angka mm menggunakan regex dari string, jika gagal default-kan ke 10
+        const matches = sizeString.match(/\d+/);
+        const sizeMm = matches ? parseInt(matches[0]) : 10;
+
         document.getElementById('modal_header_type').innerText = `${type} VISUALIZATION`;
-        document.getElementById('modal_header_size').innerText = `TARGET PHYSICAL SIZE: ${sizeMm}mm x ${sizeMm}mm`;
+        document.getElementById('modal_header_size').innerText = `CONFIG: ${sizeString}`;
         document.getElementById('modal_content_text').innerText = content;
 
         let renderPixelSize = 100 + ((sizeMm - 1) * 10.5); 

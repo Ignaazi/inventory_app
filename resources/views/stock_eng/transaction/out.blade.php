@@ -110,9 +110,9 @@
               {{ $log->request_sparepart_id ?? '-' }}
             </td>
             {{-- 5. BARCODE ID --}}
-            <td class="py-3 px-3 text-xs font-semibold text-slate-600 dark:text-gray-300 text-center font-mono">
-              {{ $log->barcode_id ?? '-' }}
-            </td>
+            <td class="py-3 px-3 text-xs font-bold text-slate-900 dark:text-white text-center font-mono">
+                {{ $log->dbBarcode->barcode_id ?? '-' }}
+              </td>
             {{-- 6. STOCK ENG ID --}}
             <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
               {{ $log->stock_eng_id }}

@@ -3,12 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DbBarcode extends Model
 {
-    // Menentukan nama tabel di MySQL secara eksplisit
+    use HasFactory;
+
     protected $table = 'db_barcodes';
 
-    // Membuka proteksi mass assignment agar data dari form/AJAX bisa langsung masuk database
-    protected $guarded = [];
+    protected $fillable = [
+        'barcode_id', // SIIXENG001, SIIXENG002, dst.
+        'barcode_type',
+        'barcode_size',
+        'final_content',
+        'current_lifecycle'
+    ];
 }
