@@ -16,8 +16,36 @@ class StockOutEngineeringController extends Controller
      */
     public function index()
     {
-        $history = StockOutEng::with('stockEng')->latest()->paginate(10);
+        // UPDATE: Langsung panggil 'rak' secara mandiri karena sudah direlasikan di model StockOutEng
+        $history = StockOutEng::with(['stockEng', 'dbBarcode', 'rak'])->latest()->paginate(10);
         return view('stock_eng.transaction.out', compact('history'));
+    }
+
+    /**
+     * Tampilan untuk Input Manual OUT
+     */
+    public function manual()
+    {
+        // 1. Ambil semua data master stock engineering
+        $stocks = StockEng::orderBy('no_nozzle', 'asc')->get();
+        
+        // 2. Ambil semua data master dari table db_barcodes
+        $barcodes = \App\Models\DbBarcode::orderBy('barcode_id', 'asc')->get();
+
+        // 3. Ambil semua data master Rak
+        $raks = \App\Models\Rak::orderBy('nama_rak', 'asc')->get();
+
+        // Kirim ketiga data master tersebut ke view manual out
+        return view('stock_eng.transaction.out_manual', compact('stocks', 'barcodes', 'raks'));
+    }
+
+    /**
+     * Tampilan untuk Scan Barcode OUT
+     */
+    public function scan()
+    {
+        $stocks = StockEng::orderBy('no_nozzle', 'asc')->get();
+        return view('stock_eng.transaction.out_scan', compact('stocks'));
     }
 
     /**
@@ -25,22 +53,26 @@ class StockOutEngineeringController extends Controller
      */
     public function store(Request $request)
     {
+        // FIX: Menambahkan validasi 'barcode_id' berbasis 'id' tabel target agar sinkron dengan kiriman value form
         $request->validate([
-            'stock_eng_id' => 'required|exists:stock_engs,id',
-            'qty_out' => 'required|integer|min:1',
-            'status' => 'required|in:SUCCESS,PENDING',
-            'remark' => 'required|in:SCAN OUT,MANUAL OUT',
+            'stock_eng_id'         => 'required|exists:stock_engs,id',
+            'rak_id'               => 'required|exists:raks,id', 
+            'barcode_id'           => 'nullable|exists:db_barcodes,id', 
+            'request_sparepart_id' => 'nullable|string',
+            'qty_out'              => 'required|integer|min:1',
+            'remark'       => 'nullable|string',
+            'comment'      => 'nullable|string',
+            'source'       => 'required|in:manual,scan'
         ]);
 
         DB::beginTransaction();
         try {
             $stock = StockEng::findOrFail($request->stock_eng_id);
 
-            if ($request->status === 'SUCCESS' && $stock->stock < $request->qty_out) {
-                return redirect()->back()->with('error', 'Gagal! Stok di Engineering tidak mencukupi.');
+            if ($stock->qty < $request->qty_out) {
+                return redirect()->back()->with('error', 'Gagal! Stok tidak mencukupi.');
             }
 
-            // AUTO INCREMENT STRING GENERATOR (ENGOUT001, ENGOUT002, dst.)
             $latestTx = StockOutEng::latest()->first();
             if (!$latestTx) {
                 $nextId = 'ENGOUT001';
@@ -49,26 +81,26 @@ class StockOutEngineeringController extends Controller
                 $nextId = 'ENGOUT' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
             }
 
-            // Insert data ke tabel stock_out_logs via Eloquent
+            $finalRemark = $request->remark ?: ($request->source === 'manual' ? 'MANUAL OUT' : 'SCAN OUT');
+
+            // Insert data ke tabel stock_out_logs
             StockOutEng::create([
                 'transaction_out_id'   => $nextId,
                 'nik'                  => Auth::user()->nim ?? Auth::user()->nik ?? '9999',
                 'request_sparepart_id' => $request->request_sparepart_id ?? null,
                 'barcode_id'           => $request->barcode_id ?? null,
                 'stock_eng_id'         => $stock->id,
+                'rak_id'               => $request->rak_id, // UPDATE: Mengunci penyimpanan data rak_id langsung ke log transaksi
                 'qty_out'              => $request->qty_out,
-                'status'               => $request->status,
-                'remark'               => $request->remark,
+                'status'               => 'SUCCESS',
+                'remark'               => strtoupper($finalRemark),
                 'comment'              => $request->comment ?? '-',
             ]);
 
-            // Potong stok utama di table stock_engs jika status SUCCESS
-            if ($request->status === 'SUCCESS') {
-                $stock->decrement('stock', $request->qty_out);
-            }
+            $stock->decrement('qty', $request->qty_out);
 
             DB::commit();
-            return redirect()->route('eng.out.index')->with('success', 'Transaksi ' . $nextId . ' Berhasil disimpan!');
+            return redirect()->route('eng.out')->with('success', 'Transaksi ' . $nextId . ' Berhasil disimpan!');
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -82,6 +82,10 @@
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REQ SPAREPART ID</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">BARCODE ID</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STOCK ENG ID</th>
+            
+            {{-- KOLOM BARU: NO RAK DI SAMPING QTY OUT --}}
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">NO RAK</th>
+            
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">QTY OUT</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STATUS</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REMARK</th>
@@ -117,6 +121,12 @@
             <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
               {{ $log->stock_eng_id }}
             </td>
+            
+            {{-- DATA BARU: NO RAK --}}
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
+              {{ $log->rak->nama_rak ?? '-' }}
+            </td>
+
             {{-- 7. QTY OUT --}}
             <td class="py-3 px-3 text-center">
               <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
@@ -163,7 +173,8 @@
           </tr>
           @empty
           <tr>
-            <td colspan="12" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            {{-- Colspan dinaikkan dari 12 menjadi 13 karena ada kolom No Rak tambahan --}}
+            <td colspan="13" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
               No recent stock out logs found.
             </td>
           </tr>

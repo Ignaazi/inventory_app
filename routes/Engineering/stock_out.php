@@ -4,18 +4,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
 
 Route::middleware(['auth'])->group(function () {
-    // 1. Halaman utama list history stock out (Mengarah ke Controller)
-    Route::get('/eng/out', [StockOutEngineeringController::class, 'index'])->name('eng.out.index');
+    // 1. Halaman utama list history stock out (Nama disesuaikan jadi eng.out agar singkron dengan view)
+    Route::get('/eng/out', [StockOutEngineeringController::class, 'index'])->name('eng.out');
     
-    // 2. Proses simpan data transaksi out
-    Route::post('/eng/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
-    
-    // 3. Jalur aman untuk view scan & manual (Sudah diarahkan ke dalam folder stock_eng.transaction)
-    Route::get('/eng/out/scan', function() { 
-        return view('stock_eng.transaction.out_scan'); 
-    })->name('eng.out.scan');
+    // 2. Tampilan untuk Input Manual (Wajib lewat Controller agar bisa kirim data $stocks ke dropdown)
+    Route::get('/eng/out/manual', [StockOutEngineeringController::class, 'manual'])->name('eng.out.manual');
 
-    Route::get('/eng/out/manual', function() { 
-        return view('stock_eng.transaction.out_manual'); 
-    })->name('eng.out.manual');
+    // 3. Tampilan untuk Scan Barcode (Lewat Controller agar terstruktur rapi mengikuti pola Manual In)
+    Route::get('/eng/out/scan', [StockOutEngineeringController::class, 'scan'])->name('eng.out.scan');
+
+    // 4. Proses simpan data transaksi out (Mengurangi stok utama & mencatat log)
+    Route::post('/eng/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
 });

@@ -9,29 +9,33 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stock_out_logs', function (Blueprint $table) {
-            $table->id(); // Primary Key internal transaksi
-            $table->string('transaction_out_id')->unique(); // ENGOUT001, ENGOUT002
-            $table->string('nik'); // NIK/NIM operator yang login
+            $table->id(); 
+            $table->string('transaction_out_id')->unique(); 
+            $table->string('nik'); 
             
             // RELASI DATABASE
             $table->unsignedBigInteger('request_sparepart_id')->nullable(); 
-            
-            // 🌟 KUNCI: barcode_id ini terhubung ke id internal tabel db_barcodes
             $table->unsignedBigInteger('barcode_id'); 
+            $table->unsignedBigInteger('stock_eng_id'); 
             
-            $table->unsignedBigInteger('stock_eng_id'); // Terhubung ke Master Stock Eng
+            // 🌟 TAMBAHAN: Daftarkan kolom rak_id di sini
+            $table->unsignedBigInteger('rak_id')->nullable(); // Dibuat nullable agar transaksi lama aman
             
             $table->integer('qty_out'); 
             $table->enum('status', ['SUCCESS', 'PENDING'])->default('SUCCESS');
-            $table->enum('remark', ['SCAN OUT', 'MANUAL OUT']);
+            
+            // 🌟 UPDATE REMARK: Diubah jadi string biasa agar fleksibel menampung custom remark (huruf kapital dll)
+            $table->string('remark')->default('MANUAL OUT');
+            
             $table->text('comment')->nullable(); 
-            $table->timestamps(); // Menghasilkan created_at dan updated_at
+            $table->timestamps(); 
 
             // FOREIGN KEY CONSTRAINTS
             $table->foreign('stock_eng_id')->references('id')->on('stock_engs')->onDelete('cascade');
-            
-            // 🌟 HUBUNGKAN KE TABEL db_barcodes
             $table->foreign('barcode_id')->references('id')->on('db_barcodes')->onDelete('cascade');
+            
+            // 🌟 TAMBAHAN: Hubungkan foreign key ke tabel raks
+            $table->foreign('rak_id')->references('id')->on('raks')->onDelete('set null');
         });
     }
 
