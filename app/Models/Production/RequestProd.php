@@ -15,16 +15,17 @@ class RequestProd extends Model
         'request_no',
         'sparepart_name',
         'sap_code',
+        'remark',
         'qty_req',
         'line_machine',
         'requestor',
         'status',
-        'production_signature', 
+        'production_signature',
         'production_stamp',
         'approved_by',
         'signature_path',
         'reject_remark',
         'created_at',
-        'update_At'
+        'updated_at'
     ];
 }

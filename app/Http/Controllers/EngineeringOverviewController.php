@@ -9,7 +9,6 @@ class EngineeringOverviewController extends Controller
 {
     public function index()
     {
-        // Ambil data part yang stoknya kritis dari model EngineeringOverview
         $parts = EngineeringOverview::all();
         
         $stats = [

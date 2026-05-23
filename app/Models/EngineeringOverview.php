@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class EngineeringOverview extends Model
 {
     use HasFactory;
-
-    // Tambahkan ini agar bisa simpan data ke database
     protected $fillable = [
         'sap_code',
         'part_name',

@@ -51,40 +51,38 @@ class StockInEngineeringController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi input (Ditambahkan aturan untuk 'comment')
+        // 1. Validasi input
         $request->validate([
             'stock_eng_id' => 'required|exists:stock_engs,id',
             'qty_in' => 'required|integer|min:1',
             'remark' => 'nullable|string',
-            'comment' => 'nullable|string' // FIX 1: Validasi kolom comment baru
+            'comment' => 'nullable|string'
         ]);
 
         // 2. Update Stok Utama
         $stock = StockEng::findOrFail($request->stock_eng_id);
         $stock->increment('qty', $request->qty_in);
 
-        // 3. Logika Penentuan Remark Otomatis
-        $finalRemark = $request->remark;
-        
-        if (empty($finalRemark)) {
-            if ($request->source === 'manual') {
-                $finalRemark = 'Manual IN';
-            } elseif ($request->source === 'scan') {
-                $finalRemark = 'Scan IN';
-            } else {
-                $finalRemark = 'System IN'; 
-            }
+        // 3. LOGIC FIX: Ambil teks catatan user secara aman
+        // Jika user mengetik catatan di inputan bernama 'remark' atau 'comment', kita satukan ke variabel $userComment
+        $userComment = $request->comment ?: $request->remark;
+
+        // 4. LOGIC FIX: Paksa penentuan Remark murni berdasarkan route atau source secara presisi
+        if ($request->source === 'scan' || $request->routeIs('eng.in.scan*')) {
+            $finalRemark = 'Scan IN';
+        } else {
+            // Default jika dari form manual atau source = manual
+            $finalRemark = 'Manual IN';
         }
 
-        // 4. Catat transaksi ke tabel Log (StockInEng)
-        // Kolom 'remark' otomatis dari sistem, 'comment' berisi catatan dari user
+        // 5. Catat transaksi ke tabel Log (StockInEng)
         StockInEng::create([
             'stock_eng_id' => $stock->id,
             'nik' => Auth::user()->nim, 
             'qty_added' => $request->qty_in,
             'status' => 'Success',
-            'remark' => $finalRemark,
-            'comment' => $request->comment, // FIX 2: Simpan data komentar ke DB
+            'remark' => $finalRemark,     // Murni berisi 'Manual IN' atau 'Scan IN'
+            'comment' => $userComment,    // Berisi teks ketikan catatan dari user
         ]);
 
         return redirect()->route('eng.in')->with('success', 'Stock In Berhasil dicatat!');

@@ -16,14 +16,14 @@ class RequestProdController extends Controller
         // Ganti ->get() jadi ->paginate(25)
         $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25); 
         
-        return view('nama_folder.nama_file_blade', compact('requests'));
+        return view('stock_prod.process_req.listRequestProd', compact('requests'));
     }
 
     public function listRequest()
     {
         // Mengambil semua data dari tabel production_requests, urut dari yang terbaru
         // KODE BARU (Ganti get() menjadi paginate(25))
-    $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25);
+        $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25);
         
         // Mengarah ke file listRequestProd di dalam folder view lu
         return view('stock_prod.process_req.listRequestProd', compact('requests'));
@@ -45,12 +45,12 @@ class RequestProdController extends Controller
         // Tangkap jenis aksi tombol (apakah 'draft' atau 'submit')
         $actionType = $request->input('action_type', 'submit');
 
-        // Validasi input dasar dari form Production
+        // Validasi input dasar dari form Production (sap_code diganti remark)
         $rules = [
             'requestor'      => 'required|string|max:255',
             'line_machine'   => 'required|string|max:100',
             'sparepart_name' => 'required|string|max:255',
-            'sap_code'       => 'required|string|max:100',
+            'remark'         => 'required|string|max:255', // UPDATE: sap_code -> remark
             'qty_req'        => 'required|integer|min:1',
         ];
 
@@ -63,8 +63,25 @@ class RequestProdController extends Controller
             'signature_data.required' => '🚨 Tanda tangan Operator / Staff Production wajib diisi untuk mengajukan request!',
         ]);
 
-        // Generate nomor request baru karena ini data benar-benar baru
-        $requestNo = 'REQ-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+        // =========================================================================
+        // LOGIKA BARU: GENERATE NOMOR URUT DINAMIS (REQ-PRD-SIIX-001)
+        // =========================================================================
+        $lastRequest = RequestProd::where('request_no', 'LIKE', 'REQ-PRD-SIIX-%')
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+
+        if ($lastRequest) {
+            // Ambil angka setelah string 'REQ-PRD-SIIX-', misal dari REQ-PRD-SIIX-001 diambil 1
+            $lastNumber = (int) substr($lastRequest->request_no, 13);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        // Jika angka di bawah 1000 tetap pakai 3 digit (001), jika di atas 1000 panjangnya menyesuaikan otomatis (dinamis tanpa batas)
+        $length = $nextNumber > 999 ? strlen((string)$nextNumber) : 3;
+        $requestNo = 'REQ-PRD-SIIX-' . str_pad($nextNumber, $length, '0', STR_PAD_LEFT);
+        // =========================================================================
         
         // Tentukan Status Akhir berdasarkan tombol yang diklik
         $statusAkhir = ($actionType === 'draft') ? 'Draft' : 'Pending';
@@ -73,7 +90,8 @@ class RequestProdController extends Controller
         RequestProd::create([
             'request_no'           => $requestNo,
             'sparepart_name'       => $request->sparepart_name,
-            'sap_code'             => $request->sap_code,
+            'sap_code'             => null,             // 💡 FIX: Set null biar aman & tetep ada di DB
+            'remark'               => $request->remark, // 💡 FIX: Simpan ke kolom remark yang baru
             'qty_req'              => $request->qty_req,
             'line_machine'         => $request->line_machine,
             'requestor'            => $request->requestor,
@@ -117,12 +135,12 @@ class RequestProdController extends Controller
         $requestProd = RequestProd::findOrFail($id);
         $actionType = $request->input('action_type', 'submit');
 
-        // Validasi input
+        // Validasi input (sap_code diganti remark)
         $rules = [
             'requestor'      => 'required|string|max:255',
             'line_machine'   => 'required|string|max:100',
             'sparepart_name' => 'required|string|max:255',
-            'sap_code'       => 'required|string|max:100',
+            'remark'         => 'required|string|max:255', // UPDATE: sap_code -> remark
             'qty_req'        => 'required|integer|min:1',
         ];
 
@@ -140,7 +158,7 @@ class RequestProdController extends Controller
         // Update records dengan Eloquent
         $requestProd->update([
             'sparepart_name'       => $request->sparepart_name,
-            'sap_code'             => $request->sap_code,
+            'remark'               => $request->remark, // 💡 FIX: Update data remark baru lu
             'qty_req'              => $request->qty_req,
             'line_machine'         => $request->line_machine,
             'requestor'            => $request->requestor,
@@ -154,5 +172,64 @@ class RequestProdController extends Controller
             : 'Draft Request No: ' . $requestProd->request_no . ' resmi dikirim ke Engineering!';
 
         return redirect()->route('prod.request.list')->with('success', $pesanSukses);
+    }
+
+    // =========================================================================
+    // 🔥 TAMBAHAN LOGIKA BARU UNTUK ACTION UPDATE, DESTROY & PREVIEW (TANPA MENGHAPUS YANG ADA)
+    // =========================================================================
+
+    /**
+     * 1. Method Update Utama (PUT)
+     * Berfungsi menangani request edit status global atau data jika diperlukan di luar alur draft
+     */
+    public function update(Request $request, $id)
+    {
+        $requestProd = RequestProd::findOrFail($id);
+
+        $request->validate([
+            'requestor'      => 'required|string|max:255',
+            'line_machine'   => 'required|string|max:100',
+            'sparepart_name' => 'required|string|max:255',
+            'remark'         => 'required|string|max:255',
+            'qty_req'        => 'required|integer|min:1',
+            'status'         => 'nullable|string'
+        ]);
+
+        $requestProd->update([
+            'sparepart_name' => $request->sparepart_name,
+            'remark'         => $request->remark,
+            'qty_req'        => $request->qty_req,
+            'line_machine'   => $request->line_machine,
+            'requestor'      => $request->requestor,
+            'status'         => $request->input('status', $requestProd->status)
+        ]);
+
+        return redirect()->route('prod.request.list')->with('success', 'Request ' . $requestProd->request_no . ' berhasil diupdate, coy!');
+    }
+
+    /**
+     * 2. Method Preview Form / Cetak Dokumen (GET)
+     * Mengarahkan ke halaman cetak/formulir resmi preview sparepart nozzle
+     */
+    public function preview($id)
+    {
+        $requestData = RequestProd::findOrFail($id);
+
+        // Arahkan ke file preview.blade.php di dalam folder view production kamu
+        return view('stock_prod.process_req.previewRequestProd', compact('requestData'));
+    }
+
+    /**
+     * 3. Method Destroy / Hapus Data Permanen (DELETE)
+     * Menghapus request data production dari database secara aman
+     */
+    public function destroy($id)
+    {
+        $requestProd = RequestProd::findOrFail($id);
+        $requestNo = $requestProd->request_no;
+
+        $requestProd->delete();
+
+        return redirect()->route('prod.request.list')->with('success', 'Request ' . $requestNo . ' berhasil dihapus dari sistem, coy!');
     }
 }

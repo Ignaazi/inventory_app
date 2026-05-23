@@ -37,8 +37,14 @@
     @endif
 
     <div class="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-xl shadow-md overflow-hidden print:hidden mb-10">
-        <form id="requestForm" action="{{ route('prod.request.store') }}" method="POST" @submit.prevent="handleFormAction($event)">
+        {{-- 💡 PERBAIKAN: Action form dikontrol dinamis lewat Alpinejs (:action) agar bisa PUT ketika mengedit Draft --}}
+        <form id="requestForm" :action="getFormAction()" method="POST" @submit.prevent="handleFormAction($event)">
             @csrf
+            
+            {{-- 💡 PERBAIKAN: Menambahkan method spoofing PUT secara otomatis jika draft_id terdeteksi --}}
+            <template x-if="draft_id">
+                <input type="hidden" name="_method" value="PUT">
+            </template>
             
             <input type="hidden" name="action_type" x-model="actionType">
             <input type="hidden" name="draft_id" x-model="draft_id">
@@ -66,9 +72,9 @@
 
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2 flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">SAP Code</label>
+                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Remark</label>
                                 <div class="relative">
-                                    <input type="text" name="sap_code" x-model="sap_code" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
+                                    <input type="text" name="remark" x-model="remark" placeholder="" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -172,7 +178,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-sm font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide">FORM REQUEST NOZZLE</h2>
-                    <p class="text-[8px] text-slate-500 font-mono mt-1" x-text="request_no ? 'Doc No: ' + request_no : 'Doc No: FORM/SEK/REQ/{{ date('Y/m') }}/XXXX'"></p>
+                    <p class="text-[8px] text-slate-500 font-mono mt-1" x-text="request_no ? 'Doc No: ' + request_no : 'Doc No: REQ-PRD-SIIX-001'"></p>
                 </div>
             </div>
 
@@ -192,8 +198,8 @@
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="sparepart_name || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">SAP CODE   </td>
-                            <td class="py-2.5 px-4 font-mono font-bold text-black tracking-wider" x-text="sap_code || '-'">-</td>
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Remark</td>
+                            <td class="py-2.5 px-4 font-mono font-bold text-black tracking-wider" x-text="remark || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Quantity Requested</td>
@@ -262,20 +268,17 @@
 <script>
 function signatureFormHandler() {
     return {
-        // PERUBAHAN UTAMA: Membaca data kiriman dari Controller saat klik Edit Draft
         requestor: '{{ old('requestor', $requestData->requestor ?? '') }}',
         line_machine: '{{ old('line_machine', $requestData->line_machine ?? '') }}',
         sparepart_name: '{{ old('sparepart_name', $requestData->sparepart_name ?? '') }}',
-        sap_code: '{{ old('sap_code', $requestData->sap_code ?? '') }}',
+        remark: '{{ old('remark', $requestData->remark ?? '') }}',
         qty_req: {{ old('qty_req', $requestData->qty_req ?? 1) }},
         
-        // Simpan data ID draf dan nomor request lama
         draft_id: '{{ $requestData->id ?? '' }}',
         request_no: '{{ $requestData->request_no ?? '' }}',
 
         activeTab: 'draw', 
         isDrawing: false,
-        // Pasang kembali tanda tangan & stempel lama jika ada di database draft
         signatureImg: '{{ $requestData->production_signature ?? '' }}' || null, 
         stampImg: '{{ $requestData->production_stamp ?? '' }}' || null,     
         ctx: null,
@@ -371,11 +374,21 @@ function signatureFormHandler() {
             window.print();
         },
 
+        // 💡 TAMBAHAN BARU: Method pembantu Alpinejs untuk generate URL action form secara dinamis
+        getFormAction() {
+            if (this.draft_id) {
+                // Mengarah ke URL Update Draft di Controller (Route: /production-request/update-draft/{id})
+                return "/production-request/update-draft/" + this.draft_id;
+            }
+            // Mengarah ke URL Store biasa
+            return "{{ route('prod.request.store') }}";
+        },
+
         resetAll() {
             this.requestor = '';
             this.line_machine = '';
             this.sparepart_name = '';
-            this.sap_code = '';
+            this.remark = '';
             this.qty_req = 1;
             this.signatureImg = null;
             this.stampImg = null;
@@ -401,7 +414,7 @@ function signatureFormHandler() {
                 }
             }
 
-            if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.sap_code || !this.qty_req) {
+            if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.remark || !this.qty_req) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Data Belum Lengkap!',
@@ -439,7 +452,7 @@ function signatureFormHandler() {
 
                 Swal.fire({
                     title: 'Kirim Request Sekarang?',
-                    text: "Request akan langsung dikirim ke antrean antrean Engineering Staff.",
+                    text: "Request akan langsung dikirim ke antrean Engineering Staff.",
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3C50E0',

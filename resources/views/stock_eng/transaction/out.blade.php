@@ -19,7 +19,7 @@
       </a>
       
       <a href="{{ route('eng.out.manual') }}"
-        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-amber-500 px-3 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider"
+        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider"
       >
         <i class="fas fa-keyboard"></i> Manual OUT
       </a>
@@ -28,13 +28,13 @@
 
   {{-- FLASH MESSAGES NOTIFICATION LOGS --}}
   @if(session('success'))
-    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
       <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
     </div>
   @endif
 
   @if(session('error'))
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 dark:bg-red-950/20 dark:border-red-900 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
       <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
     </div>
   @endif
@@ -50,7 +50,10 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div class="inline-flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="inline-flex items-center gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <span class="pl-2 pr-1 text-slate-400 dark:text-slate-500 text-xs">
+            <i class="fas fa-filter"></i>
+          </span>
           <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
             All
           </button>
@@ -75,17 +78,16 @@
       <table class="min-w-full text-left border-collapse" id="history-table">
         <thead>
           <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50 dark:bg-slate-800/40">
-            {{-- NAMA HEADER SUDAH DIUBAH BIAR RAPI DAN PROFESIONAL, GA MANUT DATABASE AGAR MUDAH DIBACA --}}
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">TRANSACTION OUT ID</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NIK</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REQ SPAREPART ID</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">BARCODE ID</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STOCK ENG ID</th>
             
-            {{-- KOLOM BARU: NO RAK DI SAMPING QTY OUT --}}
+            {{-- HEADER DISESUAIKAN JADI NO NOZZLE --}}
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">NO NOZZLE</th>
+            
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">NO RAK</th>
-            
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">QTY OUT</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STATUS</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REMARK</th>
@@ -98,32 +100,33 @@
           @forelse($history as $key => $log)
           <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
             {{-- 1. NO --}}
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white">
               {{ $history->firstItem() + $key }}
             </td>
             {{-- 2. TRANSACTION OUT ID --}}
-            <td class="py-3 px-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 font-mono text-center">
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white font-mono text-center">
               {{ $log->transaction_out_id }}
             </td>
             {{-- 3. NIK --}}
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white">
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white">
               {{ $log->nik }}
             </td>
             {{-- 4. REQUEST SPAREPART ID --}}
-            <td class="py-3 px-3 text-xs font-semibold text-slate-600 dark:text-gray-300 text-center font-mono">
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white text-center font-mono">
               {{ $log->request_sparepart_id ?? '-' }}
             </td>
             {{-- 5. BARCODE ID --}}
-            <td class="py-3 px-3 text-xs font-bold text-slate-900 dark:text-white text-center font-mono">
-                {{ $log->dbBarcode->barcode_id ?? '-' }}
-              </td>
-            {{-- 6. STOCK ENG ID --}}
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
-              {{ $log->stock_eng_id }}
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white text-center font-mono">
+              {{ $log->dbBarcode->barcode_id ?? '-' }}
             </td>
             
-            {{-- DATA BARU: NO RAK --}}
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white text-center font-mono">
+            {{-- 6. NO NOZZLE (FIXED: Membaca langsung kolom no_nozzle baru, fallback ke relasi stockEng yang benar) --}}
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white text-center font-mono">
+              {{ $log->no_nozzle ?? ($log->stockEng->no_nozzle ?? '-') }}
+            </td>
+            
+            {{-- DATA NO RAK --}}
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white text-center font-mono">
               {{ $log->rak->nama_rak ?? '-' }}
             </td>
 
@@ -151,29 +154,38 @@
                 $isScan = str_contains($remarkLower, 'scan');
               @endphp
 
-              <span class="remark-cell inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-tight uppercase
-                @if($isManual) bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400
-                @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-500/10 dark:text-purple-400
-                @else bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-700/50 dark:text-slate-300 @endif">
+              <span class="remark-cell inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[9px] font-bold tracking-tight uppercase
+                @if($isManual) bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
+                @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
+                @else bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600/50 @endif">
                 {{ $remarkText ? $log->remark : '-' }} 
               </span>
             </td>
             {{-- 10. COMMENT --}}
-            <td class="py-3 px-3 text-xs font-medium text-slate-700 dark:text-gray-300 max-w-[150px] truncate" title="{{ $log->comment }}">
+            <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white max-w-[150px] truncate" title="{{ $log->comment }}">
               {{ $log->comment ?? '-' }}
             </td>
-            {{-- 11. CREATED AT (DATE) --}}
-            <td class="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-400 text-center font-mono">
-              {{ $log->created_at ? $log->created_at->format('d/m/Y H:i') : '-' }}
+            {{-- 11. CREATED AT --}}
+            <td class="py-2 px-3 text-center">
+              <div class="text-[11px] font-semibold text-black dark:text-white tracking-tight">
+                {{ $log->created_at ? $log->created_at->format('d/m/y') : '-' }}
+              </div>
+              <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-none mt-0.5">
+                {{ $log->created_at ? $log->created_at->format('H:i') : '' }}
+              </div>
             </td>
             {{-- 12. UPDATED AT --}}
-            <td class="py-3 px-3 text-xs font-medium text-slate-600 dark:text-slate-400 text-center font-mono">
-              {{ $log->updated_at ? $log->updated_at->format('d/m/Y H:i') : '-' }}
+            <td class="py-2 px-3 text-center">
+              <div class="text-[11px] font-semibold text-black dark:text-white tracking-tight">
+                {{ $log->updated_at ? $log->updated_at->format('d/m/y') : '-' }}
+              </div>
+              <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-none mt-0.5">
+                {{ $log->updated_at ? $log->updated_at->format('H:i') : '' }}
+              </div>
             </td>
           </tr>
           @empty
           <tr>
-            {{-- Colspan dinaikkan dari 12 menjadi 13 karena ada kolom No Rak tambahan --}}
             <td colspan="13" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
               No recent stock out logs found.
             </td>

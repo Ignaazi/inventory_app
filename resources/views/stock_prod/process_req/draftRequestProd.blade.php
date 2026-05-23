@@ -64,11 +64,12 @@
                             <input type="text" name="sparepart_name" x-model="sparepart_name" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
+                        <!-- UBAH: SAP Code diganti menjadi Remark -->
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2 flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">SAP Code</label>
+                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Remark</label>
                                 <div class="relative">
-                                    <input type="text" name="sap_code" x-model="sap_code" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-4 pr-10 text-sm font-bold text-primary outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
+                                    <input type="text" name="remark" x-model="remark" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-bold text-black dark:text-white outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input">
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -190,9 +191,10 @@
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">NO NOZLE</td>
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="sparepart_name || '-'">-</td>
                         </tr>
+                        <!-- UBAH: Pratinjau SAP Code diganti menjadi Remark -->
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">SAP CODE   </td>
-                            <td class="py-2.5 px-4 font-mono font-bold text-black tracking-wider" x-text="sap_code || '-'">-</td>
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Remark</td>
+                            <td class="py-2.5 px-4 font-medium text-black" x-text="remark || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Quantity Requested</td>
@@ -227,7 +229,7 @@
 
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( _________________ )'"></p>
-                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Department</p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Production</p>
                     </div>
                 </div>
 
@@ -261,22 +263,21 @@
 <script>
 function signatureFormHandler() {
     return {
-        // UPDATE: Bind langsung data lama hasil kiriman dari Controller
         requestor: '{{ old('requestor', $requestData->requestor ?? '') }}',
         line_machine: '{{ old('line_machine', $requestData->line_machine ?? '') }}',
         sparepart_name: '{{ old('sparepart_name', $requestData->sparepart_name ?? '') }}',
-        sap_code: '{{ old('sap_code', $requestData->sap_code ?? '') }}',
+        // UBAH: Mengikat variabel ke 'remark' (bukan sap_code)
+        remark: '{{ old('remark', $requestData->remark ?? '') }}',
         qty_req: {{ old('qty_req', $requestData->qty_req ?? 1) }},
         request_no: '{{ $requestData->request_no ?? '' }}',
 
         activeTab: 'draw', 
         isDrawing: false,
         
-        // UPDATE: Tarik tanda tangan & stempel lama dari database draf jika ada
         signatureImg: '{{ $requestData->production_signature ?? '' }}' || null, 
         stampImg: '{{ $requestData->production_stamp ?? '' }}' || null,     
         ctx: null,
-        actionType: 'draft', // Default set ke draft untuk amannya
+        actionType: 'draft',
 
         init() {
             this.$nextTick(() => {
@@ -301,7 +302,6 @@ function signatureFormHandler() {
                 this.ctx.lineWidth = 2.5;         
                 this.ctx.lineCap = 'round';
                 
-                // Menggambar ulang tanda tangan draf lama ke dalam canvas baru
                 if (this.signatureImg) {
                     const img = new Image();
                     img.onload = () => this.ctx.drawImage(img, 0, 0);
@@ -384,7 +384,8 @@ function signatureFormHandler() {
                 }
             }
 
-            if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.sap_code || !this.qty_req) {
+            // UBAH: Validasi JavaScript mengecek properti 'remark'
+            if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.remark || !this.qty_req) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Data Belum Lengkap!',

@@ -28,9 +28,11 @@
             </div>
         @endif
 
-        <form action="{{ route('eng.out.store') }}" method="POST">
+        <form action="{{ route('eng.out.store') }}" method="POST" id="form-manual-out">
             @csrf
             <input type="hidden" name="source" value="manual">
+            {{-- 🌟 TAMBAHAN HIDDEN INPUT: Memastikan value text asli no_nozzle ikut terkirim langsung dari form --}}
+            <input type="hidden" name="no_nozzle" id="hidden-no-nozzle" value="{{ old('no_nozzle') }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 
@@ -42,7 +44,7 @@
                                 class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-950 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none">
                             <option value="">-- Select Nozzle To Out --</option>
                             @foreach($stocks as $item)
-                                <option value="{{ $item->id }}" {{ old('stock_eng_id') == $item->id ? 'selected' : '' }}>
+                                <option value="{{ $item->id }}" data-nozzle="{{ $item->no_nozzle }}" {{ old('stock_eng_id') == $item->id ? 'selected' : '' }}>
                                     {{ $item->no_nozzle }} | {{ $item->sap_code }} | Sisa Stok: {{ $item->qty }}
                                 </option>
                             @endforeach
@@ -127,4 +129,19 @@
         </form>
     </div>
 </div>
+
+{{-- 🌟 JAVASCRIPT REKAYASA SISTEM OTOMATIS --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectNozzle = document.getElementById('select-nozzle');
+        const hiddenNoNozzle = document.getElementById('hidden-no-nozzle');
+
+        // Fungsi sinkronisasi nomor nozzle asli saat dropdown berubah
+        selectNozzle.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const nozzleNumber = selectedOption.getAttribute('data-nozzle');
+            hiddenNoNozzle.value = nozzleNumber ? nozzleNumber : '';
+        });
+    });
+</script>
 @endsection

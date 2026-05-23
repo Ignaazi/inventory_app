@@ -53,16 +53,16 @@ class StockOutEngineeringController extends Controller
      */
     public function store(Request $request)
     {
-        // FIX: Menambahkan validasi 'barcode_id' berbasis 'id' tabel target agar sinkron dengan kiriman value form
+        // FIX 1: Menyelaraskan rule 'barcode_id' menjadi required karena pada struktur database statusnya NOT NULLABLE
         $request->validate([
             'stock_eng_id'         => 'required|exists:stock_engs,id',
             'rak_id'               => 'required|exists:raks,id', 
-            'barcode_id'           => 'nullable|exists:db_barcodes,id', 
+            'barcode_id'           => 'required|exists:db_barcodes,id', 
             'request_sparepart_id' => 'nullable|string',
             'qty_out'              => 'required|integer|min:1',
-            'remark'       => 'nullable|string',
-            'comment'      => 'nullable|string',
-            'source'       => 'required|in:manual,scan'
+            'remark'               => 'nullable|string',
+            'comment'              => 'nullable|string',
+            'source'               => 'required|in:manual,scan'
         ]);
 
         DB::beginTransaction();
@@ -70,15 +70,19 @@ class StockOutEngineeringController extends Controller
             $stock = StockEng::findOrFail($request->stock_eng_id);
 
             if ($stock->qty < $request->qty_out) {
-                return redirect()->back()->with('error', 'Gagal! Stok tidak mencukupi.');
+                return redirect()->back()->withInput()->with('error', 'Gagal! Stok tidak mencukupi untuk melakukan pengeluaran.');
             }
 
-            $latestTx = StockOutEng::latest()->first();
+            // FIX 2: Perbaikan sistem generate auto-increment ID transaksi agar lebih aman dari bentrokan unique constraint
+            $latestTx = StockOutEng::where('transaction_out_id', 'LIKE', 'ENGOUT%')
+                                    ->orderBy('id', 'desc')
+                                    ->first();
             if (!$latestTx) {
                 $nextId = 'ENGOUT001';
             } else {
-                $number = (int) substr($latestTx->transaction_out_id, 6);
-                $nextId = 'ENGOUT' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+                // Mengambil angka urut di belakang string 'ENGOUT' secara dinamis
+                $currentNumber = (int) filter_var($latestTx->transaction_out_id, FILTER_SANITIZE_NUMBER_INT);
+                $nextId = 'ENGOUT' . str_pad($currentNumber + 1, 3, '0', STR_PAD_LEFT);
             }
 
             $finalRemark = $request->remark ?: ($request->source === 'manual' ? 'MANUAL OUT' : 'SCAN OUT');
@@ -86,17 +90,22 @@ class StockOutEngineeringController extends Controller
             // Insert data ke tabel stock_out_logs
             StockOutEng::create([
                 'transaction_out_id'   => $nextId,
-                'nik'                  => Auth::user()->nim ?? Auth::user()->nik ?? '9999',
+                'nik'                  => Auth::user()->nim ?? Auth::user()->nik ?? '9999', // Mengamankan auth login berbasis NIM
                 'request_sparepart_id' => $request->request_sparepart_id ?? null,
-                'barcode_id'           => $request->barcode_id ?? null,
+                'barcode_id'           => $request->barcode_id,
                 'stock_eng_id'         => $stock->id,
-                'rak_id'               => $request->rak_id, // UPDATE: Mengunci penyimpanan data rak_id langsung ke log transaksi
+                
+                // 🌟 FIX 3: Tambahkan pengisian kolom no_nozzle langsung dari master stock_engs
+                'no_nozzle'            => $stock->no_nozzle,
+                
+                'rak_id'               => $request->rak_id, 
                 'qty_out'              => $request->qty_out,
                 'status'               => 'SUCCESS',
                 'remark'               => strtoupper($finalRemark),
                 'comment'              => $request->comment ?? '-',
             ]);
 
+            // Potong jumlah kuantitas stok di gudang engineering
             $stock->decrement('qty', $request->qty_out);
 
             DB::commit();
@@ -104,7 +113,7 @@ class StockOutEngineeringController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error Sistem: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error Sistem: ' . $e->getMessage());
         }
     }
 }

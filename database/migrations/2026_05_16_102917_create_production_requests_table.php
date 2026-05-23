@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('request_no')->unique(); 
             $table->string('sparepart_name');       
-            $table->string('sap_code');             
+            $table->string('sap_code')->nullable(); // 💡 PERBAIKAN: Tetap ada, tapi dibuat nullable() agar tidak error saat dikosongkan
+            $table->string('remark');               // 💡 TAMBAHAN: Kolom remark baru untuk menampung data dari form request lu
             $table->integer('qty_req');
             $table->string('line_machine');         
             

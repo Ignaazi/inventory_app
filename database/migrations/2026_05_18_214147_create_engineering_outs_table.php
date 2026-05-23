@@ -18,13 +18,16 @@ return new class extends Migration
             $table->unsignedBigInteger('barcode_id'); 
             $table->unsignedBigInteger('stock_eng_id'); 
             
+            // 🌟 TAMBAHAN: Kolom no_nozzle untuk histori nozzle
+            $table->string('no_nozzle')->nullable();
+            
             // 🌟 TAMBAHAN: Daftarkan kolom rak_id di sini
-            $table->unsignedBigInteger('rak_id')->nullable(); // Dibuat nullable agar transaksi lama aman
+            $table->unsignedBigInteger('rak_id')->nullable(); 
             
             $table->integer('qty_out'); 
             $table->enum('status', ['SUCCESS', 'PENDING'])->default('SUCCESS');
             
-            // 🌟 UPDATE REMARK: Diubah jadi string biasa agar fleksibel menampung custom remark (huruf kapital dll)
+            // 🌟 UPDATE REMARK: Diubah jadi string biasa agar fleksibel menampung custom remark
             $table->string('remark')->default('MANUAL OUT');
             
             $table->text('comment')->nullable(); 

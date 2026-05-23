@@ -3,8 +3,8 @@
 namespace App\Models\Engineering;
 
 use App\Models\StockEng;
-use App\Models\DbBarcode; // Panggil Model DbBarcode lu
-use App\Models\Rak;       // Panggil Model Rak lu
+use App\Models\DbBarcode; 
+use App\Models\Rak;       
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -18,9 +18,10 @@ class StockOutEng extends Model
         'transaction_out_id',
         'nik',
         'request_sparepart_id',
-        'barcode_id', // Menyimpan ID internal dari db_barcodes
-        'stock_eng_id',
-        'rak_id',      // Menyimpan ID internal dari raks
+        'barcode_id', 
+        'stock_eng_id', // 🌟 WAJIB TETAP ADA: Untuk menyimpan ID relational ke tabel stock_engs
+        'no_nozzle',    // 🌟 SEBAGAI HISTORI: Menyimpan nilai '110' langsung di log transaksi
+        'rak_id',      
         'qty_out',
         'status',
         'remark',
