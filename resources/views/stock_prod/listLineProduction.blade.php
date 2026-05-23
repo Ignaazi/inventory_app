@@ -52,7 +52,7 @@
                 <thead>
                     <tr class="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
                         <th class="px-3 py-4 text-center w-12">NO</th>
-                        <th class="px-4 py-4 text-center w-36">Line ID (Scan Key)</th>
+                        <th class="px-4 py-4 text-center w-36">Line ID</th>
                         <th class="px-4 py-4 text-center w-28">No Line</th>
                         <th class="px-4 py-4 text-center w-40">Name Machine</th>
                         <th class="px-4 py-4 text-center w-28">Create At</th>
@@ -66,8 +66,8 @@
                         <td class="px-3 py-4 text-center">{{ $lines->firstItem() + $index }}</td>
                         
                         <!-- Line ID (Key Scanner) -->
-                        <td class="px-4 py-4 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            <span class="bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-md">{{ $item->line_id }}</span>
+                        <td class="px-4 py-4 text-center font-bold">
+                            <span class="uppercase">{{ $item->line_id }}</span>
                         </td>
                         
                         <!-- No Line -->

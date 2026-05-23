@@ -24,9 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/engineering/stock_out.php');
 
-            // 4. 🚀 UPDATE BARU: Route Master Data Line Production (Sesuai Struktur Folder Baru)
+            // 4. Route Master Data Line Production (Sesuai Struktur Folder Baru)
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/Production/list_line_production.php');
+
+            // 5. 🚀 UPDATE BARU: Route Core Stock Management Production 
+            Route::middleware('web')
+                ->group(__DIR__.'/../routes/production/stock_prod.php');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

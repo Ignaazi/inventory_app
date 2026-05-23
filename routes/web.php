@@ -77,9 +77,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
 
 
-    // --- ADDED: STOCK PRODUCTION ---
-    Route::get('/prod/stock', [App\Http\Controllers\Production\StockProdController::class, 'index'])->name('prod.stock.index');
-
     // Struktur Grouping Production Transaction
     Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
         Route::get('/in', [TransactionProdController::class, 'stockIn'])->name('in');
