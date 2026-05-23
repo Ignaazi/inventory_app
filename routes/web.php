@@ -76,15 +76,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/costing/incoming-pr', [CostingOverviewController::class, 'incomingPr'])->name('costing.incoming.pr');
     Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
 
-    // --- ADDED: LIST SPAREPART PRODUCTION ---
-    Route::get('/prod/list-sparepart', [App\Http\Controllers\Production\ListSparepartProdController::class, 'index'])->name('prod.list');
 
     // --- ADDED: STOCK PRODUCTION ---
     Route::get('/prod/stock', [App\Http\Controllers\Production\StockProdController::class, 'index'])->name('prod.stock.index');
-
-
-    // (NOTE: Route /prod/request/store yang lama di sini sudah dihapus biar gak bentrok sama file baru lu, coy!)
-
 
     // Struktur Grouping Production Transaction
     Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {

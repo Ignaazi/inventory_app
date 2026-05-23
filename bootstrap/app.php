@@ -20,9 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/engineering/add_rak.php');
 
-            // 3. 🚀 UPDATE BARU: Route Custom Engineering untuk Stock Out Activities
+            // 3. Route Custom Engineering untuk Stock Out Activities (Bawaan lu yang sudah ada)
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/engineering/stock_out.php');
+
+            // 4. 🚀 UPDATE BARU: Route Master Data Line Production (Sesuai Struktur Folder Baru)
+            Route::middleware('web')
+                ->group(__DIR__.'/../routes/Production/list_line_production.php');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
