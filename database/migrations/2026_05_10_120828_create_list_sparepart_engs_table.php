@@ -11,19 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 💡 PENGAMAN: Hapus tabel 'spareparts' terlebih dahulu jika ternyata masih nyangkut di DB
+        Schema::dropIfExists('spareparts');
+
         Schema::create('spareparts', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('category');
             $table->string('image')->nullable();
             
-            // HAPUS INI: $table->integer('qty');
-            // TAMBAHKAN INI (Gunakan decimal supaya aman kalau ada koma/milimeter detail):
+            // Kolom dimensi detail nozzle / sparepart engineering
             $table->decimal('length', 8, 2)->nullable();
             $table->decimal('width', 8, 2)->nullable();
             $table->decimal('thickness', 8, 2)->nullable();
             
             $table->timestamps();
         });
+    }
+
+    /**
+     * Reverse the migrations.
+     * 💡 FIX UTAMA: Menambahkan kembali fungsi down yang hilang agar sistem refresh berjalan lancar!
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('spareparts');
     }
 };

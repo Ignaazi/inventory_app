@@ -11,24 +11,24 @@ return new class extends Migration
         Schema::create('stock_prods', function (Blueprint $table) {
             $table->id(); // Ini untuk "No" (Auto Increment)
             
-            // Relasi ke tabel list_line_productions
-            $table->unsignedBigInteger('line_id'); 
+            // AMAN: Diubah jadi string karena menampung kode unik Alfanumerik (e.g., 'SIIXSMTLINE001')
+            $table->string('line_id', 100); 
             
             // Kolom spesifik Nozzle
-            $table->string('no_nozzle');
+            $table->string('no_nozzle')->default('-');
             
             // Relasi ke tabel productions_request (menggunakan nomor request string)
-            $table->string('request_no')->nullable();
+            $table->string('request_no')->nullable()->default('-');
             
             // Data part & sap yang terintegrasi dengan stock_engs
-            $table->string('part_no');
-            $table->string('sap_code');
+            $table->string('part_no')->default('-');
+            $table->string('sap_code')->default('-');
             
-            // Relasi ke tabel db_barcodes
-            $table->unsignedBigInteger('barcode_id')->nullable();
+            // AMAN: Diubah jadi string karena di controller diisi format kode teks 'BC-XXXXX'
+            $table->string('barcode_id')->nullable()->default('-');
             
-            // Relasi ke tabel stock_out_logs untuk trace barcode out
-            $table->unsignedBigInteger('transaction_out_id')->nullable();
+            // AMAN: Diubah jadi string karena menampung token transaksi 'TXO-ENG-XXXXX'
+            $table->string('transaction_out_id')->nullable()->default('-');
             
             // Kolom Quantity & Minimum Threshold Stock
             $table->integer('qty')->default(0);

@@ -3,118 +3,141 @@
 namespace App\Http\Controllers\Engineering;
 
 use App\Http\Controllers\Controller;
-use App\Models\ApprovalEng; // Model antrean aktif asli lo
-use App\Models\Engineering\HistoryApproval; // Model history aktif lo
+use App\Models\Production\RequestProd; 
+use App\Models\Engineering\HistoryApproval; 
 use Illuminate\Http\Request;
-// --- TAMBAHKAN IMPORT RESMI INI BIAR METHOD USER/CHECK TIDAK EROR ---
 use Illuminate\Support\Facades\Auth; 
 
 class ApprovalEngController extends Controller
 {
-    // 1. Tampilkan antrean request status Pending
     public function index()
     {
-        $requests = ApprovalEng::where('status', 'Pending')
-            ->latest()
+        $requests = RequestProd::whereIn('status', ['Pending', 'Checked by Staff'])
+            ->orderBy('created_at', 'asc')
             ->paginate(10);
 
         return view('stock_eng.process_req.approval', compact('requests'));
     }
 
-    // 2. Fungsi untuk Pindah ke Halaman Review Form Cetak SIIX (New Page)
     public function review($id)
     {
-        $req = ApprovalEng::findOrFail($id);
-        
+        $req = RequestProd::findOrFail($id);
         return view('stock_eng.process_req.approveform', compact('req'));
     }
 
-    // 3. Aksi Terima Permintaan (Approve) dengan Tanda Tangan Digital
     public function approve(Request $request, $id)
     {
-        // Validasi kiriman string base64 gambar canvas dari halaman review
         $request->validate([
-            'signature_image' => 'required|string' 
+            'signature_image' => 'nullable|string',
+            'stamp_image'     => 'nullable|string',
+            'signer_role'     => 'required|string|in:staff,spv'
         ]);
 
-        $requestData = ApprovalEng::findOrFail($id);
+        $requestData = RequestProd::findOrFail($id);
+        $role = $request->input('signer_role');
+        
+        $signaturePath = null;
+        $stampPath = null;
 
-        // --- PROSES DEKODE GAMBAR TANDA TANGAN BASE64 ---
-        $image_data = $request->signature_image;
-        $image_data = str_replace('data:image/png;base64,', '', $image_data);
-        $image_data = str_replace(' ', '+', $image_data);
-        
-        $fileName = 'sig_' . str_replace('/', '-', $requestData->request_no) . '_' . time() . '.png';
-        
-        $folderPath = public_path('uploads/signatures');
-        if (!file_exists($folderPath)) {
-            mkdir($folderPath, 0777, true);
+        // --- PROSES DEKODE GAMBAR TANDA TANGAN ---
+        if ($request->filled('signature_image')) {
+            $image_data = str_replace(['data:image/png;base64,', ' '], ['', '+'], $request->signature_image);
+            $fileName = 'sig_' . $role . '_' . str_replace('/', '-', $requestData->request_no) . '_' . time() . '.png';
+            $folderPath = public_path('uploads/signatures');
+            if (!file_exists($folderPath)) mkdir($folderPath, 0777, true);
+            file_put_contents($folderPath . '/' . $fileName, base64_decode($image_data));
+            $signaturePath = 'uploads/signatures/' . $fileName;
         }
-        file_put_contents($folderPath . '/' . $fileName, base64_decode($image_data));
 
-        $signaturePath = 'uploads/signatures/' . $fileName;
+        // --- PROSES DEKODE GAMBAR STEMPEL ---
+        if ($request->filled('stamp_image')) {
+            $stamp_data = preg_replace('/^data:image\/\w+;base64,/', '', $request->stamp_image);
+            $stamp_data = str_replace(' ', '+', $stamp_data);
+            $stampName = 'stamp_' . $role . '_' . str_replace('/', '-', $requestData->request_no) . '_' . time() . '.png';
+            $stampFolderPath = public_path('uploads/stamps');
+            if (!file_exists($stampFolderPath)) mkdir($stampFolderPath, 0777, true);
+            file_put_contents($stampFolderPath . '/' . $stampName, base64_decode($stamp_data));
+            $stampPath = 'uploads/stamps/' . $stampName;
+        }
 
-        // --- FIX EROR: Ambil nama user login menggunakan Facade Auth resmi ---
-        $approverName = Auth::check() ? Auth::user()->name : 'Engineering Staff';
+        $approverName = Auth::check() ? Auth::user()->name : (($role === 'staff') ? 'Engineering Staff' : 'Engineering SPV');
 
         // -----------------------------------------------------------------
-        // Simpan log ke tabel history_approvals via Model bawaan lo
+        // LOGIKA APPROVAL BERJENJANG (STAFF VS SPV)
         // -----------------------------------------------------------------
-        HistoryApproval::create([
-            'request_no'     => $requestData->request_no,
-            'sparepart_name' => $requestData->sparepart_name,
-            'sap_code'       => $requestData->sap_code,
-            'qty_req'        => $requestData->qty_req,
-            'line_machine'   => $requestData->line_machine,
-            'requestor'      => $requestData->requestor ?? 'Production Staff', 
-            'approved_by'    => $approverName, 
-            'signature_image'=> asset($signaturePath), 
-            'status'         => 'APPROVED',
-            'processed_at'   => now(),
-        ]);
+        if ($role === 'staff') {
+            $requestData->update([
+                'status'          => 'Checked by Staff',
+                'staff_name'      => $approverName,
+                'staff_signature' => $signaturePath ? asset($signaturePath) : $requestData->staff_signature,
+                'staff_stamp'     => $stampPath ? asset($stampPath) : $requestData->staff_stamp
+            ]);
 
-        // Update status berkas utama agar hilang dari antrean pending
-        $requestData->update([
-            'status' => 'Approved',
-            'approved_by' => $approverName,
-            'signature_path' => $signaturePath
-        ]);
+            HistoryApproval::create([
+                'request_no'     => $requestData->request_no,
+                'sparepart_name' => $requestData->sparepart_name,
+                'sap_code'       => $requestData->sap_code ?? '-',
+                'qty_req'        => $requestData->qty_req,
+                'line_machine'   => $requestData->line_machine,
+                'requestor'      => $requestData->requestor ?? 'Production Staff', 
+                'approved_by'    => $approverName, 
+                'staff_signature'=> $signaturePath ? asset($signaturePath) : null,
+                'status'         => 'Checked by Staff',
+                'processed_at'   => now(),
+            ]);
 
-        return redirect()->route('eng.approval')
-            ->with('success', "Request {$requestData->request_no} berhasil di-APPROVE oleh {$approverName}!");
+            return redirect()->route('eng.approval')->with('success', "Request di-Check Staff!");
+
+        } else if ($role === 'spv') {
+            $requestData->update([
+                'status'         => 'Approved',
+                'spv_name'       => $approverName,
+                'spv_signature'  => $signaturePath ? asset($signaturePath) : $requestData->spv_signature,
+                'spv_stamp'      => $stampPath ? asset($stampPath) : $requestData->spv_stamp,
+                'approved_by'    => $approverName,
+                'signature_path' => $signaturePath ?? $requestData->signature_path
+            ]);
+
+            // 🎯 UPDATE RECORD LAMA DI HISTORY (Bukan Create baru)
+            $history = HistoryApproval::where('request_no', $requestData->request_no)
+                                       ->where('status', 'Checked by Staff')
+                                       ->latest()
+                                       ->first();
+
+            if ($history) {
+                $history->update([
+                    'status'        => 'Approved',
+                    'spv_name'      => $approverName,
+                    'spv_signature' => $signaturePath ? asset($signaturePath) : null
+                ]);
+            }
+
+            return redirect()->route('eng.approval')->with('success', "FULLY APPROVED oleh SPV!");
+        }
     }
 
-    // 4. Aksi Tolak Permintaan (Reject)
     public function reject(Request $request, $id)
     {
-        $requestData = ApprovalEng::findOrFail($id);
-        
-        // --- FIX EROR: Ambil nama user login menggunakan Facade Auth resmi ---
+        $requestData = RequestProd::findOrFail($id);
         $approverName = Auth::check() ? Auth::user()->name : 'Engineering Staff';
         
-        // -----------------------------------------------------------------
-        // Simpan log ke tabel history_approvals dengan status REJECTED
-        // -----------------------------------------------------------------
         HistoryApproval::create([
             'request_no'     => $requestData->request_no,
             'sparepart_name' => $requestData->sparepart_name,
-            'sap_code'       => $requestData->sap_code,
+            'sap_code'       => $requestData->sap_code ?? '-',
             'qty_req'        => $requestData->qty_req,
             'line_machine'   => $requestData->line_machine,
             'requestor'      => $requestData->requestor ?? 'Production Staff',
             'approved_by'    => $approverName,
-            'signature_image'=> null, 
-            'status'         => 'REJECTED',
+            'status'         => 'Rejected',
             'processed_at'   => now(),
         ]);
 
-        // Update status berkas utama
         $requestData->update([
             'status' => 'Rejected',
             'reject_remark' => $request->input('reason', 'Ditolak oleh Engineering')
         ]);
 
-        return redirect()->route('eng.approval')
-            ->with('success', "Request {$requestData->request_no} telah di-REJECT.");
+        return redirect()->route('eng.approval')->with('success', "Request telah di-REJECT.");
     }
 }

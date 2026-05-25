@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('request_no')->unique(); 
             $table->string('sparepart_name');       
-            $table->string('sap_code')->nullable(); // 💡 PERBAIKAN: Tetap ada, tapi dibuat nullable() agar tidak error saat dikosongkan
-            $table->string('remark');               // 💡 TAMBAHAN: Kolom remark baru untuk menampung data dari form request lu
+            $table->string('sap_code')->nullable(); // Tetap ada, tapi dibuat nullable() agar tidak error saat dikosongkan
+            $table->string('remark');               // Kolom remark baru untuk menampung data dari form request lu
             $table->integer('qty_req');
             $table->string('line_machine');         
             
@@ -25,14 +25,22 @@ return new class extends Migration
             $table->longText('production_signature')->nullable();
             $table->longText('production_stamp')->nullable();
             
-            // 2. Status Document (Sudah include 'Draft')
-            $table->enum('status', ['Draft', 'Pending', 'Approved', 'Rejected'])->default('Draft');
+            // 2. Status Document (Menggunakan string agar fleksibel menampung status bertahap 'Checked by Staff')
+            $table->string('status')->default('Draft');
             
-            // 3. Otorisasi dari Sisi Engineering (PENTING BIAR GAK ERROR PAS APPROVAL!)
+            // 3. Otorisasi Bertahap dari Sisi Engineering (STAFF)
+            $table->string('staff_name')->nullable();
+            $table->longText('staff_signature')->nullable(); // Menyimpan Base64 TTD Staff Engineering
+            
+            // 4. Otorisasi Bertahap dari Sisi Engineering (SPV)
+            $table->string('spv_name')->nullable();
+            $table->longText('spv_signature')->nullable(); // Menyimpan Base64 TTD SPV Engineering
+            
+            // 5. Otorisasi Legacy / Cadangan (Biar kode lama tidak error jika memanggil ini)
             $table->string('approved_by')->nullable();
-            $table->string('signature_path')->nullable(); // Path TTD Fisik Eng
+            $table->string('signature_path')->nullable(); 
             
-            // 4. Catatan jika ditolak
+            // 6. Catatan jika ditolak
             $table->text('reject_remark')->nullable(); 
             $table->timestamps();
         });

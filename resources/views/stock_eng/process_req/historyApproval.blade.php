@@ -30,6 +30,9 @@
           <button type="button" onclick="filterTable('all', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
             All
           </button>
+          <button type="button" onclick="filterTable('checked by staff', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Checked
+          </button>
           <button type="button" onclick="filterTable('approved', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
             Approved
           </button>
@@ -113,26 +116,43 @@
               {{ $log->approved_by ?? '—' }}
             </td>
 
+            {{-- 🎯 UPDATED: Sign Eng menampilkan Staff & SPV secara berdampingan --}}
             <td class="py-2 px-3 text-center">
-              @if(!empty($log->signature_image))
-                <div class="inline-block bg-white p-0.5 rounded border border-gray-200 dark:border-gray-700">
-                  @if(str_starts_with($log->signature_image, 'http') || str_starts_with($log->signature_image, 'data:'))
-                    <img src="{{ $log->signature_image }}" alt="Sign Eng" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
-                  @else
-                    <img src="{{ asset('storage/' . $log->signature_image) }}" alt="Sign Eng" class="h-7 w-auto max-w-[80px] object-contain mix-blend-multiply">
-                  @endif
-                </div>
-              @else
-                <span class="text-[10px] text-slate-400 font-bold uppercase">—</span>
-              @endif
+              <div class="flex items-center justify-center gap-1">
+                @if(!empty($log->staff_signature))
+                  <div class="inline-block bg-white p-0.5 rounded border border-blue-400" title="Signed by Staff">
+                    <img src="{{ $log->staff_signature }}" alt="Sign Staff" class="h-6 w-auto max-w-[40px] object-contain mix-blend-multiply">
+                  </div>
+                @endif
+                @if(!empty($log->spv_signature))
+                  <div class="inline-block bg-white p-0.5 rounded border border-emerald-400" title="Signed by SPV">
+                    <img src="{{ $log->spv_signature }}" alt="Sign SPV" class="h-6 w-auto max-w-[40px] object-contain mix-blend-multiply">
+                  </div>
+                @endif
+                @if(empty($log->staff_signature) && empty($log->spv_signature))
+                  <span class="text-[10px] text-slate-400 font-bold uppercase">—</span>
+                @endif
+              </div>
             </td>
 
             <td class="py-3 px-3 text-center">
-              <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if(strtolower($log->status) == 'approved' || strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
-                @else bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40 @endif">
-                {{ strtolower($log->status) == 'approved' || strtolower($log->status) == 'success' ? 'Approved' : 'Rejected' }}
-              </span>
+              @php 
+                $currentStatus = strtolower($log->status);
+              @endphp
+
+              @if($currentStatus == 'approved' || $currentStatus == 'success')
+                <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40">
+                  Approved
+                </span>
+              @elseif($currentStatus == 'checked by staff' || $currentStatus == 'checked')
+                <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40">
+                  Checked by Staff
+                </span>
+              @else
+                <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40">
+                  Rejected
+                </span>
+              @endif
             </td>
 
             <td class="py-3 px-3 text-center text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
@@ -211,6 +231,8 @@
       const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
 
       if (criteria === 'approved' && (statusText === 'approved' || statusText === 'success')) {
+         row.style.display = '';
+      } else if (criteria === 'checked by staff' && (statusText === 'checked by staff' || statusText === 'checked')) {
          row.style.display = '';
       } else if (criteria === 'rejected' && statusText === 'rejected') {
          row.style.display = '';

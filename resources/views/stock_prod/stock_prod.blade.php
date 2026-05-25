@@ -5,7 +5,6 @@
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
 
     @php
-    // Patokan data stock di area lini produksi menggunakan accessor label model baru
     $outOfStock = $stocks->where('qty', '<=', 0)->count();
     $lowStock = $stocks->filter(function($item) {
         return $item->qty > 0 && $item->qty <= $item->min_stock;
@@ -18,7 +17,7 @@
             'dot' => 'bg-red-600', 
             'text' => 'text-red-800',
             'status' => 'CRITICAL',
-            'msg' => $outOfStock . ' nozzle types depleted on production line — request stock to engineering immediately'
+            'msg' => $outOfStock . ' nozzle types depleted on production line — verify incoming items or manage line allocation immediately.'
         ];
     } elseif ($lowStock > 0) {
         $theme = [
@@ -27,7 +26,7 @@
             'dot' => 'bg-[#F59E0B]', 
             'text' => 'text-[#92400E]',
             'status' => 'WARNING',
-            'msg' => $lowStock . ' items running low on line — prepare for supply request'
+            'msg' => $lowStock . ' items running low on line — check engineering transaction status'
         ];
     } else {
         $theme = [
@@ -36,7 +35,7 @@
             'dot' => 'bg-emerald-500', 
             'text' => 'text-emerald-800',
             'status' => 'STABLE',
-            'msg' => 'All production lines stable — component stocks are sufficient'
+            'msg' => 'All registered production lines stable — component stocks are sufficient'
         ];
     }
     @endphp
@@ -49,45 +48,45 @@
         </p>
     </div>
 
-    <!-- Header & Tombol Aksi Kerja Area Produksi -->
+    <!-- Header & Tombol Aksi Baru Bersandingan Sesuai Request -->
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Production Line Stock Status</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Real-time Nozzle Stock on Machine Lines</p>
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Production Line Control Deck</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Manage Machine Lines and Incoming Engineering Nozzles</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <!-- CSV EXPORT -->
-            <a href="{{ route('stock.prod.export') }}" class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all active:scale-95">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                </svg>
-                CSV EXPORT
-            </a>
-
-            <!-- VIEW REQUEST HISTORY -->
-            <a href="{{ route('stock.prod.request.history') }}" class="flex items-center gap-2 rounded-lg bg-slate-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 transition-all active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                REQUEST HISTORY
-            </a>
-            
-            <!-- RECEIVE ITEM (IN) -->
-            <button onclick="openReceiveModal()" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 transition-all active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                RECEIVE ITEM (IN)
-            </button>
-
-            <!-- REQUEST STOCK TO ENGINEERING -->
-            <button onclick="openRequestModal()" class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all active:scale-95">
+            <!-- 1. ADD LINE BUTTON -->
+            <button onclick="openAddLineModal()" class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                REQUEST STOCK
+                ADD LINE
             </button>
+
+            <!-- 2. DELETE LINE BUTTON (Hapus Lini Terdaftar agar Dropdown Aktif Lagi) -->
+            <button onclick="openDeleteLineModal()" class="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-rose-700 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                DELETE LINE
+            </button>
+
+            <!-- 3. ADD NOZZLE BUTTON -->
+            <button onclick="openAddNozzleModal()" class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                ADD NOZZLE (IN)
+            </button>
+
+            <!-- 4. EXPORT CSV BUTTON (Bersandingan Rapi di Sebelah Kanan Atas) -->
+            <a href="{{ route('stock.prod.export.csv') }}" class="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                EXPORT CSV
+            </a>
         </div>
     </div>
 
@@ -99,10 +98,10 @@
                 <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search component data on production area..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search line or component data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
             </div>
 
-            <!-- Tab Filter Lini Produksi -->
+            <!-- Tab Filter Lini Produksi (Dinamis: Hanya Menampilkan Line yang Sudah Registrasi) -->
             <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-slate-100 dark:border-slate-700 pb-1" id="lineTabs">
                 <button onclick="filterLine('all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm">
                     All Factory Lines
@@ -132,7 +131,6 @@
                         <th class="px-4 py-4 text-center">Current Qty</th>
                         <th class="px-4 py-4 text-center">Min Stock</th>
                         <th class="px-4 py-4">Created At</th>
-                        <th class="px-4 py-4">Updated At</th>
                         <th class="px-4 py-4 text-center">Action</th>
                     </tr>
                 </thead>
@@ -141,45 +139,34 @@
                     <tr class="row-stock-prod hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all" data-line="{{ $item->line->no_line ?? '' }}">
                         <td class="px-4 py-4 text-center font-medium">{{ $stocks->firstItem() + $index }}</td>
                         
-                        <!-- Status Bulat Berwarna -->
                         <td class="px-4 py-4 text-center">
-                            <div class="flex justify-center" title="{{ $item->status_label['text'] }}">
-                                <div class="h-3 w-3 rounded-full {{ $item->status_label['color'] }} shadow-md animate-pulse"></div>
+                            <div class="flex justify-center" title="{{ $item->status_label['text'] ?? 'Status' }}">
+                                <div class="h-3 w-3 rounded-full {{ $item->status_label['color'] ?? 'bg-slate-300' }} shadow-md animate-pulse"></div>
                             </div>
                         </td>
 
-                        <!-- Line ID & No Line -->
                         <td class="px-4 py-4 text-slate-500 font-mono">{{ $item->line_id }}</td>
                         <td class="px-4 py-4 font-bold text-indigo-600 dark:text-indigo-400">{{ $item->line->no_line ?? '-' }}</td>
-                        
-                        <!-- No Nozzle -->
                         <td class="px-4 py-4 font-bold">{{ $item->no_nozzle ?? '-' }}</td>
-                        
-                        <!-- Req Sparepart ID -->
                         <td class="px-4 py-4 font-medium text-slate-600 dark:text-slate-300">{{ $item->request_no ?? '-' }}</td>
                         
-                        <!-- Part No & SAP Code -->
                         <td class="px-4 py-4 font-medium">{{ $item->part_no ?? '-' }}</td>
                         <td class="px-4 py-4 font-mono font-bold">{{ $item->sap_code ?? '-' }}</td>
                         
-                        <!-- Barcode ID & Transaction Out -->
                         <td class="px-4 py-4 font-mono text-slate-500">{{ $item->barcode_id ?? '-' }}</td>
                         <td class="px-4 py-4 font-mono text-slate-500">{{ $item->transaction_out_id ?? '-' }}</td>
                         
-                        <!-- Qty & Min Stock -->
                         <td class="px-4 py-4 text-center font-bold text-sm text-slate-800 dark:text-slate-100">{{ $item->qty }}</td>
                         <td class="px-4 py-4 text-center font-semibold text-slate-500">{{ $item->min_stock }}</td>
                         
-                        <!-- Timestamps -->
                         <td class="px-4 py-4 text-[10px] font-medium text-slate-400 whitespace-nowrap">{{ $item->created_at->format('d/m/Y H:i') }}</td>
-                        <td class="px-4 py-4 text-[10px] font-medium text-slate-400 whitespace-nowrap">{{ $item->updated_at->format('d/m/Y H:i') }}</td>
                         
-                        <!-- Action: Edit & Delete -->
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openEditModal({{ json_encode($item) }})" class="rounded bg-amber-500 px-2 py-1 text-[10px] font-bold text-white hover:bg-amber-600 transition-all">
                                     EDIT
                                 </button>
+                                
                                 <form id="delete-form-{{ $item->id }}" action="{{ route('stock.prod.destroy', $item->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
@@ -191,7 +178,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="15" class="py-12 text-center text-slate-400 italic">No component stock found on production floor.</td></tr>
+                    <tr><td colspan="14" class="py-12 text-center text-slate-400 italic">No component stock found on production floor.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -208,68 +195,107 @@
     </div>
 </div>
 
-{{-- MODAL ACTION 1: REQUEST STOCK TO ENGINEERING --}}
-<div id="modalRequestStock" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+{{-- MODAL 1: ADD LINE (Hanya memuat Lini yang BELUM terdaftar di stock prods) --}}
+<div id="modalAddLine" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
     <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Request Stock to Engineering</h3>
-            <button onclick="closeRequestModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Register Production Line</h3>
+            <button onclick="closeAddLineModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
-        <form action="{{ route('stock.prod.request.store') }}" method="POST" class="p-6 space-y-4">
+        <form action="{{ route('stock.prod.line.store') }}" method="POST" class="p-6 space-y-4">
             @csrf
             <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Target Production Line</label>
+                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Select Line (From Registered Master Data)</label>
+                <select name="no_line" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                    <option value="">-- Select Line --</option>
+                    @foreach($masterLines as $mLine)
+                        <option value="{{ $mLine->no_line }}">{{ $mLine->no_line }} - {{ $mLine->name_machine ?? 'SMT Machine' }}</option>
+                    @endforeach
+                </select>
+                <p class="text-[10px] text-slate-400 mt-1">Hanya memuat lini yang belum aktif. Begitu terdaftar, lini ini akan hilang dari pilihan.</p>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeAddLineModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all">Register Line</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL 2: DELETE LINE POP-UP KHUSUS (Hanya memuat Lini yang SEDANG AKTIF di stock prods) --}}
+<div id="modalDeleteLine" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-rose-600 dark:text-rose-400">Remove Registered Line</h3>
+            <button onclick="closeDeleteLineModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Select Active Line to Remove</label>
+                <select id="select_delete_line_id" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-rose-500 dark:text-white" required>
+                    <option value="">-- Choose Active Line --</option>
+                    @foreach($stocks as $stockItem)
+                        @if($stockItem->line)
+                            <option value="{{ $stockItem->id }}">{{ $stockItem->line->no_line }} [ID: {{ $stockItem->line_id }}]</option>
+                        @endif
+                    @endforeach
+                </select>
+                <p class="text-[10px] text-slate-400 mt-1">Menghapus lini dari control deck akan mengembalikan status ketersediaannya ke dalam modal registrasi awal.</p>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeDeleteLineModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
+                <button type="button" onclick="executeDeleteLine()" class="bg-rose-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-rose-700 transition-all">Delete Line</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL 3: ADD NOZZLE --}}
+<div id="modalAddNozzle" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Add Nozzle from Engineering (IN)</h3>
+            <button onclick="closeAddNozzleModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+        <form action="{{ route('stock.prod.nozzle.store') }}" method="POST" class="p-6 space-y-4">
+            @csrf
+            <div>
+                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Transaction Out Token / ID</label>
+                <input type="text" name="transaction_out_id" placeholder="e.g. TXO-ENG-20260510" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white uppercase" required>
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Target Allocated Line</label>
                 <select name="line_id" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                     <option value="">-- Select Line --</option>
                     @foreach($lines as $line)
-                        <option value="{{ $line->id }}">{{ $line->no_line }} - {{ $line->name_machine }}</option>
+                        <option value="{{ $line->line_id }}">{{ $line->no_line }} ({{ $line->line_id }})</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Select Nozzle Item</label>
-                <select name="no_nozzle" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
-                    <option value="">-- Select Registered Nozzle --</option>
-                    @foreach($allNozzles as $nz)
-                        <option value="{{ $nz->no_nozzle }}">{{ $nz->no_nozzle }} ({{ $nz->sap_code }})</option>
-                    @endforeach
-                </select>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Initial Stock Qty</label>
+                    <input type="number" name="qty" min="1" placeholder="e.g. 10" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Min Stock Threshold</label>
+                    <input type="number" name="min_stock" min="1" placeholder="e.g. 2" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                </div>
             </div>
-            <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Request Quantity</label>
-                <input type="number" name="request_qty" min="1" placeholder="e.g. 5" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
-            </div>
+
             <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="closeRequestModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all">Submit Request</button>
+                <button type="button" onclick="closeAddNozzleModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
+                <button type="submit" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-emerald-700 transition-all">Process In & Sync</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- MODAL ACTION 2: RECEIVE ITEM (IN) --}}
-<div id="modalReceiveStock" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Receive Stock Item (In)</h3>
-            <button onclick="closeReceiveModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
-        </div>
-        <form action="{{ route('stock.prod.receive') }}" method="POST" class="p-6 space-y-4">
-            @csrf
-            <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Input Token / Request ID Code</label>
-                <input type="text" name="request_code" placeholder="e.g. REQ-2026001" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white uppercase" required>
-                <p class="text-[10px] text-slate-400 mt-1">Sistem akan memverifikasi material pengiriman dari Engineering.</p>
-            </div>
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="closeReceiveModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
-                <button type="submit" class="bg-orange-500 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-orange-600 transition-all">Confirm Receive</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-{{-- MODAL ACTION 3: EDIT STOCK PRODUCTION (NEW) --}}
+{{-- MODAL 4: EDIT STOCK PRODUCTION --}}
 <div id="modalEditStock" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
     <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
@@ -284,7 +310,7 @@
                 <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Line Target</label>
                 <select name="line_id" id="edit_line_id" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                     @foreach($lines as $line)
-                        <option value="{{ $line->id }}">{{ $line->no_line }} - {{ $line->name_machine }}</option>
+                        <option value="{{ $line->line_id }}">{{ $line->no_line }}</option>
                     @endforeach
                 </select>
             </div>
@@ -312,10 +338,6 @@
                     <input type="number" name="min_stock" id="edit_min_stock" min="0" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                 </div>
             </div>
-            <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Req Sparepart ID (Optional)</label>
-                <input type="text" name="request_no" id="edit_request_no" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white">
-            </div>
 
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
@@ -326,7 +348,6 @@
 </div>
 
 <script>
-    // Penyesuaian filter tab berdasarkan Line Produksi SMT
     function filterLine(lineNo) {
         let btns = document.querySelectorAll(".tab-btn");
         btns.forEach(btn => {
@@ -350,17 +371,50 @@
         });
     }
 
-    // Modal Request & Receive Controls
-    function openRequestModal() { document.getElementById('modalRequestStock').classList.remove('hidden'); }
-    function closeRequestModal() { document.getElementById('modalRequestStock').classList.add('hidden'); }
+    // Modal Control Functions
+    function openAddLineModal() { document.getElementById('modalAddLine').classList.remove('hidden'); }
+    function closeAddLineModal() { document.getElementById('modalAddLine').classList.add('hidden'); }
     
-    function openReceiveModal() { document.getElementById('modalReceiveStock').classList.remove('hidden'); }
-    function closeReceiveModal() { document.getElementById('modalReceiveStock').classList.add('hidden'); }
+    function openDeleteLineModal() { document.getElementById('modalDeleteLine').classList.remove('hidden'); }
+    function closeDeleteLineModal() { document.getElementById('modalDeleteLine').classList.add('hidden'); }
 
-    // Modal Edit Controls & Data Binder
+    function openAddNozzleModal() { document.getElementById('modalAddNozzle').classList.remove('hidden'); }
+    function closeAddNozzleModal() { document.getElementById('modalAddNozzle').classList.add('hidden'); }
+
+    // Execute Delete Line dari Modal Atas via SweetAlert2
+    function executeDeleteLine() {
+        let selectedId = document.getElementById('select_delete_line_id').value;
+        if (!selectedId) {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Silakan pilih lini produksi aktif yang ingin dihapus!' });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Hapus Lini Terpilih?',
+            text: "Lini akan terhapus dari deck kontrol utama produksi!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Hapus Lini!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Submit form hapus secara dinamis berdasarkan ID baris terpilih
+                let form = document.getElementById(`delete-form-${selectedId}`);
+                if (form) {
+                    form.submit();
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Sistem Error', text: 'Form pemicu eksekusi data gagal dimuat.' });
+                }
+            }
+        });
+    }
+
+    // Modal Edit Controls
     function openEditModal(item) {
         const form = document.getElementById('formEditStock');
-        form.action = `/prod/stock/${item.id}`; // Pasangkan rute ID tujuan update
+        form.action = `/prod/stock/${item.id}`;
         
         document.getElementById('edit_line_id').value = item.line_id;
         document.getElementById('edit_no_nozzle').value = item.no_nozzle;
@@ -368,17 +422,16 @@
         document.getElementById('edit_sap_code').value = item.sap_code ?? '';
         document.getElementById('edit_qty').value = item.qty;
         document.getElementById('edit_min_stock').value = item.min_stock;
-        document.getElementById('edit_request_no').value = item.request_no ?? '';
 
         document.getElementById('modalEditStock').classList.remove('hidden');
     }
     function closeEditModal() { document.getElementById('modalEditStock').classList.add('hidden'); }
 
-    // SweetAlert2 Confirm Delete Trigger
+    // SweetAlert2 Confirm Delete dari baris tabel langsung
     function confirmDelete(id) {
         Swal.fire({
-            title: 'Hapus Data Stock?',
-            text: "Data stock nozzle ini akan dihapus permanen dari area produksi!",
+            title: 'Hapus Lini / Nozzle Terkait?',
+            text: "Data alokasi item pada area produksi ini akan dihapus permanen!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#e11d48',
@@ -392,37 +445,17 @@
         });
     }
 
-    // Intersepsi Form Submit Request dengan SweetAlert2
-    document.querySelector('#modalRequestStock form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        let form = this;
-        Swal.fire({
-            title: 'Kirim Request Stock?',
-            text: "Permintaan material akan diteruskan ke departemen Engineering.",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Ya, Kirim!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    });
-
-    // Flash Alert Notifikasi Handler dari Controller
+    // Flash Alert Notification Handler
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false });
     @endif
 
     @if($errors->any())
-        Swal.fire({ icon: 'error', title: 'Oops...', text: "{{ $errors->first() }}" });
+        Swal.fire({ icon: 'error', title: 'Validation Error', text: "{{ $errors->first() }}" });
     @endif
 
     @if(session('error'))
-        Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan', text: "{{ session('error') }}" });
+        Swal.fire({ icon: 'error', title: 'Gagal', text: "{{ session('error') }}" });
     @endif
 </script>
 

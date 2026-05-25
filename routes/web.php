@@ -18,6 +18,8 @@ use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
+// 🎯 JANGAN LUPA IMPORT INI BIAR ROUTE PRODUKSI BISA JALAN:
+use App\Http\Controllers\Production\RequestProdController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -59,11 +61,27 @@ Route::middleware('auth')->group(function () {
          ->name('list-sparepart.export');
     });
 
-    // --- APPROVAL SYSTEM (Disatukan & Diberikan Route POST Aksinya di Sini) ---
+    // =========================================================================
+    // 🎯 UPDATE UTAMA: JALUR KONEKSI BERTAHAP ANTAR DEPARTEMEN 
+    // =========================================================================
+    
+    // A. SISI ENGINEERING - APPROVAL SYSTEM (Membaca data terintegrasi)
     Route::get('/eng/approval', [ApprovalEngController::class, 'index'])->name('eng.approval');
     Route::get('/eng/approval/review/{id}', [ApprovalEngController::class, 'review'])->name('eng.approval.review');
     Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
     Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
+    
+    // B. SISI PRODUCTION - REQUEST NOZZLE SYSTEM (Form Input & List Monitoring)
+    Route::get('/prod/request/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
+    Route::get('/prod/request/create', [RequestProdController::class, 'create'])->name('prod.request.create');
+    Route::post('/prod/request/store', [RequestProdController::class, 'store'])->name('prod.request.store');
+    Route::get('/prod/request/draft/{id}', [RequestProdController::class, 'editDraft'])->name('prod.request.editDraft');
+    Route::put('/prod/request/draft/{id}/update', [RequestProdController::class, 'updateDraft'])->name('prod.request.updateDraft');
+    Route::put('/prod/request/update/{id}', [RequestProdController::class, 'update'])->name('prod.request.update');
+    Route::get('/prod/request/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
+    Route::delete('/prod/request/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
+
+    // =========================================================================
     
     // --- ADDED: PURCHASE REQUEST (Baru) ---
     Route::get('/eng/purchase-request', [App\Http\Controllers\Engineering\PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');

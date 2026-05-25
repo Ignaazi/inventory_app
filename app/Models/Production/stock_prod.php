@@ -48,17 +48,19 @@ class stock_prod extends Model
     }
 
     /**
-     * 2. Relasi ke tabel Line Line Production (Mengambil No Line)
+     * 2. RELASI KE TABEL MASTER LINE PRODUCTION (AMBIL NO LINE)
+     * FIXED: Menggunakan nama model 'ListLineProduction' sesuai tabel 'list_line_productions'
      */
     public function line()
     {
-        // Fallback deteksi letak model LineLineProduction kamu
-        $modelUtama = 'App\\Models\\LineLineProduction';
-        $modelSubFolder = 'App\\Models\\Production\\LineLineProduction';
+        // Fallback deteksi letak model ListLineProduction kamu (Luar atau dalam sub-folder Production)
+        $modelUtama = 'App\\Models\\ListLineProduction';
+        $modelSubFolder = 'App\\Models\\Production\\ListLineProduction';
 
-        if (class_exists($modelUtama)) {
-            return $this->belongsTo($modelUtama, 'line_id', 'id');
-        }
-        return $this->belongsTo($modelSubFolder, 'line_id', 'id');
+        // Menentukan class model mana yang aktif di aplikasi skripsi kamu
+        $chosenModel = class_exists($modelUtama) ? $modelUtama : $modelSubFolder;
+
+        // Hubungkan foreign key stock_prods.line_id ke owner key list_line_productions.line_id
+        return $this->belongsTo($chosenModel, 'line_id', 'line_id');
     }
 }

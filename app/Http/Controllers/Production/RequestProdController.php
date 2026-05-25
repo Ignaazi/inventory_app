@@ -97,7 +97,13 @@ class RequestProdController extends Controller
             'requestor'            => $request->requestor,
             'production_signature' => $request->input('signature_data'), 
             'production_stamp'     => $request->input('stamp_data'),     
-            'status'               => $statusAkhir
+            'status'               => $statusAkhir,
+            
+            // 🎯 SINKRONISASI DATABASE: Set null awal karena Engineering belum proses ttd bertahap
+            'staff_name'           => null,
+            'staff_signature'      => null,
+            'spv_name'             => null,
+            'spv_signature'        => null,
         ]);
 
         $pesanSukses = ($statusAkhir === 'Draft') 
@@ -164,7 +170,13 @@ class RequestProdController extends Controller
             'requestor'            => $request->requestor,
             'production_signature' => $request->input('signature_data'),
             'production_stamp'     => $request->input('stamp_data'),
-            'status'               => $statusAkhir
+            'status'               => $statusAkhir,
+            
+            // 🎯 SINKRONISASI DATABASE: Pastikan kolom otorisasi Eng tetap clear saat draf diperbarui
+            'staff_name'           => null,
+            'staff_signature'      => null,
+            'spv_name'             => null,
+            'spv_signature'        => null,
         ]);
 
         $pesanSukses = ($statusAkhir === 'Draft') 

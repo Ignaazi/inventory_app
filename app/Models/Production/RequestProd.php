@@ -9,8 +9,10 @@ class RequestProd extends Model
 {
     use HasFactory;
 
+    // Mengarah langsung ke tabel milik produksi
     protected $table = 'production_requests';
 
+    // 🎯 DAFTAR KOLOM YANG BOLEH DIISI (Mass Assignment)
     protected $fillable = [
         'request_no',
         'sparepart_name',
@@ -22,10 +24,12 @@ class RequestProd extends Model
         'status',
         'production_signature',
         'production_stamp',
+        'staff_name',
+        'staff_signature',
+        'spv_name',
+        'spv_signature',
         'approved_by',
         'signature_path',
-        'reject_remark',
-        'created_at',
-        'updated_at'
+        'reject_remark'
     ];
 }
