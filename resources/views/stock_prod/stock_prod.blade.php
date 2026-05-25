@@ -252,9 +252,9 @@
     </div>
 </div>
 
-{{-- MODAL 3: ADD NOZZLE --}}
+{{-- MODAL 3: ADD NOZZLE (IN) --}}
 <div id="modalAddNozzle" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white">Add Nozzle from Engineering (IN)</h3>
             <button onclick="closeAddNozzleModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
@@ -262,8 +262,17 @@
         <form action="{{ route('stock.prod.nozzle.store') }}" method="POST" class="p-6 space-y-4">
             @csrf
             <div>
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Transaction Out Token / ID</label>
-                <input type="text" name="transaction_out_id" placeholder="e.g. TXO-ENG-20260510" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white uppercase" required>
+                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Pilih Transaksi Keluar (Engineering)</label>
+                {{-- Tambahkan id untuk diseleksi JS --}}
+                <select name="stock_out_log_id" id="select_log" onchange="autoFillQty()" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-emerald-500 dark:text-white" required>
+                    <option value="">-- Pilih No. Transaksi --</option>
+                    @foreach($logs as $log)
+                        {{-- Simpan qty_out ke dalam data-qty agar bisa dibaca JS --}}
+                        <option value="{{ $log->id }}" data-qty="{{ $log->qty_out }}">
+                            {{ $log->transaction_out_id }} | Nozzle: {{ $log->no_nozzle }} | Qty: {{ $log->qty_out }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -271,23 +280,23 @@
                 <select name="line_id" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                     <option value="">-- Select Line --</option>
                     @foreach($lines as $line)
-                        <option value="{{ $line->line_id }}">{{ $line->no_line }} ({{ $line->line_id }})</option>
+                        <option value="{{ $line->line_id }}">{{ $line->no_line }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Initial Stock Qty</label>
-                    <input type="number" name="qty" min="1" placeholder="e.g. 10" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Input Qty</label>
+                    <input type="number" name="qty" id="input_qty" min="1" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Min Stock Threshold</label>
-                    <input type="number" name="min_stock" min="1" placeholder="e.g. 2" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
+                    <input type="number" name="min_stock" min="1" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white" required>
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-2">
+            <div class="flex justify-end gap-3 pt-4">
                 <button type="button" onclick="closeAddNozzleModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
                 <button type="submit" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-emerald-700 transition-all">Process In & Sync</button>
             </div>
@@ -445,6 +454,24 @@
         });
     }
 
+    function autoFillQty() {
+        // Ambil elemen select dan input
+        const selectLog = document.getElementById('select_log');
+        const inputQty = document.getElementById('input_qty');
+        
+        // Ambil option yang terpilih
+        const selectedOption = selectLog.options[selectLog.selectedIndex];
+        
+        // Ambil nilai data-qty
+        const qtyValue = selectedOption.getAttribute('data-qty');
+        
+        // Isi ke input Qty jika ada nilainya
+        if (qtyValue) {
+            inputQty.value = qtyValue;
+        } else {
+            inputQty.value = '';
+        }
+    }
     // Flash Alert Notification Handler
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false });
