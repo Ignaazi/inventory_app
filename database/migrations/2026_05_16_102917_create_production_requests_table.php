@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('request_no')->unique(); 
             $table->string('sparepart_name');       
-            $table->string('sap_code')->nullable(); // Tetap ada, tapi dibuat nullable() agar tidak error saat dikosongkan
-            $table->string('remark');               // Kolom remark baru untuk menampung data dari form request lu
+            $table->string('sap_code')->nullable(); 
+            $table->string('remark');               
             $table->integer('qty_req');
             $table->string('line_machine');         
             
@@ -25,18 +25,20 @@ return new class extends Migration
             $table->longText('production_signature')->nullable();
             $table->longText('production_stamp')->nullable();
             
-            // 2. Status Document (Menggunakan string agar fleksibel menampung status bertahap 'Checked by Staff')
+            // 2. Status Document
             $table->string('status')->default('Draft');
             
             // 3. Otorisasi Bertahap dari Sisi Engineering (STAFF)
             $table->string('staff_name')->nullable();
-            $table->longText('staff_signature')->nullable(); // Menyimpan Base64 TTD Staff Engineering
+            $table->longText('staff_signature')->nullable(); 
+            $table->longText('staff_stamp')->nullable(); // 🔥 TAMBAHAN
             
             // 4. Otorisasi Bertahap dari Sisi Engineering (SPV)
             $table->string('spv_name')->nullable();
-            $table->longText('spv_signature')->nullable(); // Menyimpan Base64 TTD SPV Engineering
+            $table->longText('spv_signature')->nullable(); 
+            $table->longText('spv_stamp')->nullable();   // 🔥 TAMBAHAN
             
-            // 5. Otorisasi Legacy / Cadangan (Biar kode lama tidak error jika memanggil ini)
+            // 5. Otorisasi Legacy / Cadangan
             $table->string('approved_by')->nullable();
             $table->string('signature_path')->nullable(); 
             

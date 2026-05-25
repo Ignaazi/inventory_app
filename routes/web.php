@@ -18,7 +18,6 @@ use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
-// 🎯 JANGAN LUPA IMPORT INI BIAR ROUTE PRODUKSI BISA JALAN:
 use App\Http\Controllers\Production\RequestProdController;
 
 // 1. Redirect Halaman Utama
@@ -40,38 +39,31 @@ Route::middleware('auth')->group(function () {
         return view('admin'); 
     })->name('dashboard');
 
-    // --- SESUAI SIDEBAR ASLI: /eng/overview ---
+    // --- SIDEBAR ROUTES ---
     Route::get('/eng/overview', [EngineeringOverviewController::class, 'index'])->name('engineering.overview');
-
-    // --- SESUAI SIDEBAR ASLI: /admin/users ---
     Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/admin/users/store', [UserController::class, 'store'])->name('users.store');
     Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-
-    // --- LIST SPAREPART (Controller Terpisah) ---
+    // --- LIST SPAREPART ---
     Route::get('/eng/list-sparepart', [ListSparepartEngController::class, 'index'])->name('eng.list');
 
-    // --- ENGINEERING TRANSACTIONS (IN, OUT, DISPOSAL) ---
+    // --- ENGINEERING TRANSACTIONS ---
     Route::prefix('eng')->group(function () {
         Route::get('/out', [TransactionController::class, 'indexOut'])->name('eng.out');
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
         Route::get('/list-sparepart/export', [App\Http\Controllers\StockEngineeringController::class, 'export'])
          ->name('list-sparepart.export');
     });
-
-    // =========================================================================
-    // 🎯 UPDATE UTAMA: JALUR KONEKSI BERTAHAP ANTAR DEPARTEMEN 
-    // =========================================================================
     
-    // A. SISI ENGINEERING - APPROVAL SYSTEM (Membaca data terintegrasi)
+    // A. SISI ENGINEERING - APPROVAL SYSTEM
     Route::get('/eng/approval', [ApprovalEngController::class, 'index'])->name('eng.approval');
     Route::get('/eng/approval/review/{id}', [ApprovalEngController::class, 'review'])->name('eng.approval.review');
     Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
     Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
     
-    // B. SISI PRODUCTION - REQUEST NOZZLE SYSTEM (Form Input & List Monitoring)
+    // B. SISI PRODUCTION - REQUEST NOZZLE SYSTEM
     Route::get('/prod/request/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
     Route::get('/prod/request/create', [RequestProdController::class, 'create'])->name('prod.request.create');
     Route::post('/prod/request/store', [RequestProdController::class, 'store'])->name('prod.request.store');
@@ -80,22 +72,22 @@ Route::middleware('auth')->group(function () {
     Route::put('/prod/request/update/{id}', [RequestProdController::class, 'update'])->name('prod.request.update');
     Route::get('/prod/request/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
     Route::delete('/prod/request/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
-
-    // =========================================================================
     
-    // --- ADDED: PURCHASE REQUEST (Baru) ---
+    // 🔥 ROUTE BARU: Endpoint API JSON Real-time untuk Polling di Halaman Blade
+    Route::get('/prod/request/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
+
+    // --- PURCHASE REQUEST ---
     Route::get('/eng/purchase-request', [App\Http\Controllers\Engineering\PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
 
     // --- PRODUCTION OVERVIEW ---
     Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
 
-    // --- FIXED: COSTING SYSTEM ROUTES ---
+    // --- COSTING SYSTEM ROUTES ---
     Route::get('/costing/overview', [CostingOverviewController::class, 'index'])->name('costing.overview');
     Route::get('/costing/incoming-pr', [CostingOverviewController::class, 'incomingPr'])->name('costing.incoming.pr');
     Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
 
-
-    // Struktur Grouping Production Transaction
+    // Production Transaction
     Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
         Route::get('/in', [TransactionProdController::class, 'stockIn'])->name('in');
         Route::get('/out', [TransactionProdController::class, 'stockOut'])->name('out');
@@ -104,11 +96,9 @@ Route::middleware('auth')->group(function () {
     
     // --- MODULE LAINNYA ---
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-    Route::get('/production-dashboard', function () {
-        return view('dashboard'); 
-    })->name('production.dashboard');
+    Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
 
-    // Barcode Parsing & Scanning
+    // Barcode Parsing
     Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
     Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
@@ -116,7 +106,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('list-sparepart', ListSparepartEngController::class);
     });
     
-    // ROUTE GROUP UNTUK STOCK ENGINEERING
+    // STOCK ENGINEERING
     Route::controller(StockEngineeringController::class)->group(function () {
         Route::get('/stock-engineering', 'index')->name('stock.eng.index');
         Route::post('/stock-engineering', 'store')->name('stock.eng.store');
@@ -134,7 +124,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
     Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
 
-    // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::prefix('eng-overview')->group(function () {
@@ -149,7 +138,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
     });
     
-    // Routes history approval
+    // --- ROUTE HISTORY APPROVAL (FIXED) ---
     Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
+    Route::delete('/approval/history/{id}', [HistoryApprovalController::class, 'destroy'])->name('approval.history.destroy');
     
 });

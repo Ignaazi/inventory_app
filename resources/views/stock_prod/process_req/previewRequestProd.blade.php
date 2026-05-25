@@ -3,7 +3,6 @@
 @section('content')
 <div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6">
     
-    <!-- Header Menu Atas: Judul & Tombol Aksi (Otomatis Sembunyi Saat Cetak) -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
             <h2 class="text-lg font-extrabold text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
@@ -29,7 +28,6 @@
         </div>
     </div>
 
-    <!-- AREA TARGET CETAK: Form Kertas PT SIIX EMS KARAWANG (Persis Seperti Live Preview Lu) -->
     <div id="print-target-box" class="print:m-0 print:p-0">
         <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-2 print:hidden">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +39,6 @@
         
         <div class="bg-white text-black p-8 sm:p-12 border border-slate-300 rounded-xl shadow-sm print:border-none print:shadow-none print:p-0 font-sans">
             
-            <!-- Kop Surat Dokumen -->
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
                 <div class="flex items-center gap-4">
                     <div class="w-16 h-16 flex items-center justify-center overflow-hidden">
@@ -60,7 +57,6 @@
                 </div>
             </div>
 
-            <!-- Tabel Spesifikasi Komponen Input -->
             <div class="mb-6">
                 <table class="w-full border-collapse text-xs border border-black">
                     <tbody>
@@ -84,41 +80,47 @@
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Quantity Requested</td>
                             <td class="py-2.5 px-4 font-bold text-black">{{ $requestData->qty_req ?? 0 }} Pcs</td>
                         </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Current Status</td>
+                            <td class="py-2.5 px-4 font-bold uppercase">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono border 
+                                    {{ $requestData->status === 'Approved' ? 'bg-green-100 text-green-800 border-green-300' : 
+                                      ($requestData->status === 'Checked by Staff' ? 'bg-blue-100 text-blue-800 border-blue-300' : 
+                                      ($requestData->status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-300' : 'bg-amber-100 text-amber-800 border-amber-300')) }}">
+                                    {{ $requestData->status ?? 'Draft' }}
+                                </span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Blok Otorisasi Tanda Tangan & Stempel Digital -->
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
                 
-                <!-- 1. Requested By (Production Department) -->
+                <!-- KOLOM 1: REQUESTED BY (PRODUCTION) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Requested By</div>
                     
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
-                        @if($requestData->production_signature)
+                        @if($requestData->production_signature && $requestData->production_signature !== 'null')
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
                                 <img src="{{ $requestData->production_signature }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="Signature">
                             </div>
                         @endif
                         
-                        @if($requestData->production_stamp)
+                        @if($requestData->production_stamp && $requestData->production_stamp !== 'null')
                             <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none">
                                 <img src="{{ $requestData->production_stamp }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95" alt="Company Stamp">
                             </div>
                         @endif
 
-                        @if($requestData->requestor && !$requestData->production_signature && !$requestData->production_stamp)
+                        @if($requestData->requestor && (!$requestData->production_signature || $requestData->production_signature === 'null'))
                             <div class="z-30 px-2 my-auto">
                                 <div class="text-green-600 font-mono text-[8px] uppercase tracking-tighter border border-green-200 bg-green-50/50 py-0.5 rounded mx-auto max-w-[130px]">
                                     ✓ System Verified<br>
                                     <span class="text-[7px] font-sans">By: {{ $requestData->requestor }}</span>
                                 </div>
                             </div>
-                        @endif
-
-                        @if(!$requestData->requestor && !$requestData->production_signature && !$requestData->production_stamp)
-                            <span class="text-slate-300 italic text-[9px] m-auto">( No Signature )</span>
                         @endif
                     </div>
 
@@ -130,28 +132,75 @@
                     </div>
                 </div>
 
-                <!-- 2. Checked By (Staff Engineering) -->
-                <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
+                <!-- KOLOM 2: CHECKED BY (STAFF ENGINEERING) -->
+                <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Checked By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
+                    
+                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
+                        @if($requestData->staff_signature && $requestData->staff_signature !== 'null')
+                            <!-- Render TTD Staff -->
+                            <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
+                                <img src="{{ str_starts_with($requestData->staff_signature, 'http') || str_starts_with($requestData->staff_signature, 'data:image') ? $requestData->staff_signature : asset($requestData->staff_signature) }}" class="max-h-full max-w-full object-contain mx-auto" alt="Staff Sign">
+                            </div>
+
+                            <!-- Render Stempel Staff (Jika Ada) -->
+                            @if($requestData->staff_stamp && $requestData->staff_stamp !== 'null')
+                                <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
+                                    <img src="{{ str_starts_with($requestData->staff_stamp, 'http') || str_starts_with($requestData->staff_stamp, 'data:image') ? $requestData->staff_stamp : asset($requestData->staff_stamp) }}" class="max-h-full max-w-full object-contain mx-auto mix-blend-multiply opacity-95" alt="Staff Stamp">
+                                </div>
+                            @endif
+                        @else
+                            <span class="text-slate-300 italic text-[8px] font-medium m-auto">( Waiting Staff )</span>
+                        @endif
+                    </div>
+
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black">( _________________ )</p>
+                        <p class="font-bold uppercase text-black underline tracking-wide truncate">
+                            {{ $requestData->staff_name ? '( ' . $requestData->staff_name . ' )' : '( _________________ )' }}
+                        </p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Staff Engineering</p>
                     </div>
                 </div>
 
-                <!-- 3. Approved By (SPV Engineering) -->
-                <div class="flex flex-col justify-between h-36 bg-white">
+                <!-- KOLOM 3: APPROVED BY (SPV ENGINEERING) -->
+                <div class="flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Approved By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
+                    
+                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
+                        @if($requestData->spv_signature && $requestData->spv_signature !== 'null')
+                            <!-- Render TTD SPV -->
+                            <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
+                                <img src="{{ str_starts_with($requestData->spv_signature, 'http') || str_starts_with($requestData->spv_signature, 'data:image') ? $requestData->spv_signature : asset($requestData->spv_signature) }}" class="max-h-full max-w-full object-contain mx-auto" alt="SPV Sign">
+                            </div>
+
+                            <!-- Render Stempel SPV (Jika Ada) -->
+                            @if($requestData->spv_stamp && $requestData->spv_stamp !== 'null')
+                                <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
+                                    <img src="{{ str_starts_with($requestData->spv_stamp, 'http') || str_starts_with($requestData->spv_stamp, 'data:image') ? $requestData->spv_stamp : asset($requestData->spv_stamp) }}" class="max-h-full max-w-full object-contain mx-auto mix-blend-multiply opacity-95" alt="SPV Stamp">
+                                </div>
+                            @endif
+                        @else
+                            <span class="text-slate-300 italic text-[8px] font-medium m-auto">( Waiting SPV )</span>
+                        @endif
+                    </div>
+
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black">( _________________ )</p>
+                        <p class="font-bold uppercase text-black underline tracking-wide truncate">
+                            {{ $requestData->spv_name ? '( ' . $requestData->spv_name . ' )' : '( _________________ )' }}
+                        </p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">SPV Engineering</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Footer Nota Pengaman (Hanya Muncul Saat Print Lembar Kertas) -->
+            <!-- BLOK REMARK PENOLAKAN (Muncul otomatis jika status REJECTED) -->
+            @if($requestData->status === 'Rejected' || !empty($requestData->reject_remark))
+                <div class="mt-6 border border-red-300 bg-red-50 p-4 rounded-lg print:border-black print:bg-white">
+                    <h4 class="text-xs font-black text-red-700 uppercase tracking-wide print:text-black">REJECTION REMARK / ALASAN PENOLAKAN:</h4>
+                    <p class="text-xs font-bold text-slate-700 mt-1 italic print:text-black">" {{ $requestData->reject_remark ?? 'Ditolak oleh Engineering.' }} "</p>
+                </div>
+            @endif
+
             <div class="mt-8 border-t border-dashed border-slate-300 pt-4 text-center print:block hidden">
                 <p class="text-[8px] text-slate-400 font-mono uppercase tracking-widest">SIIX-NOZZLE-TRACKING-SYSTEM • CONFIDENTIAL DOCUMENT</p>
             </div>

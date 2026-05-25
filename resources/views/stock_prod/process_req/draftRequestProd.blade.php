@@ -37,13 +37,13 @@
     @endif
 
     <div class="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-xl shadow-md overflow-hidden print:hidden mb-10">
-        <form id="requestForm" action="{{ route('prod.request.update_draft', $requestData->id) }}" method="POST" @submit.prevent="handleFormAction($event)">
+        <form id="requestForm" action="{{ route('prod.request.updateDraft', $requestData->id) }}" method="POST" @submit.prevent="handleFormAction($event)">
             @csrf
             @method('PUT')
             
             <input type="hidden" name="action_type" x-model="actionType">
-            <input type="hidden" name="signature_data" x-bind:value="signatureImg">
-            <input type="hidden" name="stamp_data" x-bind:value="stampImg">
+            <input type="hidden" name="signature_data" id="signature_data" :value="signatureImg">
+            <input type="hidden" name="stamp_data" id="stamp_data" :value="stampImg">
 
             <div class="p-5 sm:p-8">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -64,7 +64,6 @@
                             <input type="text" name="sparepart_name" x-model="sparepart_name" class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary active:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
                         </div>
 
-                        <!-- UBAH: SAP Code diganti menjadi Remark -->
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-2 flex flex-col gap-1.5">
                                 <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Remark</label>
@@ -191,7 +190,6 @@
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">NO NOZLE</td>
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="sparepart_name || '-'">-</td>
                         </tr>
-                        <!-- UBAH: Pratinjau SAP Code diganti menjadi Remark -->
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">Remark</td>
                             <td class="py-2.5 px-4 font-medium text-black" x-text="remark || '-'">-</td>
@@ -229,24 +227,54 @@
 
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-bold uppercase text-black underline tracking-wide truncate" x-text="requestor || '( _________________ )'"></p>
-                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Production</p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Production Operator</p>
                     </div>
                 </div>
 
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Checked By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
+                    
+                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
+                        @if(!empty($requestData->staff_signature))
+                            <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
+                                <img src="{{ str_starts_with($requestData->staff_signature, 'http') ? $requestData->staff_signature : asset($requestData->staff_signature) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="Staff Sign">
+                            </div>
+                            @if(!empty($requestData->staff_stamp))
+                                <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none">
+                                    <img src="{{ str_starts_with($requestData->staff_stamp, 'http') ? $requestData->staff_stamp : asset($requestData->staff_stamp) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95" alt="Staff Stamp">
+                                </div>
+                            @endif
+                        @else
+                            <span class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</span>
+                        @endif
+                    </div>
+
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black">( _________________ )</p>
+                        <p class="font-bold uppercase text-black tracking-wide truncate">{{ !empty($requestData->staff_name) ? $requestData->staff_name : '( _________________ )' }}</p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Staff Engineering</p>
                     </div>
                 </div>
 
                 <div class="flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Approved By</div>
-                    <div class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</div>
+                    
+                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
+                        @if(!empty($requestData->spv_signature))
+                            <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
+                                <img src="{{ str_starts_with($requestData->spv_signature, 'http') ? $requestData->spv_signature : asset($requestData->spv_signature) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="SPV Sign">
+                            </div>
+                            @if(!empty($requestData->spv_stamp))
+                                <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none">
+                                    <img src="{{ str_starts_with($requestData->spv_stamp, 'http') ? $requestData->spv_stamp : asset($requestData->spv_stamp) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95" alt="SPV Stamp">
+                                </div>
+                            @endif
+                        @else
+                            <span class="text-slate-300 italic text-[8px] font-medium my-auto">( No Signature )</span>
+                        @endif
+                    </div>
+
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black">( _________________ )</p>
+                        <p class="font-bold uppercase text-black tracking-wide truncate">{{ !empty($requestData->spv_name) ? $requestData->spv_name : '( _________________ )' }}</p>
                         <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">SPV Engineering</p>
                     </div>
                 </div>
@@ -266,16 +294,17 @@ function signatureFormHandler() {
         requestor: '{{ old('requestor', $requestData->requestor ?? '') }}',
         line_machine: '{{ old('line_machine', $requestData->line_machine ?? '') }}',
         sparepart_name: '{{ old('sparepart_name', $requestData->sparepart_name ?? '') }}',
-        // UBAH: Mengikat variabel ke 'remark' (bukan sap_code)
         remark: '{{ old('remark', $requestData->remark ?? '') }}',
         qty_req: {{ old('qty_req', $requestData->qty_req ?? 1) }},
         request_no: '{{ $requestData->request_no ?? '' }}',
 
         activeTab: 'draw', 
         isDrawing: false,
+        isCanvasDirty: false, // 💡 NEW: flag untuk tahu apakah user menggambar ulang canvas
         
-        signatureImg: '{{ $requestData->production_signature ?? '' }}' || null, 
-        stampImg: '{{ $requestData->production_stamp ?? '' }}' || null,     
+        // 💡 FIX: Filter string "null" agar tidak menjadi data teks rusak di Alpine
+        signatureImg: '{{ $requestData->production_signature && $requestData->production_signature !== "null" ? $requestData->production_signature : "" }}' || null, 
+        stampImg: '{{ $requestData->production_stamp && $requestData->production_stamp !== "null" ? $requestData->production_stamp : "" }}' || null,     
         ctx: null,
         actionType: 'draft',
 
@@ -295,6 +324,8 @@ function signatureFormHandler() {
             const canvas = this.$refs.canvas;
             if (canvas) {
                 this.ctx = canvas.getContext('2d');
+                
+                // Set resolusi internal canvas yang stabil
                 canvas.width = canvas.parentNode.clientWidth;
                 canvas.height = canvas.parentNode.clientHeight;
                 
@@ -302,9 +333,13 @@ function signatureFormHandler() {
                 this.ctx.lineWidth = 2.5;         
                 this.ctx.lineCap = 'round';
                 
+                // 💡 FIX: Load tanda tangan draf lama jika ada ke dalam canvas
                 if (this.signatureImg) {
                     const img = new Image();
-                    img.onload = () => this.ctx.drawImage(img, 0, 0);
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => {
+                        this.ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    };
                     img.src = this.signatureImg;
                 }
             }
@@ -312,6 +347,7 @@ function signatureFormHandler() {
 
         startDrawing(e) {
             this.isDrawing = true;
+            this.isCanvasDirty = true; // Tandai bahwa user mulai merubah canvas lama
             const pos = this.getMousePos(e);
             this.ctx.beginPath();
             this.ctx.moveTo(pos.x, pos.y);
@@ -344,6 +380,7 @@ function signatureFormHandler() {
                 this.ctx.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
             }
             this.signatureImg = null;
+            this.isCanvasDirty = true; // Set dirty agar form mendeteksi canvas telah dihapus total
         },
         clearStamp() {
             this.stampImg = null;
@@ -371,20 +408,23 @@ function signatureFormHandler() {
 
         submitAs(type) {
             this.actionType = type;
-            document.getElementById('requestForm').dispatchEvent(new Event('submit'));
+            this.handleFormAction();
         },
 
-        handleFormAction(e) {
-            if (this.activeTab === 'draw' && this.$refs.canvas) {
+        handleFormAction() {
+            // 💡 FIX: Ambil data dataURL canvas hanya jika user melakukan corat-coret/clear baru
+            if (this.activeTab === 'draw' && this.$refs.canvas && this.isCanvasDirty) {
                 const blankCanvas = document.createElement('canvas');
                 blankCanvas.width = this.$refs.canvas.width;
                 blankCanvas.height = this.$refs.canvas.height;
-                if (this.$refs.canvas.toDataURL() !== blankCanvas.toDataURL()) {
-                    this.signatureImg = this.$refs.canvas.toDataURL();
+                
+                if (this.$refs.canvas.toDataURL() === blankCanvas.toDataURL()) {
+                    this.signatureImg = null; // Canvas dikosongkan sengaja oleh user
+                } else {
+                    this.signatureImg = this.$refs.canvas.toDataURL(); // TTD Baru siap kirim
                 }
             }
 
-            // UBAH: Validasi JavaScript mengecek properti 'remark'
             if (!this.requestor || !this.line_machine || !this.sparepart_name || !this.remark || !this.qty_req) {
                 Swal.fire({
                     icon: 'error',
@@ -415,7 +455,7 @@ function signatureFormHandler() {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Otorisasi Wajib!',
-                        text: 'Harap berikan Tanda Tangan atau Upload Stampel dulu sebelum mengajukan permohonan resmi.',
+                        text: 'Harap berikan Tanda Tangan atau Upload Stempel dulu sebelum mengajukan permohonan resmi.',
                         confirmButtonColor: '#3C50E0'
                     });
                     return false;

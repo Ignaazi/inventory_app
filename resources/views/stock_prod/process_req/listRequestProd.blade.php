@@ -3,7 +3,6 @@
 @section('content')
 <div class="mx-auto w-full max-w-7xl pb-12 px-4 sm:px-6">
     
-    <!-- 1. UPDATE: Posisi Notifikasi Alert Paling Atas Sesuai File image_bc782b.png -->
     @if(session('success'))
     <div class="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 text-green-800 dark:text-green-400 shadow-sm flex items-center gap-3">
         <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
@@ -49,6 +48,9 @@
                     <button type="button" onclick="filterRequestTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         Pending
                     </button>
+                    <button type="button" onclick="filterRequestTable('checked', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        Checked
+                    </button>
                     <button type="button" onclick="filterRequestTable('approved', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         Approved
                     </button>
@@ -63,7 +65,6 @@
         </div>
 
         <div class="max-w-full overflow-x-auto">
-            <!-- 2. UPDATE: Seluruh isi text tbody menggunakan font-bold hitam pekat sesuai image_bc782b.png -->
             <table class="w-full table-auto text-xs text-left border-collapse font-sans" id="request-table">
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200 dark:border-strokedark">
@@ -75,7 +76,7 @@
                         <th class="py-3 px-4 text-center">Line</th>
                         <th class="py-3 px-4 text-center">Status</th>
                         <th class="py-3 px-4 text-center">Prod Sign</th>
-                        <th class="py-3 px-4">Remark</th>
+                        <th class="py-3 px-4 text-center">Eng Sign</th> <th class="py-3 px-4">Remark</th>
                         <th class="py-3 px-4">Create At</th>
                         <th class="py-3 px-4">Update At</th>
                         <th class="py-3 px-4 text-center">Action</th>
@@ -86,37 +87,30 @@
                     @forelse($requests as $index => $req)
                     <tr class="request-row-item hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors whitespace-nowrap">
                         
-                        <!-- 1. No -->
                         <td class="py-3.5 px-3 text-center text-slate-900 dark:text-white">
                             {{ $requests->firstItem() + $index }}
                         </td>
 
-                        <!-- 2. Req Sparepart ID -->
                         <td class="py-3.5 px-4 tracking-tight">
                             {{ $req->request_no }}
                         </td>
                         
-                        <!-- 3. NIK -->
                         <td class="py-3.5 px-4">
                             {{ $req->nik ?? '-' }}
                         </td>
                         
-                        <!-- 4. No Nozzle -->
                         <td class="py-3.5 px-4">
                             {{ $req->sparepart_name }}
                         </td>
                         
-                        <!-- 5. Qty Req -->
                         <td class="py-3.5 px-3 text-center">
                             {{ $req->qty_req }} <span class="text-[10px] text-slate-500 dark:text-slate-400">Pcs</span>
                         </td>
 
-                        <!-- 6. Line -->
                         <td class="py-3.5 px-4 text-center uppercase">
                             {{ $req->line_machine }}
                         </td>
                         
-                        <!-- 7. Status Document Badges -->
                         <td class="py-3.5 px-4 text-center status-container">
                             @if(str_contains(strtolower($req->status), 'draft'))
                                 <span class="status-badge inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-amber-200 dark:border-amber-900/50">
@@ -125,6 +119,10 @@
                             @elseif(str_contains(strtolower($req->status), 'pending'))
                                 <span class="status-badge inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-blue-200 dark:border-blue-900/50">
                                     Pending
+                                </span>
+                            @elseif(str_contains(strtolower($req->status), 'staff') || str_contains(strtolower($req->status), 'checked'))
+                                <span class="status-badge inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-indigo-200 dark:border-indigo-900/50">
+                                    Checked Staff
                                 </span>
                             @elseif(str_contains(strtolower($req->status), 'approved'))
                                 <span class="status-badge inline-flex items-center rounded-md bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-900/50">
@@ -145,7 +143,6 @@
                             @endif
                         </td>
 
-                        <!-- 8. Prod Sign Link -->
                         <td class="py-3.5 px-4 text-center">
                             @if($req->production_signature || $req->production_stamp)
                                 <a href="{{ route('prod.request.preview', $req->id) }}" class="inline-flex items-center gap-1 bg-green-50 hover:bg-green-100 dark:bg-green-950/30 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900 font-bold text-[10px] py-0.5 px-2 rounded transition-all">
@@ -157,12 +154,26 @@
                             @endif
                         </td>
 
-                        <!-- 9. Remark -->
+                        <td class="py-3.5 px-4 text-center">
+                            @if($req->spv_signature)
+                                <span class="inline-flex items-center rounded-md bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-900/50">
+                                    🟢 FULL APP
+                                </span>
+                            @elseif($req->staff_signature)
+                                <span class="inline-flex items-center rounded-md bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-indigo-200 dark:border-indigo-900/50">
+                                    🔵 BY STAFF
+                                </span>
+                            @else
+                                <span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 text-[10px] font-medium italic border border-slate-200 dark:border-slate-700">
+                                    ⚪ WAITING
+                                </span>
+                            @endif
+                        </td>
+
                         <td class="py-3.5 px-4 max-w-xs truncate">
                             {{ $req->remark ?? '-' }}
                         </td>
 
-                        <!-- 10. Create At -->
                         <td class="py-3.5 px-4 leading-normal">
                             <div>
                                 {{ $req->created_at ? $req->created_at->format('d/m/y') : '-' }}
@@ -172,7 +183,6 @@
                             </div>
                         </td>
 
-                        <!-- 11. Update At -->
                         <td class="py-3.5 px-4 leading-normal">
                             <div>
                                 {{ $req->updated_at ? $req->updated_at->format('d/m/y') : '-' }}
@@ -182,10 +192,8 @@
                             </div>
                         </td>
                         
-                        <!-- 12. UPDATE: Modul Action Menggunakan Gaya Icon Penuh Sesuai File image_bc782b.png -->
                         <td class="py-3.5 px-4 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- Icon Preview (Mata) -->
                                 <a href="{{ route('prod.request.preview', $req->id) }}" class="w-7 h-7 inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md shadow-blue-500/10 transition-all active:scale-90" title="Preview Form">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -193,16 +201,14 @@
                                     </svg>
                                 </a>
 
-                                <!-- Icon Edit khusus draft (Pensil) -->
                                 @if(str_contains(strtolower($req->status), 'draft'))
-                                <a href="{{ route('prod.request.edit_draft', $req->id) }}" class="w-7 h-7 inline-flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-md shadow-amber-500/10 transition-all active:scale-90" title="Edit Draft">
+                                <a href="{{ route('prod.request.editDraft', $req->id) }}" class="w-7 h-7 inline-flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-md shadow-amber-500/10 transition-all active:scale-90" title="Edit Draft">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                                     </svg>
                                 </a>
                                 @endif
 
-                                <!-- Icon Delete (Tong Sampah) -->
                                 <form action="{{ route('prod.request.destroy', $req->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus request ini, coy?')" class="inline-block">
                                     @csrf
                                     @method('DELETE')
@@ -217,7 +223,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="12" class="text-center py-12 text-slate-400 dark:text-slate-500 font-medium italic">
+                        <td colspan="13" class="text-center py-12 text-slate-400 dark:text-slate-500 font-medium italic">
                             <svg class="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 00-2 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
@@ -265,6 +271,17 @@
       const statusBadge = row.querySelector('.status-badge');
       if (statusBadge) {
         const statusText = statusBadge.textContent.trim().toLowerCase();
+        
+        // JIKA kriteria filter 'checked', tangkap baris yang bertuliskan 'checked staff'
+        if (criteria === 'checked') {
+          if (statusText.includes('checked') || statusText.includes('staff')) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+          return;
+        }
+
         if (statusText.includes(criteria.toLowerCase())) {
           row.style.display = '';
         } else {

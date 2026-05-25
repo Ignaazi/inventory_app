@@ -13,7 +13,6 @@ class RequestProdController extends Controller
      * UPDATE: Sekarang mengarah ke file listRequestProd.blade.php
      */
     public function index() {
-        // Ganti ->get() jadi ->paginate(25)
         $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25); 
         
         return view('stock_prod.process_req.listRequestProd', compact('requests'));
@@ -21,12 +20,24 @@ class RequestProdController extends Controller
 
     public function listRequest()
     {
-        // Mengambil semua data dari tabel production_requests, urut dari yang terbaru
-        // KODE BARU (Ganti get() menjadi paginate(25))
         $requests = RequestProd::orderBy('created_at', 'desc')->paginate(25);
         
-        // Mengarah ke file listRequestProd di dalam folder view lu
         return view('stock_prod.process_req.listRequestProd', compact('requests'));
+    }
+
+    /**
+     * API ENDPOINT UNTUK REAL-TIME UPDATES
+     * Menembak data 15 request terbaru dalam bentuk JSON untuk diproses JavaScript di Blade.
+     */
+    public function fetchUpdates()
+    {
+        // Mengambil data terbaru berdasarkan waktu update terakhir
+        $requests = RequestProd::orderBy('updated_at', 'desc')->take(15)->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $requests
+        ]);
     }
 
     /**
@@ -42,19 +53,16 @@ class RequestProdController extends Controller
      */
     public function store(Request $request)
     {
-        // Tangkap jenis aksi tombol (apakah 'draft' atau 'submit')
         $actionType = $request->input('action_type', 'submit');
 
-        // Validasi input dasar dari form Production (sap_code diganti remark)
         $rules = [
             'requestor'      => 'required|string|max:255',
             'line_machine'   => 'required|string|max:100',
             'sparepart_name' => 'required|string|max:255',
-            'remark'         => 'required|string|max:255', // UPDATE: sap_code -> remark
+            'remark'         => 'required|string|max:255', 
             'qty_req'        => 'required|integer|min:1',
         ];
 
-        // WAJIBKAN TTD HANYA jika aksinya adalah REAL SUBMIT (Bukan Draft)
         if ($actionType === 'submit') {
             $rules['signature_data'] = 'required|string';
         }
@@ -63,43 +71,41 @@ class RequestProdController extends Controller
             'signature_data.required' => '🚨 Tanda tangan Operator / Staff Production wajib diisi untuk mengajukan request!',
         ]);
 
-        // =========================================================================
-        // LOGIKA BARU: GENERATE NOMOR URUT DINAMIS (REQ-PRD-SIIX-001)
-        // =========================================================================
         $lastRequest = RequestProd::where('request_no', 'LIKE', 'REQ-PRD-SIIX-%')
                                     ->orderBy('id', 'desc')
                                     ->first();
 
         if ($lastRequest) {
-            // Ambil angka setelah string 'REQ-PRD-SIIX-', misal dari REQ-PRD-SIIX-001 diambil 1
             $lastNumber = (int) substr($lastRequest->request_no, 13);
             $nextNumber = $lastNumber + 1;
         } else {
             $nextNumber = 1;
         }
 
-        // Jika angka di bawah 1000 tetap pakai 3 digit (001), jika di atas 1000 panjangnya menyesuaikan otomatis (dinamis tanpa batas)
         $length = $nextNumber > 999 ? strlen((string)$nextNumber) : 3;
         $requestNo = 'REQ-PRD-SIIX-' . str_pad($nextNumber, $length, '0', STR_PAD_LEFT);
-        // =========================================================================
         
-        // Tentukan Status Akhir berdasarkan tombol yang diklik
         $statusAkhir = ($actionType === 'draft') ? 'Draft' : 'Pending';
 
-        // Simpan data baru ke database
+        // Filter string "null" bawaan javascript agar tersimpan sebagai NULL asli di DB
+        $prodSignature = $request->input('signature_data');
+        $prodStamp     = $request->input('stamp_data');
+
+        if ($prodSignature === 'null' || empty($prodSignature)) $prodSignature = null;
+        if ($prodStamp === 'null' || empty($prodStamp)) $prodStamp = null;
+
         RequestProd::create([
             'request_no'           => $requestNo,
             'sparepart_name'       => $request->sparepart_name,
-            'sap_code'             => null,             // 💡 FIX: Set null biar aman & tetep ada di DB
-            'remark'               => $request->remark, // 💡 FIX: Simpan ke kolom remark yang baru
+            'sap_code'             => null,             
+            'remark'               => $request->remark, 
             'qty_req'              => $request->qty_req,
             'line_machine'         => $request->line_machine,
             'requestor'            => $request->requestor,
-            'production_signature' => $request->input('signature_data'), 
-            'production_stamp'     => $request->input('stamp_data'),     
+            'production_signature' => $prodSignature, 
+            'production_stamp'     => $prodStamp,     
             'status'               => $statusAkhir,
             
-            // 🎯 SINKRONISASI DATABASE: Set null awal karena Engineering belum proses ttd bertahap
             'staff_name'           => null,
             'staff_signature'      => null,
             'spv_name'             => null,
@@ -110,69 +116,68 @@ class RequestProdController extends Controller
             ? 'Form Request berhasil disimpan sebagai Draft dengan Nomor Dokumen: ' . $requestNo
             : 'Form Request Nozzle berhasil diajukan dengan Nomor Dokumen: ' . $requestNo;
 
-        // Redirect balik ke halaman list request baru lu
         return redirect()->route('prod.request.list')->with('success', $pesanSukses);
     }
 
     /**
      * Mengambil data draft lama untuk dilempar ke Form Edit Khusus Draft
-     * UPDATE: Sekarang mengarah ke draftRequestProd.blade.php
      */
     public function editDraft($id)
     {
-        // Cari data berdasarkan ID draft tersebut
         $requestData = RequestProd::findOrFail($id);
         
-        // Validasi keamanan: Pastikan hanya data berstatus 'Draft' yang bisa dibuka kembali untuk di-edit
         if ($requestData->status !== 'Draft') {
             return redirect()->route('prod.request.list')->with('error', 'Hanya data dengan status Draft yang bisa diedit kembali!');
         }
 
-        // Buka halaman edit khusus draf, bawa variabel $requestData berisi data lama
         return view('stock_prod.process_req.draftRequestProd', compact('requestData'));
     }
 
     /**
      * Memproses Update Data Draft dari Form draftRequestProd (Method: PUT)
-     * BARU: Method ini memisahkan logika update data draf agar tidak bentrok di store()
      */
     public function updateDraft(Request $request, $id)
     {
         $requestProd = RequestProd::findOrFail($id);
         $actionType = $request->input('action_type', 'submit');
 
-        // Validasi input (sap_code diganti remark)
         $rules = [
             'requestor'      => 'required|string|max:255',
             'line_machine'   => 'required|string|max:100',
             'sparepart_name' => 'required|string|max:255',
-            'remark'         => 'required|string|max:255', // UPDATE: sap_code -> remark
+            'remark'         => 'required|string|max:255', 
             'qty_req'        => 'required|integer|min:1',
         ];
 
-        if ($actionType === 'submit') {
+        // WAJIBKAN TTD baru HANYA jika di database data tanda tangan lamanya juga kosong
+        if ($actionType === 'submit' && empty($requestProd->production_signature)) {
             $rules['signature_data'] = 'required|string';
         }
 
         $request->validate($rules, [
-            'signature_data.required' => ' Tanda tangan Operator / Staff Production wajib diisi untuk mengajukan request!',
+            'signature_data.required' => '🚨 Tanda tangan Operator / Staff Production wajib diisi untuk mengajukan request!',
         ]);
 
-        // Status berubah jadi 'Pending' jika di-submit resmi, atau tetap 'Draft' jika di-update draf lagi
         $statusAkhir = ($actionType === 'draft') ? 'Draft' : 'Pending';
 
-        // Update records dengan Eloquent
+        // 🔥 LOGIKA PENGAMAN TANDA TANGAN (Mencegah Nilai Kosong / "null" Menimpa Data Lama)
+        $newSignature = $request->input('signature_data');
+        $newStamp     = $request->input('stamp_data');
+
+        // Jika input baru ada isinya dan bukan tulisan "null", gunakan yang baru. Jika kosong, pakai data lama di DB.
+        $finalSignature = (!empty($newSignature) && $newSignature !== 'null') ? $newSignature : $requestProd->production_signature;
+        $finalStamp     = (!empty($newStamp) && $newStamp !== 'null') ? $newStamp : $requestProd->production_stamp;
+
         $requestProd->update([
             'sparepart_name'       => $request->sparepart_name,
-            'remark'               => $request->remark, // 💡 FIX: Update data remark baru lu
+            'remark'               => $request->remark, 
             'qty_req'              => $request->qty_req,
             'line_machine'         => $request->line_machine,
             'requestor'            => $request->requestor,
-            'production_signature' => $request->input('signature_data'),
-            'production_stamp'     => $request->input('stamp_data'),
+            'production_signature' => $finalSignature, // Tetap aman & real-time
+            'production_stamp'     => $finalStamp,     // Tetap aman & real-time
             'status'               => $statusAkhir,
             
-            // 🎯 SINKRONISASI DATABASE: Pastikan kolom otorisasi Eng tetap clear saat draf diperbarui
             'staff_name'           => null,
             'staff_signature'      => null,
             'spv_name'             => null,
@@ -186,13 +191,8 @@ class RequestProdController extends Controller
         return redirect()->route('prod.request.list')->with('success', $pesanSukses);
     }
 
-    // =========================================================================
-    // 🔥 TAMBAHAN LOGIKA BARU UNTUK ACTION UPDATE, DESTROY & PREVIEW (TANPA MENGHAPUS YANG ADA)
-    // =========================================================================
-
     /**
-     * 1. Method Update Utama (PUT)
-     * Berfungsi menangani request edit status global atau data jika diperlukan di luar alur draft
+     * Method Update Utama (PUT)
      */
     public function update(Request $request, $id)
     {
@@ -220,20 +220,16 @@ class RequestProdController extends Controller
     }
 
     /**
-     * 2. Method Preview Form / Cetak Dokumen (GET)
-     * Mengarahkan ke halaman cetak/formulir resmi preview sparepart nozzle
+     * Method Preview Form / Cetak Dokumen (GET)
      */
     public function preview($id)
     {
         $requestData = RequestProd::findOrFail($id);
-
-        // Arahkan ke file preview.blade.php di dalam folder view production kamu
         return view('stock_prod.process_req.previewRequestProd', compact('requestData'));
     }
 
     /**
-     * 3. Method Destroy / Hapus Data Permanen (DELETE)
-     * Menghapus request data production dari database secara aman
+     * Method Destroy / Hapus Data Permanen (DELETE)
      */
     public function destroy($id)
     {

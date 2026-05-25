@@ -13,8 +13,6 @@ class HistoryApprovalController extends Controller
         $search = $request->input('search');
 
         $history = HistoryApproval::query()
-            // 💡 OPTIMASI: Eager loading relasi ke tabel produksi 
-            // Agar pas panggil $log->productionRequest tidak kena error atau lambat
             ->with('productionRequest') 
             ->when($search, function($query, $search) {
                 return $query->where('request_no', 'LIKE', "%{$search}%")
@@ -25,5 +23,22 @@ class HistoryApprovalController extends Controller
             ->paginate(10);
 
         return view('stock_eng.process_req.historyApproval', compact('history', 'search'));
+    }
+
+    /**
+     * Menghapus record history approval
+     */
+    public function destroy($id)
+    {
+        try {
+            $log = HistoryApproval::findOrFail($id);
+            $log->delete();
+
+            return redirect()->route('approval.history')
+                             ->with('success', 'History approval berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->route('approval.history')
+                             ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
     }
 }

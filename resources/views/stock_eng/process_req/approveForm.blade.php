@@ -149,7 +149,6 @@
                 @if(!$hasSpvSigned && $req->status !== 'Rejected')
                 <div class="mt-8 flex flex-col sm:flex-row gap-2.5 sm:justify-end border-t border-stroke dark:border-strokedark pt-5">
                     
-                    {{-- 🔴 BUTTON REJECT: DOMINAN MERAH GRADIENT KUNING --}}
                     <button type="button" @click="triggerReject()" class="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-red-600 via-red-500 to-amber-500 hover:from-red-700 hover:to-amber-600 text-white py-2 px-4 text-xs font-bold uppercase tracking-wide shadow-sm transition-all duration-150 active:scale-95 border-none">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -157,7 +156,6 @@
                         Reject Request
                     </button>
 
-                    {{-- 🔵 BUTTON APPROVE: GRADIENT BIRU & BIRU STABILO --}}
                     <button type="submit" class="flex items-center justify-center gap-1.5 rounded-lg text-white py-2 px-5 text-xs font-bold uppercase tracking-wide shadow-md transition-all duration-150 active:scale-95 bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400 hover:from-blue-700 hover:to-cyan-600 border-none">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
@@ -171,7 +169,6 @@
         </form>
     </div>
 
-    <!-- LIVE VIEW PRINT TARGET BOX -->
     <div id="print-target-box" class="print:m-0 print:p-0">
         <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-2 print:hidden">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -182,9 +179,8 @@
             
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
                 <div class="flex items-center gap-4">
-                    {{-- 💡 FIX LOGO SIIX --}}
                     <div class="w-16 h-16 flex items-center justify-center overflow-hidden">
-                        <img src="/images/logo-siix.png" class="max-h-full max-w-full object-contain" alt="Logo SIIX" </img>
+                        <img src="/images/logo-siix.png" class="max-h-full max-w-full object-contain" alt="Logo SIIX">
                     </div>  
                     <div>
                         <h1 class="text-lg font-black uppercase tracking-tight text-black">PT. SIIX EMS KARAWANG</h1>
@@ -193,7 +189,6 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-sm font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide">FORM REQUEST NOZZLE</h2>
-                    {{-- 💡 FIX DOC NO SESUAI DATABASE --}}
                     <p class="text-[8px] text-slate-500 font-mono mt-1">Doc No: {{ $req->request_no ?? 'REQ-PRD-SIIX-001' }}</p>
                 </div>
             </div>
@@ -225,10 +220,8 @@
                 </table>
             </div>
 
-            <!-- THREE COLUMN SIGNATURE WORKFLOW -->
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
                 
-                <!-- KOLOM 1: REQUESTED BY (PRODUCTION) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Requested By</div>
                     
@@ -261,33 +254,29 @@
                     </div>
                 </div>
 
-                <!-- KOLOM 2: CHECKED BY (STAFF ENGINEERING) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Checked By</div>
                     <div class="relative flex items-center justify-center h-20 w-full overflow-hidden p-1">
                         
-                        <!-- Live Render TTD jika Staff menggambar -->
                         <template x-if="isStaffTurn && signatureImg">
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
                                 <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                             </div>
                         </template>
 
-                        <!-- Live Render Stamp jika Staff upload file -->
                         <template x-if="isStaffTurn && stampImg">
                             <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
                                 <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
                             </div>
                         </template>
                         
-                        <!-- Render dari DB jika database sudah menyimpan data TTD Staff -->
                         @if($hasStaffSigned)
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
-                                <img src="{{ $req->staff_signature }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="Staff Sign">
+                                <img src="{{ str_starts_with($req->staff_signature, 'http') ? $req->staff_signature : asset($req->staff_signature) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="Staff Sign">
                             </div>
                             @if($req->staff_stamp)
                                 <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
-                                    <img src="{{ $req->staff_stamp }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
+                                    <img src="{{ str_starts_with($req->staff_stamp, 'http') ? $req->staff_stamp : asset($req->staff_stamp) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
                                 </div>
                             @endif
                         @elseif(!$hasStaffSigned)
@@ -302,33 +291,29 @@
                     </div>
                 </div>
 
-                <!-- KOLOM 3: APPROVED BY (SPV ENGINEERING) -->
                 <div class="flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px] text-slate-800">Approved By</div>
                     <div class="relative flex items-center justify-center h-20 w-full overflow-hidden p-1">
                         
-                        <!-- Live Render TTD jika SPV menggambar -->
                         <template x-if="isSpvTurn && signatureImg">
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
                                 <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                             </div>
                         </template>
 
-                        <!-- Live Render Stamp jika SPV upload file -->
                         <template x-if="isSpvTurn && stampImg">
                             <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
                                 <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
                             </div>
                         </template>
                         
-                        <!-- Render dari DB jika database sudah menyimpan data TTD SPV -->
                         @if($hasSpvSigned)
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
-                                <img src="{{ $req->spv_signature }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="SPV Sign">
+                                <img src="{{ str_starts_with($req->spv_signature, 'http') ? $req->spv_signature : asset($req->spv_signature) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block" alt="SPV Sign">
                             </div>
                             @if($req->spv_stamp)
                                 <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none">
-                                    <img src="{{ $req->spv_stamp }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
+                                    <img src="{{ str_starts_with($req->spv_stamp, 'http') ? $req->spv_stamp : asset($req->spv_stamp) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
                                 </div>
                             @endif
                         @elseif(!$hasSpvSigned)
@@ -455,29 +440,46 @@ function approvalFormHandler() {
         generatePDF() {
             window.print();
         },
-
+        triggerReject() {
+            Swal.fire({
+                title: 'Alasan Tolak Permohonan',
+                input: 'textarea',
+                inputPlaceholder: 'Tulis alasan penolakan sparepart request disini...',
+                inputAttributes: {
+                    'aria-label': 'Tulis alasan penolakan'
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#f43f5e',
+                cancelButtonColor: '#cbd5e1',
+                confirmButtonText: 'Ya, Tolak!',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Alasan wajib diisi, bro!'
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('rejectReasonField').value = result.value;
+                    document.getElementById('rejectFormAction').submit();
+                }
+            });
+        },
         handleApprovalSubmit(e) {
             if (this.activeTab === 'draw' && this.$refs.canvas) {
                 const blankCanvas = document.createElement('canvas');
                 blankCanvas.width = this.$refs.canvas.width;
                 blankCanvas.height = this.$refs.canvas.height;
-                
                 if (this.$refs.canvas.toDataURL() === blankCanvas.toDataURL()) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Tanda Tangan Kosong!',
-                        text: 'Silakan bubuhkan tanda tangan verifikasi Anda terlebih dahulu pada Pad!',
-                        confirmButtonColor: '#3C50E0'
-                    });
-                    return false;
+                    this.signatureImg = null;
                 }
             }
 
-            if (this.activeTab === 'upload' && !this.stampImg) {
+            if (!this.signatureImg && !this.stampImg) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Stempel Kosong!',
-                    text: 'Silakan upload file stempel otorisasi Anda terlebih dahulu!',
+                    title: 'Otorisasi Diperlukan!',
+                    text: 'Harap bubuhkan Tanda Tangan atau Upload Stempel digital sebelum memproses approval.',
                     confirmButtonColor: '#3C50E0'
                 });
                 return false;
@@ -485,41 +487,16 @@ function approvalFormHandler() {
 
             Swal.fire({
                 title: 'Konfirmasi Approval?',
-                text: "Otorisasi digital Anda akan disimpan pada log berkas cetak SIIX.",
+                text: "Pastikan data sparepart request sudah sesuai dengan verifikasi fisik di lapangan.",
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#2563eb',
+                confirmButtonColor: '#10B981',
                 cancelButtonColor: '#cbd5e1',
                 confirmButtonText: 'Ya, Approve!',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById('approvalForm').submit();
-                }
-            });
-        },
-
-        triggerReject() {
-            Swal.fire({
-                title: 'Tolak Request Sparepart?',
-                text: 'Berikan alasan singkat penolakan berkas:',
-                input: 'text',
-                inputPlaceholder: 'Contoh: Nozzle Stock Kosong / Salah Model...',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#cbd5e1',
-                confirmButtonText: 'Ya, Tolak!',
-                cancelButtonText: 'Batal',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'Alasan reject wajib diisi, bro!'
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('rejectReasonField').value = result.value;
-                    document.getElementById('rejectFormAction').submit();
                 }
             });
         }
