@@ -13,8 +13,10 @@ return new class extends Migration
             $table->string('transaction_out_id')->unique(); 
             $table->string('nik'); 
             
-            // RELASI DATABASE
-            $table->unsignedBigInteger('request_sparepart_id')->nullable(); 
+            // 🌟 DIPERBAIKI: Diubah dari unsignedBigInteger ke string 
+            // agar bisa menampung data request_no (contoh: REQ001) dari tabel production_requests
+            $table->string('request_sparepart_id')->nullable(); 
+            
             $table->unsignedBigInteger('barcode_id'); 
             $table->unsignedBigInteger('stock_eng_id'); 
             

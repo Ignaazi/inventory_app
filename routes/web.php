@@ -19,6 +19,9 @@ use App\Http\Controllers\EngOverview\TypeBarcodeController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
 use App\Http\Controllers\Production\RequestProdController;
+// 🌟 Import Controller Baru
+use App\Http\Controllers\Engineering\StockOutEngineeringController;
+use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -55,6 +58,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('eng.disposal');
         Route::get('/list-sparepart/export', [App\Http\Controllers\StockEngineeringController::class, 'export'])
          ->name('list-sparepart.export');
+        
+        // 🌟 Tambahan Rute Stock Out Engineering
+        Route::get('/out/manual', [StockOutEngineeringController::class, 'manual'])->name('eng.out.manual');
+        Route::get('/out/scan', [StockOutEngineeringController::class, 'scan'])->name('eng.out.scan');
+        Route::post('/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
     });
     
     // A. SISI ENGINEERING - APPROVAL SYSTEM
@@ -73,11 +81,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/prod/request/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
     Route::delete('/prod/request/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
     
-    // 🔥 ROUTE BARU: Endpoint API JSON Real-time untuk Polling di Halaman Blade
     Route::get('/prod/request/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
 
     // --- PURCHASE REQUEST ---
-    Route::get('/eng/purchase-request', [App\Http\Controllers\Engineering\PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
+    Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
 
     // --- PRODUCTION OVERVIEW ---
     Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');

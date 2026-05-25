@@ -4,7 +4,8 @@ namespace App\Models\Engineering;
 
 use App\Models\StockEng;
 use App\Models\DbBarcode; 
-use App\Models\Rak;       
+use App\Models\Rak;
+use App\Models\Production\RequestProd; // 🌟 Import model RequestProd
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -19,8 +20,8 @@ class StockOutEng extends Model
         'nik',
         'request_sparepart_id',
         'barcode_id', 
-        'stock_eng_id', // 🌟 WAJIB TETAP ADA: Untuk menyimpan ID relational ke tabel stock_engs
-        'no_nozzle',    // 🌟 SEBAGAI HISTORI: Menyimpan nilai '110' langsung di log transaksi
+        'stock_eng_id', 
+        'no_nozzle',    
         'rak_id',      
         'qty_out',
         'status',
@@ -50,5 +51,14 @@ class StockOutEng extends Model
     public function rak()
     {
         return $this->belongsTo(Rak::class, 'rak_id', 'id');
+    }
+
+    /**
+     * 🌟 Relasi ke Production Request
+     * Menghubungkan request_sparepart_id (string) dengan request_no (string)
+     */
+    public function productionRequest()
+    {
+        return $this->belongsTo(RequestProd::class, 'request_sparepart_id', 'request_no');
     }
 }
