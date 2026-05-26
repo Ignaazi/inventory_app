@@ -16,12 +16,17 @@ return new class extends Migration
             $table->enum('role', ['admin', 'engineering', 'production', 'costing'])->default('production');
             $table->string('password');
             $table->boolean('is_active')->default(true);
+            
+            // 🌟 Tambahan untuk audit sistem (Berguna untuk melacak aktivitas user)
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip')->nullable();
+            
             $table->text('profile_photo_path')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
 
-        // 2. Tabel Password Reset (Ganti email ke nim agar konsisten)
+        // 2. Tabel Password Reset
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('nim')->primary(); 
             $table->string('token');

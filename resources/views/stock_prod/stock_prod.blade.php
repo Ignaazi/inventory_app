@@ -48,7 +48,6 @@
         </p>
     </div>
 
-    <!-- Header & Tombol Aksi Baru Bersandingan Sesuai Request -->
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Production Line Control Deck</h2>
@@ -56,7 +55,6 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <!-- 1. ADD LINE BUTTON -->
             <button onclick="openAddLineModal()" class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -64,7 +62,6 @@
                 ADD LINE
             </button>
 
-            <!-- 2. DELETE LINE BUTTON (Hapus Lini Terdaftar agar Dropdown Aktif Lagi) -->
             <button onclick="openDeleteLineModal()" class="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-rose-700 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -72,7 +69,6 @@
                 DELETE LINE
             </button>
 
-            <!-- 3. ADD NOZZLE BUTTON -->
             <button onclick="openAddNozzleModal()" class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -80,7 +76,6 @@
                 ADD NOZZLE (IN)
             </button>
 
-            <!-- 4. EXPORT CSV BUTTON (Bersandingan Rapi di Sebelah Kanan Atas) -->
             <a href="{{ route('stock.prod.export.csv') }}" class="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -90,7 +85,40 @@
         </div>
     </div>
 
-    <!-- Kontainer Tabel Data -->
+    <div class="mb-6">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            Nozzle Stock Accumulation Summary
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            @php
+                // Kelompokkan data stocks berdasarkan nama/nomor nozzle untuk dihitung total Qty-nya
+                $groupedStocks = $stocks->groupBy('no_nozzle');
+            @endphp
+            
+            @forelse($groupedStocks as $nozzleType => $items)
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-boxdark hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">TYPE</span>
+                        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 font-mono">
+                            {{ $items->count() }} Tx
+                        </span>
+                    </div>
+                    <div class="text-lg font-black text-slate-800 dark:text-white mb-1">
+                        {{ $nozzleType ?: 'Unknown' }}
+                    </div>
+                    <div class="flex items-baseline gap-1 text-xs text-slate-500">
+                        <span class="text-xl font-bold text-indigo-600 dark:text-indigo-400 font-mono">{{ $items->sum('qty') }}</span>
+                        <span class="text-[10px] uppercase font-semibold text-slate-400">Pcs Total</span>
+                    </div>
+                </div>
+            @empty
+                <div class="col-span-full py-4 text-center text-xs text-slate-400 italic bg-white dark:bg-boxdark rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                    No accumulation data available.
+                </div>
+            @endforelse
+        </div>
+    </div>
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-boxdark overflow-hidden">
         
         <div class="p-5 border-b border-slate-100 dark:border-slate-700">
@@ -101,7 +129,6 @@
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search line or component data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500">
             </div>
 
-            <!-- Tab Filter Lini Produksi (Dinamis: Hanya Menampilkan Line yang Sudah Registrasi) -->
             <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-slate-100 dark:border-slate-700 pb-1" id="lineTabs">
                 <button onclick="filterLine('all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm">
                     All Factory Lines
@@ -195,7 +222,7 @@
     </div>
 </div>
 
-{{-- MODAL 1: ADD LINE (Hanya memuat Lini yang BELUM terdaftar di stock prods) --}}
+{{-- MODAL 1: ADD LINE --}}
 <div id="modalAddLine" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
     <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
@@ -223,7 +250,7 @@
     </div>
 </div>
 
-{{-- MODAL 2: DELETE LINE POP-UP KHUSUS (Hanya memuat Lini yang SEDANG AKTIF di stock prods) --}}
+{{-- MODAL 2: DELETE LINE POP-UP KHUSUS --}}
 <div id="modalDeleteLine" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
     <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
@@ -263,11 +290,9 @@
             @csrf
             <div>
                 <label class="text-xs font-bold text-slate-500 mb-1 block uppercase">Pilih Transaksi Keluar (Engineering)</label>
-                {{-- Tambahkan id untuk diseleksi JS --}}
                 <select name="stock_out_log_id" id="select_log" onchange="autoFillQty()" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-emerald-500 dark:text-white" required>
                     <option value="">-- Pilih No. Transaksi --</option>
                     @foreach($logs as $log)
-                        {{-- Simpan qty_out ke dalam data-qty agar bisa dibaca JS --}}
                         <option value="{{ $log->id }}" data-qty="{{ $log->qty_out }}">
                             {{ $log->transaction_out_id }} | Nozzle: {{ $log->no_nozzle }} | Qty: {{ $log->qty_out }}
                         </option>
@@ -409,7 +434,6 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Submit form hapus secara dinamis berdasarkan ID baris terpilih
                 let form = document.getElementById(`delete-form-${selectedId}`);
                 if (form) {
                     form.submit();
@@ -455,23 +479,18 @@
     }
 
     function autoFillQty() {
-        // Ambil elemen select dan input
         const selectLog = document.getElementById('select_log');
         const inputQty = document.getElementById('input_qty');
-        
-        // Ambil option yang terpilih
         const selectedOption = selectLog.options[selectLog.selectedIndex];
-        
-        // Ambil nilai data-qty
         const qtyValue = selectedOption.getAttribute('data-qty');
         
-        // Isi ke input Qty jika ada nilainya
         if (qtyValue) {
             inputQty.value = qtyValue;
         } else {
             inputQty.value = '';
         }
     }
+
     // Flash Alert Notification Handler
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false });

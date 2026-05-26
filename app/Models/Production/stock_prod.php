@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\production;
+namespace App\Models\Production;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -62,5 +62,19 @@ class stock_prod extends Model
 
         // Hubungkan foreign key stock_prods.line_id ke owner key list_line_productions.line_id
         return $this->belongsTo($chosenModel, 'line_id', 'line_id');
+    }
+
+    /**
+     * 🔗 3. RELASI BERANTAI KE MASTER STOCK ENGINEERING (StockEng)
+     * Ditambahkan agar pemanggilan $log->stockProd->stockEng->part_no di Blade aman.
+     * Menggunakan dengan default data lokal milik stock_prod itu sendiri sebagai cadangan.
+     */
+    public function stockEng()
+    {
+        return $this->belongsTo(\App\Models\StockEng::class, 'sap_code', 'sap_code')
+            ->withDefault([
+                'part_no' => $this->part_no ?? '-',
+                'sap_code' => $this->sap_code ?? '-'
+            ]);
     }
 }

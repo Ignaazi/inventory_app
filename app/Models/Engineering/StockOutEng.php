@@ -61,4 +61,14 @@ class StockOutEng extends Model
     {
         return $this->belongsTo(RequestProd::class, 'request_sparepart_id', 'request_no');
     }
+
+    /**
+     * 🔗 ALIAS RELATIONSHIP UNTUK RANTAI VIEW (inProd)
+     * Menjamin pemanggilan $log->stockOutLog->requestProd->request_no di Blade 
+     * berjalan mulus tanpa merusak/menghapus fungsi productionRequest di atas.
+     */
+    public function requestProd()
+    {
+        return $this->productionRequest();
+    }
 }
