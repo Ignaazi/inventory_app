@@ -89,6 +89,14 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Quantity (QTY) <span class="text-rose-500">*</span></label>
+                            <div class="col-span-2 flex items-center gap-1">
+                                <input type="number" name="qty" id="qty_input" min="1" value="{{ old('qty', 1) }}" required class="w-24 bg-transparent border-0 text-slate-900 dark:text-white font-bold font-mono text-xs p-0 outline-none focus:ring-0" placeholder="0">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">Pcs</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
@@ -155,4 +163,16 @@
     </div>
 
 </div>
+
+<style>
+    /* Menghilangkan panah spin bawaan browser di input type number agar tampilannya clean ala Odoo */
+    #qty_input::-webkit-outer-spin-button,
+    #qty_input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    #qty_input {
+        -moz-appearance: textfield;
+    }
+</style>
 @endsection

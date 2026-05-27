@@ -72,6 +72,7 @@
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white w-[180px]">PR Reference</th>
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Item Product / Description</th>
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white w-[140px]">SAP Code</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[70px]">QTY</th>
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[100px]">Priority</th>
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">Requested By</th>
                         <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[130px]">Stage Status</th>
@@ -84,6 +85,7 @@
                             code: '{{ $pr->pr_code }}',
                             type: '{{ $pr->type_product }}',
                             product: '{{ $pr->product }}',
+                            qty: '{{ $pr->qty ?? 1 }}',
                             priority: '{{ $pr->priority }}',
                             name: '{{ $pr->name }}',
                             nik: '{{ $pr->nik ?? '-' }}',
@@ -106,6 +108,9 @@
                         </td>
                         <td class="py-2 px-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase font-mono">
                             {{ $pr->product }}
+                        </td>
+                        <td class="py-2 px-3 text-xs font-bold text-slate-900 dark:text-white text-center font-mono">
+                            {{ $pr->qty ?? 1 }}
                         </td>
                         <td class="py-2 px-3 text-center">
                             @if(strtolower($pr->priority) == 'urgent')
@@ -130,7 +135,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <td colspan="7" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
                             No purchase requests pending inside ledger.
                         </td>
                     </tr>
@@ -149,6 +154,7 @@
         </div>
     </div>
 
+    {{-- RIGHT SIDE SLIDER PANEL --}}
     <div x-show="selectedPr" 
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -170,13 +176,9 @@
                     </button>
 
                     <div x-show="selectedPr && selectedPr.status !== 'approved' && selectedPr.status !== 'rejected'" class="flex items-center gap-3 w-full sm:w-auto">
-                        <form :action="selectedPr ? selectedPr.approve_route : '#'" method="POST" class="inline w-full sm:w-auto" onsubmit="return confirm('Setujui Purchase Request ini?')">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 via-green-400 to-yellow-300 text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity">
-                                Approve PR
-                            </button>
-                        </form>
+                        <button type="submit" form="approvalMainForm" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 via-green-400 to-yellow-300 text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity">
+                            Approve PR
+                        </button>
                         
                         <form :action="selectedPr ? selectedPr.reject_route : '#'" method="POST" class="inline w-full sm:w-auto" onsubmit="return confirm('Tolak request item ini, Bro?')">
                             @csrf
@@ -225,67 +227,98 @@
                         <h2 class="text-xl font-bold text-purple-600 dark:text-purple-400 tracking-tight font-mono" x-text="selectedPr ? selectedPr.code : ''"></h2>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5 text-xs font-sans">
-                        
-                        <div class="space-y-3.5">
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Requester Name</label>
-                                <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.name : ''"></div>
-                            </div>
+                    {{-- MASTER MAIN ACTION FORM --}}
+                    <form :action="selectedPr ? selectedPr.approve_route : '#'" method="POST" id="approvalMainForm" onsubmit="return confirm('Setujui Purchase Request ini dengan jumlah QTY yang ditentukan?')">
+                        @csrf
+                        @method('PUT')
 
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">NIK / NIM</label>
-                                <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.nik : ''"></div>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5 text-xs font-sans">
+                            
+                            <div class="space-y-3.5">
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Requester Name</label>
+                                    <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.name : ''"></div>
+                                </div>
 
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Product (Category)</label>
-                                <div class="col-span-2 text-indigo-600 dark:text-indigo-400 font-semibold uppercase font-mono text-xs" x-text="selectedPr ? selectedPr.product : ''"></div>
-                            </div>
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">NIK / NIM</label>
+                                    <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.nik : ''"></div>
+                                </div>
 
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Type Product</label>
-                                <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.type : ''"></div>
-                            </div>
-                        </div>
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Product (Category)</label>
+                                    <div class="col-span-2 text-indigo-600 dark:text-indigo-400 font-semibold uppercase font-mono text-xs" x-text="selectedPr ? selectedPr.product : ''"></div>
+                                </div>
 
-                        <div class="space-y-3.5">
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Priority</label>
-                                <div class="col-span-2">
-                                    <template x-if="selectedPr && selectedPr.priority.toLowerCase() === 'urgent'">
-                                        <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400">Urgent</span>
-                                    </template>
-                                    <template x-if="selectedPr && selectedPr.priority.toLowerCase() !== 'urgent'">
-                                        <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700/50 dark:text-slate-300">Normal</span>
-                                    </template>
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Type Product</label>
+                                    <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.type : ''"></div>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Request By</label>
-                                <div class="col-span-2 text-slate-800 dark:text-slate-200 font-medium uppercase text-xs">ENGINEERING DEPARTMENT</div>
+                            <div class="space-y-3.5">
+                                {{-- 🌟 TAMBAHAN: INPUT QUANTITY (QTY) DI DALAM PANEL APPROVAL COSTING --}}
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Quantity (QTY)</label>
+                                    <div class="col-span-2 flex items-center gap-1.5">
+                                        <template x-if="selectedPr && selectedPr.status !== 'approved' && selectedPr.status !== 'rejected'">
+                                            <input type="number" name="qty" min="1" x-model="selectedPr.qty" required class="w-20 bg-gray-50 dark:bg-slate-800 text-slate-950 dark:text-white font-bold font-mono text-xs px-2 py-0.5 border border-gray-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-purple-500 outline-none text-center">
+                                        </template>
+                                        <template x-if="selectedPr && (selectedPr.status === 'approved' || selectedPr.status === 'rejected')">
+                                            <span class="text-slate-950 dark:text-white font-bold font-mono text-xs" x-text="selectedPr.qty + ' Pcs'"></span>
+                                        </template>
+                                        <span x-show="selectedPr && selectedPr.status !== 'approved' && selectedPr.status !== 'rejected'" class="text-[10px] text-slate-400 font-bold uppercase">Pcs</span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Priority</label>
+                                    <div class="col-span-2">
+                                        <template x-if="selectedPr && selectedPr.priority.toLowerCase() === 'urgent'">
+                                            <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400">Urgent</span>
+                                        </template>
+                                        <template x-if="selectedPr && selectedPr.priority.toLowerCase() !== 'urgent'">
+                                            <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700/50 dark:text-slate-300">Normal</span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Request By</label>
+                                    <div class="col-span-2 text-slate-800 dark:text-slate-200 font-medium uppercase text-xs">ENGINEERING DEPARTMENT</div>
+                                </div>
+
+                                <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                    <label class="font-bold text-slate-400 text-[11px] uppercase">Request Date</label>
+                                    <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.date : ''"></div>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Request Date</label>
-                                <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.date : ''"></div>
-                            </div>
-
-                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
-                                <label class="font-bold text-slate-400 text-[11px] uppercase">Destination</label>
-                                <div class="col-span-2 text-emerald-600 dark:text-emerald-400 font-semibold uppercase text-xs" x-text="selectedPr ? selectedPr.destination : ''"></div>
-                            </div>
                         </div>
-
-                    </div>
+                    </form>
 
                     <div class="mt-5">
-                        <div class="border-b border-gray-200 dark:border-gray-800 flex gap-6 text-[11px] font-bold uppercase text-slate-950 dark:text-white">
-                            <span class="border-b-2 border-purple-600 pb-1 text-purple-600">Internal Notes / Reason</span>
-                        </div>
-                        <div class="mt-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-800">
-                            <p class="text-slate-700 dark:text-slate-300 italic font-medium text-xs" x-text="selectedPr ? selectedPr.notes : ''"></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                            <div>
+                                <div class="border-b border-gray-200 dark:border-gray-800 flex gap-6 text-[11px] font-bold uppercase text-slate-950 dark:text-white">
+                                    <span class="border-b-2 border-purple-600 pb-1 text-purple-600">Internal Notes / Reason</span>
+                                </div>
+                                <div class="mt-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[64px]">
+                                    <p class="text-slate-700 dark:text-slate-300 italic font-medium text-xs" x-text="selectedPr ? selectedPr.notes : ''"></p>
+                                </div>
+                            </div>
+                            <div class="mt-5 md:mt-0">
+                                <div class="border-b border-gray-200 dark:border-gray-800 flex gap-6 text-[11px] font-bold uppercase text-slate-400">
+                                    <span>Shipping Destination</span>
+                                </div>
+                                <div class="mt-3 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold uppercase text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1 1 15 0Z"/>
+                                    </svg>
+                                    <span x-text="selectedPr ? selectedPr.destination : ''"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -339,20 +372,17 @@
         transition: all 0.3s ease;
     }
 
-    /* Step pertama (DRAFT): Sisi kiri lurus, kanan panah */
     .odoo-step.step-first {
         padding-left: 18px;
         clip-path: polygon(calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%, 0% 50%, 0% 0%);
     }
 
-    /* Step terakhir (DONE): Sisi kiri panah, kanan lurus */
     .odoo-step.step-last {
         padding-right: 18px;
         margin-right: 0;
         clip-path: polygon(100% 0%, 100% 50%, 100% 100%, 0% 100%, 12px 50%, 0% 0%);
     }
 
-    /* Memaksa text yang aktif/diwarnai berwarna putih cerah */
     .font-active span {
         color: #ffffff !important;
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -363,5 +393,13 @@
         white-space: nowrap;
         text-align: center;
     }
+
+    /* Menghilangkan spin arrows bawaan browser pada input number qty */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    input[type=number] { -moz-appearance: textfield; }
 </style>
 @endsection

@@ -38,6 +38,10 @@ class PurchaseRequestHistoryEngController extends Controller
         $request->validate([
             'type_product' => 'required|string|max:255',
             'product'      => 'required|string|max:255',
+            
+            // 🌟 TAMBAHAN: Validasi QTY wajib angka dan minimal 1 saat diedit
+            'qty'          => 'required|integer|min:1',
+            
             'priority'     => 'required|in:normal,urgent',
             'status'       => 'required|in:draft,waiting approval,approved,rejected,done', 
         ]);
@@ -54,6 +58,10 @@ class PurchaseRequestHistoryEngController extends Controller
         $pr->update([
             'type_product' => $request->type_product,
             'product'      => $request->product,
+            
+            // 🌟 TAMBAHAN: Update nilai QTY baru ke database
+            'qty'          => $request->qty,
+            
             'priority'     => $request->priority,
             'status'       => $statusBaru,
         ]);

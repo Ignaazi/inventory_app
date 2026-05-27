@@ -22,6 +22,10 @@ class PurchaseRequestEng extends Model
         'nik',
         'product',
         'type_product',
+        
+        // 🌟 TAMBAHAN: Mendaftarkan kolom qty agar diizinkan masuk ke database
+        'qty', 
+        
         'priority',
         'request_by',
         'request_date',
@@ -35,5 +39,7 @@ class PurchaseRequestEng extends Model
         'request_date' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        // Tipe data qty dikunci ke integer agar nilainya konsisten angka
+        'qty' => 'integer', 
     ];
 }

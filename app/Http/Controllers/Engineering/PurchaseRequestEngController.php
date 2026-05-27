@@ -67,6 +67,10 @@ class PurchaseRequestEngController extends Controller
             'pr_code'      => 'required',
             'product'      => 'required',
             'type_product' => 'required',
+            
+            // 🌟 TAMBAHAN: Validasi QTY wajib diisi, berupa angka, dan minimal berjumlah 1
+            'qty'          => 'required|integer|min:1',
+            
             'priority'     => 'required|in:normal,urgent',
             'request_by'   => 'required',
             'request_date' => 'required',
@@ -87,6 +91,10 @@ class PurchaseRequestEngController extends Controller
                 'nik'          => $nikUser,   
                 'product'      => $request->product,
                 'type_product' => $request->type_product,
+                
+                // 🌟 TAMBAHAN: Memasukkan data QTY ke database
+                'qty'          => $request->qty,
+                
                 'priority'     => $request->priority,
                 'request_by'   => $request->request_by,
                 'request_date' => $request->request_date,
@@ -96,8 +104,6 @@ class PurchaseRequestEngController extends Controller
             ]);
 
             // 🛠️ DOUBLE PROTECTION (FORCE UPDATE):
-            // Jika ada event model atau default value database yang nakal mengubah statusnya menjadi approved, 
-            // kita paksa timpa (override) kembali di sini ke 'waiting approval' lalu save ulang secara silent.
             if ($pr->status !== 'waiting approval') {
                 $pr->status = 'waiting approval';
                 $pr->saveQuietly(); // saveQuietly() digunakan agar tidak memicu Observer/Event bawaan model

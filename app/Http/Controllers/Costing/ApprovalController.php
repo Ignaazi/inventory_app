@@ -41,14 +41,26 @@ class ApprovalController extends Controller
 
     /**
      * Mengubah status Purchase Request menjadi 'approved'
+     * 🌟 UPDATE: Menambahkan Request $request untuk menangkap perubahan QTY saat di-approve
      */
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
         $pr = PurchaseRequestEng::findOrFail($id);
 
         try {
-            // 🛠️ FIX ENUM: Langsung update menggunakan 'approved' sesuai string di migration database
-            $pr->update(['status' => 'approved']);
+            // Data yang mau di-update
+            $updateData = ['status' => 'approved'];
+
+            // 🌟 TAMBAHAN: Jika di dalam form approval menyertakan input QTY baru, ikut update ke DB
+            if ($request->has('qty')) {
+                $request->validate([
+                    'qty' => 'required|integer|min:1'
+                ]);
+                $updateData['qty'] = $request->qty;
+            }
+
+            // Jalankan update sekaligus
+            $pr->update($updateData);
             
             return redirect()->back()->with('success', 'PR ' . $pr->pr_code . ' Berhasil di-Approve, Stock Siap Diproses!');
         } catch (\Exception $e) {

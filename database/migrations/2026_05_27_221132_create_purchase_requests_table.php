@@ -15,14 +15,16 @@ return new class extends Migration
             $table->string('nik');               // auto dari user login
             $table->string('product');           // Kategori sparepart
             $table->string('type_product');      // Nama sparepart
+            
+            // 🌟 Kolom qty aman nangkring di sini
+            $table->integer('qty')->default(1);  
+            
             $table->enum('priority', ['normal', 'urgent'])->default('normal');
             $table->string('request_by')->default('ENGINEERING DEPARTMENT');
             $table->dateTime('request_date');
             $table->string('destination')->default('Costing & Procurement Room');
             $table->text('notes')->nullable();
             
-            // 🛠️ PERBAIKAN: Hapus yang duplikat huruf besar, sisakan versi huruf kecil saja.
-            // Karena MySQL case-insensitive, ini sudah mencakup versi 'Approved' atau 'APPROVED'.
             $table->enum('status', [
                 'draft', 
                 'waiting', 

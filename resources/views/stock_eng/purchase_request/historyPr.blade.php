@@ -5,7 +5,7 @@
     showPreview: false,
     showEdit: false,
     selectedPr: {},
-    editForm: { id: '', pr_code: '', type_product: '', product: '', priority: '', status: '' },
+    editForm: { id: '', pr_code: '', type_product: '', product: '', qty: '', priority: '', status: '' },
     
     initPreview(id) {
         fetch(`/eng/purchase-request/${id}/preview`)
@@ -78,7 +78,7 @@
             Approved
           </button>
           <button type="button" onclick="filterTable('urgent', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Urgent
+            Premium / Urgent
           </button>
         </div>
       </div>
@@ -93,6 +93,7 @@
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">PR CODE REFERENCE</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">PRODUCT NAME</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">CATEGORY</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[70px]">QTY</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">PRIORITY</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">STATUS</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">REQUEST DATE</th>
@@ -118,7 +119,11 @@
             <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white">
               {{ $pr->product }}
             </td>
-            {{-- 5. PRIORITY --}}
+            {{-- 🌟 TAMBAHAN: 5. QTY DI TABEL UTAMA --}}
+            <td class="py-3 px-3 text-xs font-bold text-slate-900 dark:text-white text-center font-mono">
+              {{ $pr->qty ?? 1 }}
+            </td>
+            {{-- 6. PRIORITY --}}
             <td class="py-3 px-3 text-center">
               <span class="priority-cell inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase
                 @if(strtolower($pr->priority) == 'urgent') bg-rose-50 text-rose-600 border border-rose-100 
@@ -126,7 +131,7 @@
                 {{ $pr->priority }}
               </span>
             </td>
-            {{-- 6. STATUS (🛠️ FIX SINKRONISASI BLADE) --}}
+            {{-- 7. STATUS --}}
             <td class="py-3 px-3 text-center">
               <span class="status-cell inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-tight uppercase
                 @if(in_array(strtolower($pr->status), ['draft', 'waiting', 'waiting approval'])) 
@@ -145,7 +150,7 @@
                 @endif
               </span>
             </td>
-            {{-- 7. REQUEST DATE --}}
+            {{-- 8. REQUEST DATE --}}
             <td class="py-2 px-3 text-center">
               <div class="text-[11px] font-semibold text-black dark:text-white tracking-tight">
                 {{ $pr->request_date ? \Carbon\Carbon::parse($pr->request_date)->format('d/m/y') : '-' }}
@@ -154,7 +159,7 @@
                 {{ $pr->request_date ? \Carbon\Carbon::parse($pr->request_date)->format('H:i') : '' }}
               </div>
             </td>
-            {{-- 8. ACTIONS CONTROLS --}}
+            {{-- 9. ACTIONS CONTROLS --}}
             <td class="py-3 px-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 
@@ -189,7 +194,7 @@
           </tr>
           @empty
           <tr>
-            <td colspan="8" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <td colspan="9" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
               No purchase request history logs found.
             </td>
           </tr>
@@ -209,7 +214,7 @@
     </div>
   </div>
 
-  {{-- 🔍 MODAL PREVIEW DETAIL (🛠️ FIX SINKRONISASI ALPINE JS STATUS) --}}
+  {{-- 🔍 MODAL PREVIEW DETAIL --}}
   <div x-show="showPreview" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition style="display: none;">
     <div @click.away="showPreview = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">
@@ -224,6 +229,11 @@
             <div class="grid grid-cols-3 py-1 border-b border-gray-100">
                 <span class="text-gray-500">Category</span>
                 <span class="col-span-2 font-semibold text-blue-600" x-text="selectedPr.product"></span>
+            </div>
+            {{-- 🌟 TAMBAHAN: QTY DI MODAL PREVIEW --}}
+            <div class="grid grid-cols-3 py-1 border-b border-gray-100">
+                <span class="text-gray-500">Quantity (QTY)</span>
+                <span class="col-span-2 font-bold text-slate-950 font-mono" x-text="(selectedPr.qty ?? 1) + ' Pcs'"></span>
             </div>
             <div class="grid grid-cols-3 py-1 border-b border-gray-100">
                 <span class="text-gray-500">Priority</span>
@@ -246,7 +256,7 @@
     </div>
   </div>
 
-  {{-- 📝 MODAL EDIT (🛠️ FIX VALUE ENUM OPTION) --}}
+  {{-- 📝 MODAL EDIT --}}
   <div x-show="showEdit" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition style="display: none;">
     <div @click.away="showEdit = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">
@@ -273,7 +283,12 @@
                 <input type="text" name="product" x-model="editForm.product" required class="w-full bg-white text-black border border-gray-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500 focus:outline-none">
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            {{-- UPDATE GRID: MENAMBAHKAN INPUT FIELD QTY DI MODAL EDIT --}}
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Quantity</label>
+                    <input type="number" name="qty" min="1" x-model="editForm.qty" required class="w-full bg-white text-black border border-gray-200 rounded-lg p-2 font-bold font-mono text-center focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Priority</label>
                     <select name="priority" x-model="editForm.priority" class="w-full bg-white text-black border border-gray-200 rounded-lg p-2 focus:outline-none">
@@ -323,6 +338,14 @@
     font-size: 12px;
     padding: 4px 8px;
   }
+  
+  /* Menghilangkan spin button input number di modal edit */
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+  }
+  input[type=number] { -moz-appearance: textfield; }
 </style>
 
 {{-- JAVASCRIPT REALTIME ROW FILTER --}}
