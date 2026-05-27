@@ -39,7 +39,6 @@ class ApprovalEngController extends Controller
         $signaturePath = null;
         $stampPath = null;
 
-        // --- PROSES DEKODE GAMBAR TANDA TANGAN ---
         if ($request->filled('signature_image') && !str_starts_with($request->signature_image, 'http')) {
             $image_data = str_replace(['data:image/png;base64,', ' '], ['', '+'], $request->signature_image);
             $fileName = 'sig_' . $role . '_' . str_replace('/', '-', $requestData->request_no) . '_' . time() . '.png';
@@ -48,8 +47,6 @@ class ApprovalEngController extends Controller
             file_put_contents($folderPath . '/' . $fileName, base64_decode($image_data));
             $signaturePath = 'uploads/signatures/' . $fileName;
         }
-
-        // --- PROSES DEKODE GAMBAR STEMPEL ---
         if ($request->filled('stamp_image') && !str_starts_with($request->stamp_image, 'http')) {
             $stamp_data = preg_replace('/^data:image\/\w+;base64,/', '', $request->stamp_image);
             $stamp_data = str_replace(' ', '+', $stamp_data);
@@ -61,13 +58,7 @@ class ApprovalEngController extends Controller
         }
 
         $approverName = Auth::check() ? Auth::user()->name : (($role === 'staff') ? 'Engineering Staff' : 'Engineering SPV');
-
-        // -----------------------------------------------------------------
-        // LOGIKA APPROVAL BERJENJANG (STAFF VS SPV)
-        // -----------------------------------------------------------------
         if ($role === 'staff') {
-            
-            // Ambil path lama dan bersihkan dari bungkus asset() jika telanjur ada
             $oldSignature = $requestData->staff_signature;
             if ($oldSignature) {
                 $oldSignature = str_replace(url('/'), '', $oldSignature);
@@ -83,8 +74,8 @@ class ApprovalEngController extends Controller
             $requestData->update([
                 'status'          => 'Checked by Staff',
                 'staff_name'      => $approverName,
-                'staff_signature' => $signaturePath ? $signaturePath : $oldSignature, // 🔧 BERSIH TANPA ASSET()
-                'staff_stamp'     => $stampPath ? $stampPath : $oldStamp               // 🔧 BERSIH TANPA ASSET()
+                'staff_signature' => $signaturePath ? $signaturePath : $oldSignature, 
+                'staff_stamp'     => $stampPath ? $stampPath : $oldStamp               
             ]);
 
             HistoryApproval::create([
@@ -119,13 +110,11 @@ class ApprovalEngController extends Controller
             $requestData->update([
                 'status'         => 'Approved',
                 'spv_name'       => $approverName,
-                'spv_signature'  => $signaturePath ? $signaturePath : $oldSignature, // 🔧 BERSIH TANPA ASSET()
-                'spv_stamp'      => $stampPath ? $stampPath : $oldStamp,             // 🔧 BERSIH TANPA ASSET()
+                'spv_signature'  => $signaturePath ? $signaturePath : $oldSignature, 
+                'spv_stamp'      => $stampPath ? $stampPath : $oldStamp,             
                 'approved_by'    => $approverName,
                 'signature_path' => $signaturePath ? $signaturePath : $requestData->signature_path
             ]);
-
-            // 🎯 UPDATE RECORD LAMA DI HISTORY
             $history = HistoryApproval::where('request_no', $requestData->request_no)
                                        ->where('status', 'Checked by Staff')
                                        ->latest()

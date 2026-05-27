@@ -1,133 +1,158 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)]">
+<div class="-m-4 md:-m-6 2xl:-m-10 bg-[#F9F9FB] dark:bg-slate-900 min-h-[calc(100vh-80px)] text-slate-800 dark:text-slate-200 font-sans p-3">
     
-    <div class="p-4 md:p-8 2xl:p-10">
+    <div class="px-4 pt-4 max-w-full mx-auto">
+        <h1 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Create Purchase Request</h1>
+    </div>
+
+    <div class="p-3 max-w-full mx-auto">
         
-        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-slate-900 dark:text-white">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight uppercase">Purchase Requests</h1>
-                <nav class="flex text-sm text-slate-500 font-medium mt-1">
-                    <span>Engineering</span>
-                    <span class="mx-2 text-slate-300">/</span>
-                    <span class="text-primary font-bold">Costing & Procurement</span>
-                </nav>
-            </div>
+        @if(session('success'))
+        <div class="mb-3 p-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold rounded shadow-sm">
+            {{ session('success') }}
         </div>
+        @endif
 
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden">
+        @if ($errors->any())
+        <div class="mb-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-bold rounded shadow-sm">
+            <p class="uppercase mb-1">Gagal Menyimpan! Periksa Input Berikut:</p>
+            <ul class="list-disc pl-4 font-semibold">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded shadow-sm overflow-hidden">
             
-            <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 dark:border-strokedark">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white uppercase">Requests List</h3>
-                    <p class="text-sm text-slate-500 font-bold uppercase tracking-tight mt-1">Manage purchase requests and procurement stock.</p>
+            <div class="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700 px-4 py-1.5 flex justify-between items-center text-[10px] font-bold uppercase tracking-wider">
+                <div class="flex gap-2 text-slate-400">
+                    <span>Source: <span class="text-slate-700 dark:text-white">Auto-generated</span></span>
                 </div>
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Export
+                
+                <div class="flex items-center bg-gray-200/60 dark:bg-slate-700 rounded overflow-hidden text-[9px]">
+                    <span class="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white px-3 py-1 relative after:content-[''] after:absolute after:top-0 after:right-[-6px] after:border-y-[11px] after:border-y-transparent after:border-l-[6px] after:border-l-orange-500 z-10">Draft</span>
+                    <span class="text-slate-500 dark:text-slate-400 px-4 py-1.5">Waiting Approval</span>
+                    <span class="text-slate-500 dark:text-slate-400 px-3 py-1.5">Done</span>
+                </div>
+            </div>
+
+            <form id="odooPrForm" action="{{ route('purchase.request.store') }}" method="POST" class="p-4 md:p-6">
+                @csrf
+
+                <div class="mb-4">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">Purchase Request Reference</label>
+                    <input type="hidden" name="pr_code" value="{{ $generatedPrCode }}">
+                    <h2 class="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight">{{ $generatedPrCode }}</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-xs">
+                    
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Requester Name</label>
+                            <div class="col-span-2">
+                                <input type="text" value="{{ Auth::user() ? Auth::user()->name : 'muhammad ignazi' }}" readonly class="w-full bg-transparent border-0 text-gray-500 font-semibold text-xs p-0 cursor-not-allowed outline-none focus:ring-0">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">NIK / NIM</label>
+                            <div class="col-span-2">
+                                <input type="text" value="{{ Auth::user() ? (Auth::user()->nim ?? Auth::user()->nik) : '20260001' }}" readonly class="w-full bg-transparent border-0 text-gray-500 font-semibold text-xs p-0 cursor-not-allowed outline-none focus:ring-0">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Product (Category) <span class="text-rose-500">*</span></label>
+                            <div class="col-span-2">
+                                <select name="product" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-xs font-semibold text-indigo-600 dark:text-indigo-400 p-0 cursor-pointer">
+                                    <option value="" disabled selected>Select Category...</option>
+                                    @foreach($spareparts->unique('category') as $item)
+                                        <option value="{{ $item->category }}" {{ old('product') == $item->category ? 'selected' : '' }}>{{ $item->category }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Type Product (Name) <span class="text-rose-500">*</span></label>
+                            <div class="col-span-2">
+                                <select name="type_product" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-xs font-semibold text-indigo-600 dark:text-indigo-400 p-0 cursor-pointer">
+                                    <option value="" disabled selected>Select Product Name...</option>
+                                    @foreach($spareparts as $item)
+                                        <option value="{{ $item->name }}" {{ old('type_product') == $item->name ? 'selected' : '' }}>{{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Priority</label>
+                            <div class="col-span-2 flex gap-4">
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-700 dark:text-white">
+                                    <input type="radio" name="priority" value="normal" {{ old('priority', 'normal') == 'normal' ? 'checked' : '' }} class="text-orange-500 focus:ring-0 border-gray-300 w-3 h-3">
+                                    <span>Normal</span>
+                                </label>
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-rose-600">
+                                    <input type="radio" name="priority" value="urgent" {{ old('priority') == 'urgent' ? 'checked' : '' }} class="text-red-500 focus:ring-0 border-gray-300 w-3 h-3">
+                                    <span>Urgent</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Request By</label>
+                            <div class="col-span-2">
+                                <input type="hidden" name="request_by" value="ENGINEERING DEPARTMENT">
+                                <select disabled class="w-full bg-transparent border-0 focus:ring-0 outline-none text-xs font-semibold text-gray-600 dark:text-slate-300 p-0 cursor-not-allowed">
+                                    <option value="ENGINEERING DEPARTMENT" selected>ENGINEERING DEPARTMENT</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Request Date</label>
+                            <div class="col-span-2">
+                                <input type="datetime-local" name="request_date" value="{{ old('request_date', now()->format('Y-m-d\TH:i')) }}" required class="w-full bg-transparent border-0 text-gray-600 dark:text-slate-300 font-semibold text-xs p-0 outline-none focus:ring-0 cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
+                            <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Destination</label>
+                            <div class="col-span-2">
+                                <select name="destination" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-xs font-semibold text-gray-600 dark:text-slate-300 p-0 cursor-pointer">
+                                    <option value="Costing & Procurement Room" selected>Costing & Procurement Room</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <div class="border-b border-gray-200 dark:border-slate-700 flex gap-6 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <span class="border-b-2 border-orange-500 pb-1 text-orange-500 cursor-pointer">Internal Notes / Reason</span>
+                    </div>
+                    
+                    <div class="mt-2 mb-4">
+                        <textarea name="notes" rows="3" required placeholder="Define why engineering needs this purchase request..." class="w-full p-3 border border-gray-200 dark:border-slate-700 rounded bg-transparent focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-xs font-semibold transition-all resize-none">{{ old('notes') }}</textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-3 border-t border-gray-100 dark:border-slate-700/50">
+                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:opacity-90 text-white text-[11px] font-bold rounded shadow-md uppercase tracking-wider transition-all transform hover:-translate-y-0.5">
+                        Save Purchase Request
                     </button>
-                    <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 rounded-xl text-sm font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-100 dark:shadow-none transition-all uppercase">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Add Request
-                    </button>
                 </div>
-            </div>
 
-            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-boxdark">
-                <div class="relative w-full md:w-80">
-                    <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                    <input type="text" placeholder="Search..." class="w-full pl-11 pr-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all dark:bg-meta-4 text-sm font-bold uppercase">
-                </div>
-                <button class="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.5a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Filter
-                </button>
-            </div>
-
-            <div class="max-w-full overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[800px]">
-                    <thead>
-                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20">
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">No. PR</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Item Info</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Urgency</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">SAP Code</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                            <th class="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Req. Date</th>
-                            <th class="px-6 py-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark font-bold">
-                        {{-- Row 1 --}}
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all">
-                            <td class="px-6 py-6 text-xs text-slate-400 font-black">PR-01</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-strokedark">
-                                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="1.5"/></svg>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-sm font-black text-slate-800 dark:text-white uppercase">Nozzle Yamaha 221</span>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">QTY REQ: 50 PCS</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs text-slate-600 dark:text-bodydark uppercase">Urgent</td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-lg text-xs font-black">SAP-NOZ-YMH01</span>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase">Approved</span>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs font-black text-slate-500 uppercase">31 Mar, 2026</td>
-                            <td class="px-6 py-6 text-right">
-                                <button class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
-                            </td>
-                        </tr>
-                        {{-- Row 2 --}}
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all">
-                            <td class="px-6 py-6 text-xs text-slate-400 font-black">PR-02</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-strokedark">
-                                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="1.5"/></svg>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-sm font-black text-slate-800 dark:text-white uppercase">Feeder 8mm Yamaha</span>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">QTY REQ: 10 UNIT</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs text-slate-600 dark:text-bodydark uppercase">Normal</td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-lg text-xs font-black">SAP-FDR-YMH08</span>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-100 uppercase">Rejected</span>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs font-black text-slate-500 uppercase">28 Mar, 2026</td>
-                            <td class="px-6 py-6 text-right">
-                                <button class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 dark:border-strokedark">
-                <p class="text-xs font-black text-slate-500 uppercase tracking-widest">Showing <span class="text-slate-800 dark:text-white font-black">1 to 2</span> of 50</p>
-                <div class="flex items-center gap-2">
-                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    <button class="w-9 h-9 flex items-center justify-center bg-indigo-600 rounded-xl text-white text-sm font-black shadow-lg shadow-indigo-100 dark:shadow-none">1</button>
-                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-600 dark:text-white text-sm font-black hover:bg-slate-50 transition-all">2</button>
-                    <button class="w-9 h-9 flex items-center justify-center border border-slate-200 dark:border-strokedark rounded-xl text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
+
 </div>
 @endsection

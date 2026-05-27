@@ -19,6 +19,11 @@ use App\Http\Controllers\Engineering\HistoryApprovalController;
 use App\Http\Controllers\Production\RequestProdController;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
+// 🌟 IMPORT BARU UNTUK MANAGING HISTORY PR ENGINEERING
+use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
+
+// 🌟 IMPORT BARU UNTUK VERIFIKASI/APPROVAL DI SISI COSTING
+use App\Http\Controllers\Costing\ApprovalController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -61,7 +66,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/eng/approval/review/{id}', [ApprovalEngController::class, 'review'])->name('eng.approval.review');
         Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
         Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
+        
+        // 🛍️ ROUTE PURCHASE REQUEST (DIJAGA DAN DITAMBAHKAN TANPA MENGHAPUS YANG LAMA)
         Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
+        Route::post('/eng/purchase-request', [PurchaseRequestEngController::class, 'store'])->name('purchase.request.store'); 
+
+       // SISTEM HISTORY APPROVAL PR UNTUK VIEW, PREVIEW JSON, EDIT, UPDATE DAN DELETE
+       Route::get('/eng/purchase-request/history', [PurchaseRequestHistoryEngController::class, 'index'])->name('purchase.request.history');
+       Route::get('/eng/purchase-request/{id}/preview', [PurchaseRequestHistoryEngController::class, 'preview'])->name('purchase.request.preview');
+       Route::put('/eng/purchase-request/{id}/update', [PurchaseRequestHistoryEngController::class, 'update'])->name('purchase.request.update'); // <-- SISIPKAN INI, JANGAN HAPUS YANG LAIN
+       Route::delete('/eng/purchase-request/{id}/delete', [PurchaseRequestHistoryEngController::class, 'destroy'])->name('purchase.request.delete');
+        
+        // 🛠️ SEKARANG SUDAH DITAMBAHKAN BIAR TIDAK ERROR LAGI, BRO!
+        Route::get('/eng/purchase-request/{id}/edit', [PurchaseRequestHistoryEngController::class, 'edit'])->name('purchase.request.edit');
+        
+        Route::delete('/eng/purchase-request/{id}/delete', [PurchaseRequestHistoryEngController::class, 'destroy'])->name('purchase.request.delete');
+        
         Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
         Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
         Route::prefix('eng')->group(function () {
@@ -101,10 +121,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
     });
 
-    // --- GRUP COSTING ---
+    // --- GRUP COSTING (DI-UPDATE SECURELY BIAR GA ERROR LAGI) ---
     Route::middleware('role:admin,costing')->group(function () {
         Route::get('/costing/overview', [CostingOverviewController::class, 'index'])->name('costing.overview');
-        Route::get('/costing/incoming-pr', [CostingOverviewController::class, 'incomingPr'])->name('costing.incoming.pr');
+        
+        // 🛠️ Hubungkan langsung ke ApprovalController index agar memuat data view Odoo Style Lu
+        Route::get('/costing/incoming-pr', [ApprovalController::class, 'index'])->name('costing.pr.index');
+        
+        // 🛠️ Rute pemrosesan PUT Action Approve dan Reject dari tombol table view Costing
+        Route::put('/costing/incoming-pr/{id}/approve', [ApprovalController::class, 'approve'])->name('costing.pr.approve');
+        Route::put('/costing/incoming-pr/{id}/reject', [ApprovalController::class, 'reject'])->name('costing.pr.reject');
+        
         Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
     });
     

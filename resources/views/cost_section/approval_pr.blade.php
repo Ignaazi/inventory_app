@@ -1,140 +1,367 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-[calc(100vh-80px)] font-sans">
+<div x-data="{ 
+    currentFilter: 'all',
+    selectedPr: null, 
     
-    <div class="p-4 md:p-8 2xl:p-10">
-        
-        <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-slate-900 dark:text-white">
-            <div>
-                <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">PR Approval</h1>
-                <nav class="flex text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-                    <span>Costing</span>
-                    <span class="mx-2 text-slate-300">/</span>
-                    <span class="text-indigo-600">Pending Requests</span>
-                </nav>
-            </div>
-            <div class="text-left sm:text-right">
-                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Awaiting Verification</p>
-                <p class="text-xs md:text-sm font-bold text-slate-700 dark:text-white uppercase">{{ date('d M Y') }}</p>
-            </div>
+    filterTable(status) {
+        this.currentFilter = status;
+        const rows = document.querySelectorAll('.odoo-table-row');
+        rows.forEach(row => {
+            if (status === 'all') {
+                row.style.display = '';
+            } else if (status === 'urgent') {
+                const priority = row.getAttribute('data-priority');
+                row.style.display = (priority === 'urgent') ? '' : 'none';
+            } else {
+                const rowStatus = row.getAttribute('data-status');
+                row.style.display = (rowStatus === status) ? '' : 'none';
+            }
+        });
+    }
+}" class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans text-slate-900 dark:text-slate-100">
+
+    <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight">
+                Purchase Requests Approval
+            </h2>
+            <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Verify, audit, and validate engineering machine sparepart requirements</p>
         </div>
 
-        <div class="bg-white dark:bg-boxdark rounded-2xl border border-slate-200 dark:border-strokedark shadow-sm overflow-hidden">
+        <div class="flex flex-wrap items-center gap-3">
+            <form action="{{ route('costing.pr.index') }}" method="GET" class="relative w-full sm:w-auto">
+                <div class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <input type="text" name="search" value="{{ $search }}" placeholder="SEARCH REFERENCE..." class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white pl-9 pr-12 py-2 border border-gray-200 dark:border-gray-800 rounded-xl text-xs font-medium focus:outline-none uppercase w-full sm:w-60 transition-all shadow-sm">
+                @if($search)
+                    <a href="{{ route('costing.pr.index') }}" class="absolute inset-y-0 right-3 flex items-center text-xs text-slate-400 hover:text-slate-950 uppercase font-bold">Clear</a>
+                @endif
+            </form>
+
+            <div class="inline-flex items-center gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm w-full sm:w-auto justify-center sm:justify-start">
+                <button @click="filterTable('all')" :class="currentFilter === 'all' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white'" class="px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 uppercase flex-1 sm:flex-none text-center">All</button>
+                <button @click="filterTable('waiting approval')" :class="currentFilter === 'waiting approval' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white'" class="px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 uppercase flex-1 sm:flex-none text-center">To Approve</button>
+                <button @click="filterTable('urgent')" :class="currentFilter === 'urgent' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white'" class="px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 uppercase flex-1 sm:flex-none text-center">Urgent</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-3 mb-4">
+        @if(session('success'))
+            <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+                Success: {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="p-4 bg-red-50 border border-red-200 text-red-600 dark:bg-red-950/20 dark:border-red-900 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
+                Error: {{ session('error') }}
+            </div>
+        @endif
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-slate-900 sm:px-6">
+        <div class="w-full overflow-x-auto">
+            <table class="min-w-full text-left border-collapse" id="approval-table">
+                <thead>
+                    <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50 dark:bg-slate-800/40">
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white w-[180px]">PR Reference</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Item Product / Description</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white w-[140px]">SAP Code</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[100px]">Priority</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">Requested By</th>
+                        <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-[130px]">Stage Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @forelse($pendingPr as $pr)
+                    <tr @click="selectedPr = {
+                            id: '{{ $pr->id }}',
+                            code: '{{ $pr->pr_code }}',
+                            type: '{{ $pr->type_product }}',
+                            product: '{{ $pr->product }}',
+                            priority: '{{ $pr->priority }}',
+                            name: '{{ $pr->name }}',
+                            nik: '{{ $pr->nik ?? '-' }}',
+                            destination: '{{ $pr->destination ?? '-' }}',
+                            notes: `{{ $pr->notes ?? 'No special notes given.' }}`,
+                            date: '{{ $pr->created_at ? $pr->created_at->format('Y-m-d H:i') : '' }}',
+                            status: '{{ strtolower($pr->status) }}',
+                            approve_route: '{{ route('costing.pr.approve', $pr->id) }}',
+                            reject_route: '{{ route('costing.pr.reject', $pr->id) }}'
+                        }"
+                        class="odoo-table-row hover:bg-gray-50/50 dark:hover:bg-white/[0.02] cursor-pointer transition-colors duration-200"
+                        data-status="{{ strtolower($pr->status) === 'approved' ? 'approved' : (strtolower($pr->status) === 'rejected' ? 'rejected' : 'waiting approval') }}" 
+                        data-priority="{{ strtolower($pr->priority) }}">
+                        
+                        <td class="py-2 px-3 text-xs font-semibold text-purple-600 dark:text-purple-400 font-mono">
+                            {{ $pr->pr_code }}
+                        </td>
+                        <td class="py-2 px-3 text-xs font-semibold text-black dark:text-white uppercase tracking-tight text-center">
+                            {{ $pr->type_product }}
+                        </td>
+                        <td class="py-2 px-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase font-mono">
+                            {{ $pr->product }}
+                        </td>
+                        <td class="py-2 px-3 text-center">
+                            @if(strtolower($pr->priority) == 'urgent')
+                                <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">Urgent</span>
+                            @else
+                                <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600/50">Normal</span>
+                            @endif
+                        </td>
+                        <td class="py-2 px-3">
+                            <span class="text-xs font-semibold text-black dark:text-white uppercase block leading-none mb-0.5">{{ $pr->name }}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">NIK: {{ $pr->nik ?? '-' }}</span>
+                        </td>
+                        <td class="py-2 px-3 text-center">
+                            @if(strtolower($pr->status) === 'approved')
+                                <span class="inline-flex items-center justify-center w-24 rounded-lg py-1 text-[10px] font-bold tracking-wider uppercase border border-emerald-500/30 bg-emerald-50/50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">Approved</span>
+                            @elseif(strtolower($pr->status) === 'rejected')
+                                <span class="inline-flex items-center justify-center w-24 rounded-lg py-1 text-[10px] font-bold tracking-wider uppercase border border-rose-500/30 bg-rose-50/50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">Rejected</span>
+                            @else
+                                <span class="inline-flex items-center justify-center w-24 rounded-lg py-1 text-[10px] font-bold tracking-wider uppercase border border-blue-500/30 bg-blue-50/50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">Waiting</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            No purchase requests pending inside ledger.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <p class="text-xs font-bold text-slate-950 dark:text-white">
+                Showing {{ $pendingPr->firstItem() ?? 0 }} to {{ $pendingPr->lastItem() ?? 0 }} of {{ $pendingPr->total() ?? 0 }} entries
+            </p>
+            <div class="flex items-center odoo-pagination-container">
+                {{ $pendingPr->appends(['search' => $search])->links() }}
+            </div>
+        </div>
+    </div>
+
+    <div x-show="selectedPr" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex justify-end items-stretch"
+         style="display: none;">
+         
+        <div @click.away="selectedPr = null" 
+             class="w-full max-w-4xl bg-slate-50 dark:bg-slate-950 shadow-2xl flex flex-col justify-between border-l border-gray-200 dark:border-gray-800 animate-slide-in">
             
-            <div class="p-4 md:p-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-slate-100 dark:border-strokedark">
-                <div class="w-full xl:w-auto">
-                    <h3 class="text-base md:text-lg font-bold text-slate-800 dark:text-white uppercase leading-tight">Waiting Approval</h3>
-                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Review and verify purchase requests from engineering.</p>
-                </div>
-                <div class="flex items-center gap-3 w-full xl:w-auto">
-                    <button class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-strokedark rounded-xl text-[10px] font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase tracking-widest">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Export PR
+            <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between shadow-sm">
+                
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto order-2 lg:order-1">
+                    <button @click="selectedPr = null" class="bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity flex-grow sm:flex-grow-0 text-center">
+                        Back
                     </button>
+
+                    <div x-show="selectedPr && selectedPr.status !== 'approved' && selectedPr.status !== 'rejected'" class="flex items-center gap-3 w-full sm:w-auto">
+                        <form :action="selectedPr ? selectedPr.approve_route : '#'" method="POST" class="inline w-full sm:w-auto" onsubmit="return confirm('Setujui Purchase Request ini?')">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 via-green-400 to-yellow-300 text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity">
+                                Approve PR
+                            </button>
+                        </form>
+                        
+                        <form :action="selectedPr ? selectedPr.reject_route : '#'" method="POST" class="inline w-full sm:w-auto" onsubmit="return confirm('Tolak request item ini, Bro?')">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-rose-500 via-orange-500 to-amber-400 text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity">
+                                Reject
+                            </button>
+                        </form>
+                    </div>
+
+                    <div x-show="selectedPr && (selectedPr.status === 'approved' || selectedPr.status === 'rejected')" class="text-xs font-bold text-white uppercase bg-purple-600 dark:bg-purple-700 px-4 py-2 rounded-lg text-center w-full sm:w-auto shadow-sm tracking-wider">
+                        Processed Ledger
+                    </div>
+                </div>
+
+                <div class="flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg text-[11px] font-extrabold uppercase select-none w-full lg:w-auto order-1 lg:order-2 overflow-hidden shadow-inner p-0.5">
+                    
+                    <div :class="selectedPr && selectedPr.status === 'draft' 
+                            ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white font-active' 
+                            : 'bg-gray-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'"
+                          class="odoo-step step-first">
+                        <span>Draft</span>
+                    </div>
+                    
+                    <div :class="selectedPr && selectedPr.status !== 'approved' && selectedPr.status !== 'rejected' && selectedPr.status !== 'draft'
+                            ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 text-white font-active' 
+                            : 'bg-gray-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'"
+                          class="odoo-step">
+                        <span>Waiting Approval</span>
+                    </div>
+                    
+                    <div :class="selectedPr && selectedPr.status === 'approved' 
+                            ? 'bg-gradient-to-r from-emerald-600 via-green-500 to-lime-400 text-white font-active' 
+                            : (selectedPr && selectedPr.status === 'rejected' ? 'bg-gradient-to-r from-rose-600 to-red-500 text-white font-active' : 'bg-gray-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500')"
+                          class="odoo-step step-last">
+                        <span>Done</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-4 md:p-6 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white dark:bg-boxdark">
-                <div class="relative w-full lg:w-96">
-                    <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                    <input type="text" placeholder="Search PR Number..." class="w-full pl-11 pr-4 py-3 border border-slate-200 dark:border-strokedark rounded-xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all dark:bg-meta-4 text-[11px] font-black uppercase">
+            <div class="flex-grow p-4 md:p-6 overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm text-slate-950 dark:text-white">
+                    
+                    <div class="mb-5 border-b border-gray-100 dark:border-gray-800 pb-3">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Purchase Request Reference</label>
+                        <h2 class="text-xl font-bold text-purple-600 dark:text-purple-400 tracking-tight font-mono" x-text="selectedPr ? selectedPr.code : ''"></h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5 text-xs font-sans">
+                        
+                        <div class="space-y-3.5">
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Requester Name</label>
+                                <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.name : ''"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">NIK / NIM</label>
+                                <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.nik : ''"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Product (Category)</label>
+                                <div class="col-span-2 text-indigo-600 dark:text-indigo-400 font-semibold uppercase font-mono text-xs" x-text="selectedPr ? selectedPr.product : ''"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Type Product</label>
+                                <div class="col-span-2 text-slate-950 dark:text-white font-medium uppercase text-xs" x-text="selectedPr ? selectedPr.type : ''"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3.5">
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Priority</label>
+                                <div class="col-span-2">
+                                    <template x-if="selectedPr && selectedPr.priority.toLowerCase() === 'urgent'">
+                                        <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400">Urgent</span>
+                                    </template>
+                                    <template x-if="selectedPr && selectedPr.priority.toLowerCase() !== 'urgent'">
+                                        <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700/50 dark:text-slate-300">Normal</span>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Request By</label>
+                                <div class="col-span-2 text-slate-800 dark:text-slate-200 font-medium uppercase text-xs">ENGINEERING DEPARTMENT</div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Request Date</label>
+                                <div class="col-span-2 text-slate-800 dark:text-slate-300 font-mono font-medium text-xs" x-text="selectedPr ? selectedPr.date : ''"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 items-center border-b border-gray-50 dark:border-gray-800/60 pb-1.5">
+                                <label class="font-bold text-slate-400 text-[11px] uppercase">Destination</label>
+                                <div class="col-span-2 text-emerald-600 dark:text-emerald-400 font-semibold uppercase text-xs" x-text="selectedPr ? selectedPr.destination : ''"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-5">
+                        <div class="border-b border-gray-200 dark:border-gray-800 flex gap-6 text-[11px] font-bold uppercase text-slate-950 dark:text-white">
+                            <span class="border-b-2 border-purple-600 pb-1 text-purple-600">Internal Notes / Reason</span>
+                        </div>
+                        <div class="mt-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <p class="text-slate-700 dark:text-slate-300 italic font-medium text-xs" x-text="selectedPr ? selectedPr.notes : ''"></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-3 flex justify-between items-center text-xs font-bold uppercase text-slate-400 border-t border-gray-100 dark:border-gray-800 select-none">
+                        <span>Verification Mode Active</span>
+                        <div class="flex gap-2 items-center text-sm font-bold">
+                            <span>Status:</span>
+                            <span :class="selectedPr && selectedPr.status === 'approved' ? 'text-emerald-600' : (selectedPr && selectedPr.status === 'rejected' ? 'text-rose-600' : 'text-blue-600')" x-text="selectedPr ? selectedPr.status : ''"></span>
+                        </div>
+                    </div>
+
                 </div>
-                <button class="w-full lg:w-auto flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 dark:border-strokedark rounded-xl text-[10px] font-black text-slate-700 dark:text-white hover:bg-slate-50 transition-all uppercase tracking-widest">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.5a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Urgency Filter
-                </button>
             </div>
 
-            <div class="max-w-full overflow-x-auto scrollbar-hide">
-                <table class="w-full text-left border-collapse min-w-[1000px]">
-                    <thead>
-                        <tr class="border-y border-slate-100 dark:border-strokedark bg-slate-50/50 dark:bg-meta-4/20">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">PR No.</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Item Info</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Urgency</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Qty Req</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Requested By</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Verification</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-strokedark font-bold">
-                        {{-- Row 1 --}}
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all text-slate-900 dark:text-white">
-                            <td class="px-6 py-6 text-[11px] text-slate-400 font-black tracking-widest uppercase">PR-2026-001</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex-shrink-0 flex items-center justify-center border border-slate-100 dark:border-strokedark text-slate-400">
-                                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="1.5"/></svg>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-xs md:text-sm font-black uppercase leading-none">Nozzle Yamaha 221</span>
-                                        <span class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1.5 leading-none">SAP-NOZ-YMH01</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="bg-rose-50 dark:bg-rose-500/10 text-rose-600 px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest border border-rose-100/50">Urgent</span>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs font-black uppercase">50 PCS</td>
-                            <td class="px-6 py-6 text-center uppercase text-[10px] text-slate-500 font-black tracking-widest">ENGINEERING DEPT</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center justify-center gap-3">
-                                    <button class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-100 dark:shadow-none border border-rose-600">
-                                        Reject
-                                    </button>
-                                    <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-100 dark:shadow-none border border-emerald-600">
-                                        Approve
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        {{-- Row 2 --}}
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-meta-4/10 transition-all text-slate-900 dark:text-white">
-                            <td class="px-6 py-6 text-[11px] text-slate-400 font-black tracking-widest uppercase">PR-2026-002</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-100 dark:bg-meta-4 flex-shrink-0 flex items-center justify-center border border-slate-100 dark:border-strokedark text-slate-400">
-                                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="1.5"/></svg>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-xs md:text-sm font-black uppercase leading-none">Feeder 8mm Yamaha</span>
-                                        <span class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1.5 leading-none">SAP-FDR-YMH08</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-6 text-center">
-                                <span class="bg-slate-50 dark:bg-meta-4 text-slate-500 px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest border border-slate-200">Normal</span>
-                            </td>
-                            <td class="px-6 py-6 text-center text-xs font-black uppercase">10 UNIT</td>
-                            <td class="px-6 py-6 text-center uppercase text-[10px] text-slate-500 font-black tracking-widest">ENGINEERING DEPT</td>
-                            <td class="px-6 py-6">
-                                <div class="flex items-center justify-center gap-3">
-                                    <button class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-100 dark:shadow-none border border-rose-600">
-                                        Reject
-                                    </button>
-                                    <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-100 dark:shadow-none border border-emerald-600">
-                                        Approve
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-50 dark:border-strokedark bg-white dark:bg-boxdark">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest order-2 md:order-1">Showing <span class="text-slate-900 dark:text-white">1 to 2</span> of 12 Pending PR</p>
-                <div class="flex items-center gap-1.5 order-1 md:order-2">
-                    <button class="w-8 h-8 flex items-center justify-center border border-slate-100 dark:border-strokedark rounded-lg text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    <button class="w-8 h-8 flex items-center justify-center bg-indigo-600 rounded-lg text-white text-[10px] font-black">1</button>
-                    <button class="w-8 h-8 flex items-center justify-center border border-slate-100 dark:border-strokedark rounded-lg text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                </div>
+            <div class="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-gray-800 p-4 text-center text-xs text-slate-500 font-bold uppercase font-mono tracking-wider select-none">
+                Costing Department Verification Ledger
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .odoo-pagination-container nav[role="navigation"] svg { width: 16px; height: 16px; display: inline; }
+    .odoo-pagination-container nav[role="navigation"] div:first-child { display: none; }
+    .pagination .page-item.active .page-link {
+        background-color: #7c3aed !important;
+        border-color: #7c3aed !important;
+        color: white !important;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    .pagination .page-link {
+        color: inherit !important;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .animate-slide-in { animation: slideIn 0.2s ease-out forwards; }
+
+    /* 🎯 EXACT ODOO CHEVRON PIPELINE */
+    .odoo-step {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 22px 6px 30px;
+        min-height: 32px;
+        clip-path: polygon(calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%, 12px 50%, 0% 0%);
+        margin-right: -10px;
+        transition: all 0.3s ease;
+    }
+
+    /* Step pertama (DRAFT): Sisi kiri lurus, kanan panah */
+    .odoo-step.step-first {
+        padding-left: 18px;
+        clip-path: polygon(calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%, 0% 50%, 0% 0%);
+    }
+
+    /* Step terakhir (DONE): Sisi kiri panah, kanan lurus */
+    .odoo-step.step-last {
+        padding-right: 18px;
+        margin-right: 0;
+        clip-path: polygon(100% 0%, 100% 50%, 100% 100%, 0% 100%, 12px 50%, 0% 0%);
+    }
+
+    /* Memaksa text yang aktif/diwarnai berwarna putih cerah */
+    .font-active span {
+        color: #ffffff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .odoo-step span {
+        display: block;
+        white-space: nowrap;
+        text-align: center;
+    }
+</style>
 @endsection

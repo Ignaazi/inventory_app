@@ -128,7 +128,7 @@
 
       @if(in_array(auth()->user()->role, ['admin', 'engineering']))
       <div class="mb-8" x-data="{ 
-          openMenu: '{{ request()->is('*eng/in*', '*eng/out*', '*eng/disposal*') ? 'trans' : (request()->is('*barcode*', '*parsing*', '*type*') ? 'barcode' : (request()->is('*eng/approval*', '*approval/history*') ? 'approval' : 'none')) }}'
+          openMenu: '{{ request()->is('*eng/purchase-request*') ? 'pr' : (request()->is('*eng/in*', '*eng/out*', '*eng/disposal*') ? 'trans' : (request()->is('*barcode*', '*parsing*', '*type*') ? 'barcode' : (request()->is('*eng/approval*', '*approval/history*') ? 'approval' : 'none'))) }}'
         }">
         <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           ENGINEERING
@@ -169,7 +169,7 @@
             <ul x-show="openMenu === 'trans'" x-transition :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
               <li>
                 <a href="/eng/in" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/in*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
-                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l-4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                   <span>In</span>
                 </a>
               </li>
@@ -254,12 +254,37 @@
             </ul>
           </li>
   
-          <li>
-            <a href="/eng/purchase-request" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/purchase-request*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Purchase Request</span>
-            </a>
+          <!-- 🛒 Purchase Request Dropdown (Terintegrasi Penuh dengan View Baru) -->
+          <li class="relative">
+            <button 
+              type="button"
+              @click="openMenu = (openMenu === 'pr' ? 'none' : 'pr')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/purchase-request*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Purchase Request</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <ul x-show="openMenu === 'pr'" x-transition :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
+              <li>
+                <!-- Diarahkan ke form pembuatan PR -->
+                <a href="/eng/purchase-request" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('eng/purchase-request') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>Create PR</span>
+                </a>
+              </li>
+              <li>
+                <!-- 🌟 Diubah ke Named Route History PR Baru yang Mengarah ke Table Full Page -->
+                <a href="{{ route('purchase.request.history') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*purchase-request/history*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>History PR</span>
+                </a>
+              </li>
+            </ul>
           </li>
+
           <li>
             <a href="/eng/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
               <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -366,47 +391,56 @@
         </div>
   @endif
 
-      @if(in_array(auth()->user()->role, ['admin', 'costing']))
-<div class="mb-8">
-  <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-    COSTING
-  </h3>
-  <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">CST</div>
-
-  <ul class="flex flex-col gap-1.5">
-    <li>
-      <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
-      </a>
-    </li>
-    <li>
-      <a href="{{ route('costing.incoming.pr') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/incoming*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
-      </a>
-    </li>
-    <li>
-      <a href="{{ route('costing.material.received') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/material*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
-      </a>
-    </li>
-    <li>
-      <a href="/costing/history" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/history*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">History</span>
-      </a>
-    </li>
-    <li>
-      <a href="/costing/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1-1H5a1 1 0 01-1-1V4z"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">Report</span>
-      </a>
-    </li>
-  </ul>
-</div>
-@endif
+  @if(in_array(auth()->user()->role, ['admin', 'costing']))
+  <div class="mb-8">
+    <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+      COSTING
+    </h3>
+    <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">CST</div>
+  
+    <ul class="flex flex-col gap-1.5">
+      {{-- 1. COSTING OVERVIEW --}}
+      <li>
+        <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
+        </a>
+      </li>
+  
+      {{-- 2. APPROVE PR (🌟 DI-UPDATE: Menggunakan nama route baru 'costing.pr.index') --}}
+      <li>
+        <a href="{{ route('costing.pr.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/incoming-pr*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
+        </a>
+      </li>
+  
+      {{-- 3. MATERIAL RECEIVED --}}
+      <li>
+        <a href="{{ route('costing.material.received') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/material*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
+        </a>
+      </li>
+  
+      {{-- 4. HISTORY --}}
+      <li>
+        <a href="/costing/history" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/history*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">History</span>
+        </a>
+      </li>
+  
+      {{-- 5. REPORT --}}
+      <li>
+        <a href="/costing/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1-1H5a1 1 0 01-1-1V4z"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Report</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  @endif
 
     </nav>
   </div>
