@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\StockEng; 
 use App\Models\Rak; 
-use App\Models\ListSparepartEng; // 🌟 1. Pastikan Model Master Data Lu Di-import di Sini
-use Illuminate\Support\Facades\Response;
+use App\Models\ListSparepartEng; 
 use Illuminate\Support\Facades\Log;
 
 class StockEngineeringController extends Controller
@@ -15,45 +14,26 @@ class StockEngineeringController extends Controller
     {
         $raks = Rak::all();
         $stocks = StockEng::with('rak')->orderBy('created_at', 'desc')->paginate(25);
-        
-        // 🌟 2. KEMBALI NORMAL & RIEL: Ambil data master langsung dari table ListSparepartEng
         $ListSparepartEng = ListSparepartEng::orderBy('name', 'asc')->get(); 
-
-        // 🌟 3. SINKRONISASI: Samakan nama variabel di compact dengan yang dipanggil oleh @foreach di Blade
         return view('stock_eng.index', compact('stocks', 'raks', 'ListSparepartEng'));
     }
-
-    /**
-     * Menampilkan halaman Utama Transaction IN (History)
-     * File: resources/views/stock_eng/transaction/in.blade.php
-     */
     public function indexIn()
     {
         $recent_logs = StockEng::orderBy('updated_at', 'desc')->take(10)->get();
         return view('stock_eng.transaction.in', compact('recent_logs'));
     }
-
-    /**
-     * Menampilkan halaman Mode Scanner
-     */
     public function inScan()
     {
         $stocks = StockEng::all(); 
         return view('stock_eng.transaction.in_scan', compact('stocks'));
     }
 
-    /**
-     * Menampilkan halaman Mode Manual
-     */
     public function inManual()
     {
         $stocks = StockEng::all(); 
         return view('stock_eng.transaction.in_manual', compact('stocks'));
     }
 
-    /**
-     * Memproses penambahan stok (QTY IN)
-     */
     public function updateStockIn(Request $request)
     {
         try {
@@ -77,7 +57,6 @@ class StockEngineeringController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-
     public function store(Request $request)
     {
         try {
@@ -124,21 +103,14 @@ class StockEngineeringController extends Controller
 
         return redirect()->back()->with('success', 'Rak Baru Berhasil Ditambahkan');
     }
-
-    /**
-     * Menangani delete rak samping add rak
-     */
     public function destroyRak($id)
     {
         try {
             $rak = Rak::findOrFail($id);
-            
-            // Cek apakah rak masih digunakan oleh data stock_engs
             $checkUsage = StockEng::where('rak_id', $id)->exists();
             if ($checkUsage) {
                 return redirect()->back()->with('error', 'Rak gagal dihapus karena masih ada nozzle di dalamnya!');
             }
-
             $rak->delete();
             return redirect()->back()->with('success', 'Rak Berhasil Dihapus!');
         } catch (\Exception $e) {
@@ -146,14 +118,12 @@ class StockEngineeringController extends Controller
             return redirect()->back()->with('error', 'Gagal hapus rak: ' . $e->getMessage());
         }
     }
-
     public function update(Request $request, $id)
     {
         $stock = StockEng::findOrFail($id);
         $stock->update($request->all());
         return redirect()->back()->with('success', 'Data Berhasil Diupdate');
     }
-
     public function destroy($id)
     {
         $stock = StockEng::findOrFail($id);

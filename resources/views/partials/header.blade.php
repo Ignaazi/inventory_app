@@ -1,3 +1,14 @@
+<style>
+  
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  header, 
+  header *,
+  [x-show="profileModalOpen"],
+  [x-show="profileModalOpen"] * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+</style>
 <header
   x-data="{ dropdownOpen: false, notifyOpen: false, profileModalOpen: false }"
   class="sticky top-0 z-50 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"

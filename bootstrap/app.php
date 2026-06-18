@@ -31,6 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
             // 5. 🚀 UPDATE BARU: Route Core Stock Management Production 
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/production/stock_prod.php');
+
+            // 6. 🌐 UPDATE UTAMA API MOBILE: Mendaftarkan file routes/api.php agar dibaca sistem
+            Route::middleware('api')
+                ->prefix('api') // Menambahkan prefix 'api/' secara otomatis di depan rute
+                ->group(__DIR__.'/../routes/api.php');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

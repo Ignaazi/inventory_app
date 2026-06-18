@@ -45,12 +45,12 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // --- GRUP ADMIN (Full Access) ---
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/admin/users/store', [UserController::class, 'store'])->name('users.store');
-        Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    });
+Route::middleware('role:admin')->group(function () {
+    Route::get('/admin/users', [UserController::class, 'index'])->name('users.index'); // 👈 Lihat name() di sini
+    Route::post('/admin/users/store', [UserController::class, 'store'])->name('users.store');
+    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
 
     // --- GRUP ENGINEERING ---
     Route::middleware('role:admin,engineering')->group(function () {

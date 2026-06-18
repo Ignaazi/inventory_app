@@ -1,10 +1,9 @@
 @extends('admin')
 
 @section('content')
-{{-- Container utama tanpa padding tambahan karena sudah ada di admin.blade.php --}}
+
 <div class="flex flex-col gap-6">
     
-    {{-- 1. ENGINEERING KPI ROW (5 Columns) --}}
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-5">
         @php
             $engKpis = [
@@ -15,7 +14,6 @@
                 ['label' => 'Trans. (IN/OUT)', 'val' => '124', 'icon' => 'refresh-cw', 'bg' => 'bg-indigo-500/10', 'color' => 'text-indigo-500', 'sub' => 'Today'],
             ];
         @endphp
-
         @foreach($engKpis as $kpi)
         <div class="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark transition-all hover:shadow-md">
             <div class="flex items-center gap-3 mb-4">
@@ -31,10 +29,7 @@
         </div>
         @endforeach
     </div>
-
-    {{-- 2. CHART & ALERTS SECTION --}}
     <div class="grid grid-cols-12 gap-6">
-        {{-- Activity Chart --}}
         <div class="col-span-12 xl:col-span-8 rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
             <div class="flex justify-between items-center mb-6">
                 <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm tracking-tight">Aktivitas Transaksi Sparepart</h4>
@@ -45,8 +40,6 @@
             </div>
             <div class="h-[250px]"><canvas id="engActivityChart"></canvas></div>
         </div>
-
-        {{-- Urgent PR & Lost Summary --}}
         <div class="col-span-12 xl:col-span-4 flex flex-col gap-6">
             <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark flex-1">
                 <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm mb-4 flex items-center gap-2">
@@ -64,7 +57,6 @@
                     @endforeach
                 </div>
             </div>
-            
             <div class="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
                 <h4 class="font-bold text-slate-800 dark:text-white uppercase text-sm mb-2 text-warning">Lost Report Summary</h4>
                 <div class="flex items-center justify-between">
@@ -76,8 +68,6 @@
             </div>
         </div>
     </div>
-
-    {{-- 3. STOCK TABLE (Engineering View) --}}
     <div class="rounded-2xl border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark overflow-hidden mb-10">
         <div class="px-6 py-6 border-b border-stroke dark:border-strokedark flex items-center justify-between bg-gray-50/30 dark:bg-white/0">
             <div>

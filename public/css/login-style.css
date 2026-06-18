@@ -1,0 +1,18 @@
+/* 1. Ambil Font Nunito dari Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+/* 2. Paksa semua elemen, termasuk utilities dari Tailwind, menggunakan Nunito */
+* {
+    font-family: 'Nunito', sans-serif !important;
+}
+
+@keyframes vibrantBlueRainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animate-rainbow {
+    background-size: 200% 200%;
+    animation: vibrantBlueRainbow 8s ease-in-out infinite;
+}
