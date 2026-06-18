@@ -5,7 +5,15 @@
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<div class="-m-10 bg-slate-50 dark:bg-boxdark-2 min-h-screen">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+
+  .barcode-customizer-view, .barcode-customizer-view * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+</style>
+
+<div class="barcode-customizer-view -m-10 bg-slate-50 dark:bg-boxdark-2 min-h-screen">
     <div class="p-10">
         <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
