@@ -20,7 +20,8 @@ class HistoryApprovalController extends Controller
                              ->orWhere('sparepart_name', 'LIKE', "%{$search}%");
             })
             ->orderBy('processed_at', 'desc')
-            ->paginate(10);
+            ->paginate(15) // Diubah ke 15 baris sesuai request konsep halaman baru
+            ->withQueryString(); // Memastikan parameter search/filter aman saat pindah halaman
 
         return view('stock_eng.process_req.historyApproval', compact('history', 'search'));
     }

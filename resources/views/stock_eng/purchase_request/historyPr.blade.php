@@ -1,6 +1,15 @@
 @extends('admin')
 
 @section('content')
+<!-- Inject Font Nunito & Global Layout Size Overrides -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+
+  .pr-history-view, .pr-history-view * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+</style>
+
 <div x-data="{ 
     showPreview: false,
     showEdit: false,
@@ -25,20 +34,20 @@
             })
             .catch(err => alert('Gagal memuat data edit!'));
     }
-}" class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans text-black">
+}" class="pr-history-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 text-black antialiased">
   
   {{-- HEADER SECTION & NAV BUTTONS --}}
   <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
     <div>
-      <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight font-sans">
+      <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight">
         Purchase Request History
       </h2>
-      <p class="text-xs font-medium text-slate-600 dark:text-gray-400 font-sans">Track, audit, and manage all active engineering machine nozzle requests</p>
+      <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Track, audit, and manage all active engineering machine nozzle requests</p>
     </div>
 
     <div class="flex items-center gap-3">
       <a href="{{ route('eng.pr.index') }}"
-        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 px-3 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider font-sans"
+        class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 px-3 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider"
       >
         <svg class="w-3.5 h-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -50,7 +59,7 @@
 
   {{-- FLASH MESSAGES NOTIFICATION LOGS --}}
   @if(session('success'))
-    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm font-sans">
+    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
       💡 {{ session('success') }}
     </div>
   @endif
@@ -61,13 +70,13 @@
     {{-- TABLE FILTER CONTROL --}}
     <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-base font-bold text-slate-950 dark:text-white uppercase tracking-tight font-sans">
+        <h3 class="text-base font-bold text-slate-950 dark:text-white uppercase tracking-tight">
           Recent History PR
         </h3>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div class="inline-flex items-center gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm font-sans">
+        <div class="inline-flex items-center gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
             All
           </button>
@@ -86,7 +95,7 @@
 
     {{-- MAIN TABLE LOG PR --}}
     <div class="w-full overflow-x-auto">
-      <table class="min-w-full text-left border-collapse font-sans" id="history-table">
+      <table class="min-w-full text-left border-collapse" id="history-table">
         <thead>
           <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50 dark:bg-slate-800/40">
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">NO</th>
@@ -119,7 +128,7 @@
             <td class="py-3 px-3 text-xs font-semibold text-black dark:text-white">
               {{ $pr->product }}
             </td>
-            {{-- 🌟 TAMBAHAN: 5. QTY DI TABEL UTAMA --}}
+            {{-- 5. QTY DI TABEL UTAMA --}}
             <td class="py-3 px-3 text-xs font-bold text-slate-900 dark:text-white text-center font-mono">
               {{ $pr->qty ?? 1 }}
             </td>
@@ -205,7 +214,7 @@
 
     {{-- PAGINATION INTERFACE --}}
     <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-      <p class="text-xs font-bold text-slate-950 dark:text-white font-sans">
+      <p class="text-xs font-bold text-slate-950 dark:text-white">
         Showing {{ $historyPr->firstItem() ?? 0 }} to {{ $historyPr->lastItem() ?? 0 }} of {{ $historyPr->total() ?? 0 }} entries
       </p>
       <div class="flex items-center">
@@ -221,7 +230,7 @@
             <h3 class="text-sm font-bold text-black font-mono" x-text="'Detail: ' + selectedPr.pr_code"></h3>
             <button @click="showPreview = false" class="text-gray-400 hover:text-black font-bold text-lg">&times;</button>
         </div>
-        <div class="mt-4 space-y-3 text-xs font-sans text-black">
+        <div class="mt-4 space-y-3 text-xs text-black">
             <div class="grid grid-cols-3 py-1 border-b border-gray-100">
                 <span class="text-gray-500">Product Name</span>
                 <span class="col-span-2 font-bold text-black" x-text="selectedPr.type_product"></span>
@@ -230,7 +239,6 @@
                 <span class="text-gray-500">Category</span>
                 <span class="col-span-2 font-semibold text-blue-600" x-text="selectedPr.product"></span>
             </div>
-            {{-- 🌟 TAMBAHAN: QTY DI MODAL PREVIEW --}}
             <div class="grid grid-cols-3 py-1 border-b border-gray-100">
                 <span class="text-gray-500">Quantity (QTY)</span>
                 <span class="col-span-2 font-bold text-slate-950 font-mono" x-text="(selectedPr.qty ?? 1) + ' Pcs'"></span>
@@ -260,11 +268,11 @@
   <div x-show="showEdit" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition style="display: none;">
     <div @click.away="showEdit = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-200">
         <div class="flex justify-between items-center pb-3 border-b border-gray-200">
-            <h3 class="text-sm font-bold text-black font-sans">Update Purchase Request</h3>
+            <h3 class="text-sm font-bold text-black">Update Purchase Request</h3>
             <button @click="showEdit = false" class="text-gray-400 hover:text-black font-bold text-lg">&times;</button>
         </div>
         
-        <form :action="'/eng/purchase-request/' + editForm.id + '/update'" method="POST" class="mt-4 space-y-4 text-xs font-sans text-black">
+        <form :action="'/eng/purchase-request/' + editForm.id + '/update'" method="POST" class="mt-4 space-y-4 text-xs text-black">
             @csrf
             @method('PUT')
             
@@ -283,7 +291,6 @@
                 <input type="text" name="product" x-model="editForm.product" required class="w-full bg-white text-black border border-gray-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500 focus:outline-none">
             </div>
 
-            {{-- UPDATE GRID: MENAMBAHKAN INPUT FIELD QTY DI MODAL EDIT --}}
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Quantity</label>

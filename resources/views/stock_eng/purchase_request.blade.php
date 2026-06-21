@@ -1,7 +1,16 @@
 @extends('admin')
 
 @section('content')
-<div class="-m-4 md:-m-6 2xl:-m-10 bg-[#F9F9FB] dark:bg-slate-900 min-h-[calc(100vh-80px)] text-slate-800 dark:text-slate-200 font-sans p-3">
+<!-- Inject Font Nunito & Global Layout Size Overrides -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+
+  .create-pr-view, .create-pr-view * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+</style>
+
+<div class="create-pr-view -m-4 md:-m-6 2xl:-m-10 bg-[#F9F9FB] dark:bg-slate-900 min-h-[calc(100vh-80px)] text-slate-800 dark:text-slate-200 font-sans p-3">
     
     <div class="px-4 pt-4 max-w-full mx-auto">
         <h1 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Create Purchase Request</h1>
@@ -93,7 +102,7 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-100 dark:border-slate-700/50 pb-1">
                             <label class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase">Quantity (QTY) <span class="text-rose-500">*</span></label>
                             <div class="col-span-2 flex items-center gap-1">
-                                <input type="number" name="qty" id="qty_input" min="1" value="{{ old('qty', 1) }}" required class="w-24 bg-transparent border-0 text-slate-900 dark:text-white font-bold font-mono text-xs p-0 outline-none focus:ring-0" placeholder="0">
+                                <input type="number" name="qty" id="qty_input" min="1" value="{{ old('qty', 1) }}" required class="w-24 bg-transparent border-0 text-slate-900 dark:text-white font-bold text-xs p-0 outline-none focus:ring-0" placeholder="0">
                                 <span class="text-[10px] text-gray-400 font-bold uppercase">Pcs</span>
                             </div>
                         </div>

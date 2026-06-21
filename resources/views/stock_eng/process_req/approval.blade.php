@@ -1,24 +1,36 @@
 @extends('admin')
 
 @section('content')
-<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+
+  .approval-view, .approval-view * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  .table-row-item {
+    transition: all 0.2s ease-in-out;
+  }
+</style>
+
+<div class="approval-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
   
   <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
     <div>
-      <h2 class="text-xl font-bold text-slate-950 dark:text-white uppercase tracking-tight">
+      <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
         Engineering Approval List
       </h2>
-      <p class="text-xs font-medium text-slate-600 dark:text-gray-400">Verify and process production line requests queue</p>
+      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">Verify and process production line requests </p>
     </div>
   </div>
 
   @if(session('success'))
-      <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wide">
+      <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm">
           {{ session('success') }}
       </div>
   @endif
 
-  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm sm:px-6">
     
     <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
       
@@ -44,7 +56,7 @@
           </button>
         </div>
 
-        <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+        <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white transition-colors">
           <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M2.29004 5.90393H17.7067" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M17.7075 14.0961H2.29085" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -56,25 +68,32 @@
       </div>
     </div>
 
-    <div class="w-full overflow-x-auto">
-      <table class="min-w-full text-left border-collapse" id="approval-table">
+    <div class="w-full overflow-x-auto block align-middle">
+      <table class="min-w-full text-left border-collapse mx-auto" id="approval-table">
         <thead>
           <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">REQ No.</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">No Nozzle</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white">SAP Code</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Qty Req</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Machine / Line</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Requestor</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Status</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center">Action Decision</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">NO</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">REQ No.</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">No Nozzle</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">SAP Code</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Qty Req</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Machine / Line</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Requestor</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Status</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Created At</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Last Update</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-44 whitespace-nowrap">Action Decision</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800 font-medium text-slate-950 dark:text-white">
-          @forelse($requests as $req)
+          @forelse($requests as $key => $req)
           <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
             
-            <td class="py-3 px-3 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
+              {{ $requests->firstItem() + $key }}
+            </td>
+
+            <td class="py-3 px-3 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase whitespace-nowrap">
               {{ $req->request_no }}
             </td>
             
@@ -86,7 +105,7 @@
               {{ $req->sap_code }}
             </td>
             
-            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white">
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white whitespace-nowrap">
               {{ sprintf("%02d", $req->qty_req) }} PCS
             </td>
             
@@ -94,11 +113,11 @@
               {{ $req->line_machine }}
             </td>
             
-            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase tracking-wider">
+            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase tracking-wider whitespace-nowrap">
               {{ $req->requestor }}
             </td>
 
-            <td class="py-3 px-3 text-center">
+            <td class="py-3 px-3 text-center whitespace-nowrap">
               <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
                 @if($req->status == 'success' || $req->status == 'approved') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
                 @elseif($req->status == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
@@ -106,11 +125,29 @@
                 {{ $req->status == 'success' || $req->status == 'approved' ? 'Success' : ($req->status == 'rejected' ? 'Rejected' : 'Pending') }}
               </span>
             </td>
+
+            <td class="py-3 px-3 text-xs whitespace-nowrap">
+              <div class="font-bold text-slate-800 dark:text-slate-200">
+                {{ \Carbon\Carbon::parse($req->created_at)->format('d/m/y') }}
+              </div>
+              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
+                {{ \Carbon\Carbon::parse($req->created_at)->format('H:i') }} WIB
+              </div>
+            </td>
+
+            <td class="py-3 px-3 text-xs whitespace-nowrap">
+              <div class="font-bold text-slate-800 dark:text-slate-200">
+                {{ \Carbon\Carbon::parse($req->updated_at)->format('d/m/y') }}
+              </div>
+              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
+                {{ \Carbon\Carbon::parse($req->updated_at)->format('H:i') }} WIB
+              </div>
+            </td>
             
-            <td class="py-3 px-3">
+            <td class="py-3 px-3 whitespace-nowrap">
               <div class="flex items-center justify-center gap-1.5">
                 @if(!in_array($req->status, ['success', 'approved', 'rejected']))
-                    <form action="{{ route('eng.approval.reject', $req->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENOLAK request ini?');" class="inline-block">
+                    <form action="{{ route('eng.approval.reject', $req->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENOLAK request ini?');" class="inline-block m-0">
                         @csrf
                         <button type="submit" class="px-2.5 py-1.5 bg-gradient-to-r from-red-500 to-amber-400 hover:from-red-600 hover:to-amber-500 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all active:scale-[0.98]">
                             Reject
@@ -129,7 +166,7 @@
           </tr>
           @empty
           <tr>
-            <td colspan="8" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
+            <td colspan="11" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
               No Production Requests Queue Found.
             </td>
           </tr>
@@ -138,8 +175,8 @@
       </table>
     </div>
 
-    <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-      <p class="text-xs font-bold text-slate-950 dark:text-white">
+    <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-1 border-t border-gray-100 pt-5 dark:border-gray-800">
+      <p class="text-xs font-extrabold text-slate-950 dark:text-white">
         Showing {{ $requests->firstItem() ?? 0 }} to {{ $requests->lastItem() ?? 0 }} of {{ $requests->total() ?? 0 }} entries
       </p>
       <div class="flex items-center">
