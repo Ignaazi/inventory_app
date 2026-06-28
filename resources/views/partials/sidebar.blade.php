@@ -1,77 +1,4 @@
-<style>
-  /* Import Font Nunito langsung dari Google Fonts */
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
-
-  /* Paksa semua elemen di dalam komponen ini untuk memakai Nunito */
-  .sidebar-responsive, 
-  .sidebar-responsive * {
-    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
-  }
-
-  /* Menjamin ukuran icon tetap konsisten di semua layar */
-  .siix-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-  }
-  
-  /* Animasi Scroll Smooth dan Custom Scrollbar */
-  .custom-scroll-container {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Membuat scrollbar lebih cantik (Modern Look) */
-  .custom-scroll-container::-webkit-scrollbar {
-    width: 5px;
-  }
-  .custom-scroll-container::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scroll-container::-webkit-scrollbar-thumb {
-    background: #e2e8f0; /* slate-200 */
-    border-radius: 10px;
-  }
-  .dark .custom-scroll-container::-webkit-scrollbar-thumb {
-    background: #334155; /* slate-700 */
-  }
-
-  /* Responsivitas dasar */
-  @media (max-width: 1024px) {
-    .sidebar-responsive {
-      transform: translateX(-100%);
-      position: fixed !important;
-      z-index: 99999;
-      width: 290px !important;
-    }
-    .sidebar-show-mobile {
-      transform: translateX(0);
-    }
-  }
-
-  /* Style untuk floating menu saat sidebar mini */
-  .sidebar-mini-floating {
-    position: absolute !important;
-    left: 80px;
-    width: 190px;
-    background: white;
-    box-shadow: 6px 4px 15px rgba(0,0,0,0.08);
-    border: 1px solid #f1f5f9;
-    border-radius: 8px;
-    padding: 8px !important;
-    margin-left: 0 !important;
-    z-index: 9999;
-  }
-  .dark .sidebar-mini-floating {
-    background: #1e293b;
-    border-color: #334155;
-    box-shadow: 6px 4px 15px rgba(0,0,0,0.4);
-  }
-
-  .cursor-not-allowed-mini {
-    cursor: default !important;
-  }
-</style>
+<link rel="stylesheet" href="{{ asset('css/partials/sidebar.css') }}">
 
 <div 
   x-show="sidebarToggle && window.innerWidth < 1024" 
@@ -168,7 +95,8 @@
             <button 
               type="button"
               @click.stop="openMenu = (openMenu === 'trans' ? 'none' : 'trans')" 
-              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/in*', '*eng/out*', '*eng/return*', '*eng/disposal*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+              {{-- Menjaga parent menu tetap aktif (highlighted) jika salah satu sub-menu diakses --}}
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
             >
               <div class="flex items-center gap-3">
                 <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
@@ -176,32 +104,42 @@
               </div>
               <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'trans' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </button>
+            
             <div x-show="openMenu === 'trans'" x-collapse class="overflow-hidden">
               <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
+                
+                {{-- 1. MENU IN --}}
                 <li>
-                  <a href="/eng/in" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/in*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <a href="{{ route('stock_eng.transaction.in') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.in') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                     <span>In</span>
                   </a>
                 </li>
+                
+                {{-- 2. MENU OUT --}}
                 <li>
-                  <a href="/eng/out" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/out*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <a href="{{ route('stock_eng.transaction.out') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.out') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     <span>Out</span>
                   </a>
                 </li>
+                
+                {{-- 3. MENU RETURN --}}
                 <li>
-                  <a href="/eng/return" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/return*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <a href="{{ route('stock_eng.transaction.return') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.return') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"/></svg>
                     <span>Return</span>
                   </a>
                 </li>
+                
+                {{-- 4. MENU DISPOSAL --}}
                 <li>
-                  <a href="/eng/disposal" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/disposal*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                  <a href="{{ route('stock_eng.transaction.disposal') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.disposal') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     <span>Disposal</span>
                   </a>
                 </li>
+          
               </ul>
             </div>
           </li>

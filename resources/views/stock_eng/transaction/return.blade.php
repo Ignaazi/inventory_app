@@ -4,7 +4,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
 
-  .stock-disposal-view, .stock-disposal-view * {
+  .stock-return-view, .stock-return-view * {
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
   }
 
@@ -22,20 +22,20 @@
   }
 </style>
 
-<div class="stock-disposal-view mx-auto max-w-screen-2xl p-5 md:p-8 2xl:p-12">
+<div class="stock-return-view mx-auto max-w-screen-2xl p-5 md:p-8 2xl:p-12">
   <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
-        Stock Disposal Activities
+        Stock Return Activities
       </h2>
-      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">Track scrapped or damaged engineering components</p>
+      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">Track your recent sparepart return activities from lines</p>
     </div>
 
     <div class="flex items-center gap-3 w-full sm:w-auto">
-      <a href="/stock-eng/transaction/disposal/create"
-        class="photo-grad-btn w-full sm:w-40 h-10 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#E51E43] to-[#C01231] px-3 text-xs font-black text-white tracking-wider uppercase"
+      <a href="/stock-eng/transaction/return/create"
+        class="photo-grad-btn w-full sm:w-40 h-10 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] px-3 text-xs font-black text-white tracking-wider uppercase"
       >
-        <span>New Disposal</span>
+        <span>New Return</span>
       </a>
     </div>
   </div>
@@ -54,11 +54,11 @@
           <button type="button" onclick="filterTable('all', this)" class="filter-btn px-4 py-1.5 text-xs font-extrabold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
             All
           </button>
-          <button type="button" onclick="filterTable('scrapped', this)" class="filter-btn px-4 py-1.5 text-xs font-extrabold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Scrapped
+          <button type="button" onclick="filterTable('good', this)" class="filter-btn px-4 py-1.5 text-xs font-extrabold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Good Condition
           </button>
-          <button type="button" onclick="filterTable('lost', this)" class="filter-btn px-4 py-1.5 text-xs font-extrabold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Lost
+          <button type="button" onclick="filterTable('repair', this)" class="filter-btn px-4 py-1.5 text-xs font-extrabold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Need Repair
           </button>
         </div>
       </div>
@@ -70,13 +70,13 @@
           <tr class="border-gray-200 border-y dark:border-gray-800 bg-gray-50/70 dark:bg-slate-800/60">
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">NO</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">DATE</th>
-            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">EXECUTED BY</th>
+            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">RETURNED BY</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">No Nozzle</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">Part No</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">SAP Code</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">Category</th>
-            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white text-center">Qty SCRAP</th>
-            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white text-center">Method</th>
+            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white text-center">Qty RETURN</th>
+            <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white text-center">Condition</th>
             <th class="py-3.5 px-4 text-[11px] font-extrabold text-slate-950 uppercase tracking-wider dark:text-white">Remarks</th>
           </tr>
         </thead>
@@ -90,7 +90,7 @@
               {{ $log->created_at ? $log->created_at->format('d/m/Y') : '-' }}
             </td>
             <td class="py-4 px-4 text-[13px] font-bold text-slate-900 dark:text-white">
-              {{ $log->authorized_by ?? '-' }}
+              {{ $log->returned_by ?? '-' }}
             </td>
             <td class="py-4 px-4 text-[13px] font-bold text-slate-900 dark:text-white">
               {{ $log->stockEng->no_nozzle ?? '-' }}
@@ -105,15 +105,15 @@
               {{ $log->stockEng->category ?? '-' }}
             </td>
             <td class="py-4 px-4 text-center">
-              <span class="inline-flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-extrabold bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
-                -{{ $log->qty ?? 0 }}
+              <span class="inline-flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-extrabold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20">
+                {{ $log->qty ?? 0 }}
               </span>
             </td>
             <td class="py-4 px-4 text-center">
-              <span class="method-cell inline-flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-extrabold tracking-tight
-                @if(strtolower($log->disposal_method ?? '') == 'scrapped') bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400
-                @else bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 @endif">
-                {{ $log->disposal_method ?? 'Scrapped' }}
+              <span class="condition-cell inline-flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-extrabold tracking-tight
+                @if(strtolower($log->condition ?? '') == 'good') bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400
+                @else bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 @endif">
+                {{ $log->condition ?? 'Good' }}
               </span>
             </td>
             <td class="py-4 px-4 text-[13px] font-semibold text-slate-600 dark:text-gray-300 max-w-[220px] truncate" title="{{ $log->remarks }}">
@@ -122,7 +122,7 @@
           </tr>
           @empty
           <tr>
-            <td colspan="10" class="py-8 text-center text-sm font-semibold text-slate-400">No disposal transaction history found.</td>
+            <td colspan="10" class="py-8 text-center text-sm font-semibold text-slate-400">No return transaction history found.</td>
           </tr>
           @endforelse
         </tbody>
@@ -161,8 +161,8 @@
         row.style.display = '';
         return;
       }
-      const methodText = row.querySelector('.method-cell').textContent.trim().toLowerCase();
-      if (methodText.includes(criteria)) {
+      const conditionText = row.querySelector('.condition-cell').textContent.trim().toLowerCase();
+      if (conditionText.includes(criteria)) {
         row.style.display = '';
       } else {
         row.style.display = 'none';

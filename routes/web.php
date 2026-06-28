@@ -25,6 +25,9 @@ use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 // 🌟 IMPORT BARU UNTUK VERIFIKASI/APPROVAL DI SISI COSTING
 use App\Http\Controllers\Costing\ApprovalController;
 
+// 🚀 IMPORT TRANSACTION CONTROLLER MILIK LU
+use App\Http\Controllers\Engineering\TransactionController;
+
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
     return redirect('/login');
@@ -45,12 +48,12 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // --- GRUP ADMIN (Full Access) ---
-Route::middleware('role:admin')->group(function () {
-    Route::get('/admin/users', [UserController::class, 'index'])->name('users.index'); // 👈 Lihat name() di sini
-    Route::post('/admin/users/store', [UserController::class, 'store'])->name('users.store');
-    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-});
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/users', [UserController::class, 'index'])->name('users.index'); // 👈 Lihat name() di sini
+        Route::post('/admin/users/store', [UserController::class, 'store'])->name('users.store');
+        Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 
     // --- GRUP ENGINEERING ---
     Route::middleware('role:admin,engineering')->group(function () {
@@ -71,11 +74,11 @@ Route::middleware('role:admin')->group(function () {
         Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
         Route::post('/eng/purchase-request', [PurchaseRequestEngController::class, 'store'])->name('purchase.request.store'); 
 
-       // SISTEM HISTORY APPROVAL PR UNTUK VIEW, PREVIEW JSON, EDIT, UPDATE DAN DELETE
-       Route::get('/eng/purchase-request/history', [PurchaseRequestHistoryEngController::class, 'index'])->name('purchase.request.history');
-       Route::get('/eng/purchase-request/{id}/preview', [PurchaseRequestHistoryEngController::class, 'preview'])->name('purchase.request.preview');
-       Route::put('/eng/purchase-request/{id}/update', [PurchaseRequestHistoryEngController::class, 'update'])->name('purchase.request.update'); // <-- SISIPKAN INI, JANGAN HAPUS YANG LAIN
-       Route::delete('/eng/purchase-request/{id}/delete', [PurchaseRequestHistoryEngController::class, 'destroy'])->name('purchase.request.delete');
+        // SISTEM HISTORY APPROVAL PR UNTUK VIEW, PREVIEW JSON, EDIT, UPDATE DAN DELETE
+        Route::get('/eng/purchase-request/history', [PurchaseRequestHistoryEngController::class, 'index'])->name('purchase.request.history');
+        Route::get('/eng/purchase-request/{id}/preview', [PurchaseRequestHistoryEngController::class, 'preview'])->name('purchase.request.preview');
+        Route::put('/eng/purchase-request/{id}/update', [PurchaseRequestHistoryEngController::class, 'update'])->name('purchase.request.update'); // <-- SISIPKAN INI, JANGAN HAPUS YANG LAIN
+        Route::delete('/eng/purchase-request/{id}/delete', [PurchaseRequestHistoryEngController::class, 'destroy'])->name('purchase.request.delete');
         
         // 🛠️ SEKARANG SUDAH DITAMBAHKAN BIAR TIDAK ERROR LAGI, BRO!
         Route::get('/eng/purchase-request/{id}/edit', [PurchaseRequestHistoryEngController::class, 'edit'])->name('purchase.request.edit');
@@ -95,6 +98,17 @@ Route::middleware('role:admin')->group(function () {
             Route::delete('/db-barcode/{id}', [DbBarcodeController::class, 'destroy'])->name('barcode.db.delete');
             Route::get('/type-barcode', [TypeBarcodeController::class, 'index'])->name('barcode.type');
             Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
+        });
+
+        // 🚀 MAP ROUTE TRANSACTION (MENGGUNAKAN TRANSACTION CONTROLLER LU)
+        // Name Route di bawah otomatis menghasilkan: stock_eng.transaction.in, .out, .return, .disposal
+        Route::prefix('stock-eng/transaction')->name('stock_eng.transaction.')->group(function () {
+            Route::get('/in', [TransactionController::class, 'indexIn'])->name('in');
+            Route::get('/out', [TransactionController::class, 'indexOut'])->name('out');
+            Route::get('/return', [TransactionController::class, 'indexReturn'])->name('return');
+            Route::post('/return/store', [TransactionController::class, 'storeReturn'])->name('return.store');
+            Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('disposal');
+            Route::post('/disposal/store', [TransactionController::class, 'storeDisposal'])->name('disposal.store');
         });
     });
     
