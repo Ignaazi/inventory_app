@@ -3,6 +3,23 @@
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<!-- CSS Khusus untuk Memaksa Font Nunito di Seluruh View Page -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+    .mx-auto,
+    .mx-auto *,
+    #modalLineProd,
+    #modalLineProd *,
+    .swal2-container,
+    .swal2-container * {
+        font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .swal2-container { z-index: 10000 !important; }
+</style>
+
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
 
     <!-- Alert Total Data Terdaftar -->
@@ -52,6 +69,8 @@
                 <thead>
                     <tr class="text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
                         <th class="px-3 py-4 text-center w-12">NO</th>
+                        <!-- Tambah Kolom NIK di samping NO -->
+                        <th class="px-4 py-4 text-center w-32">NIK</th>
                         <th class="px-4 py-4 text-center w-36">Line ID</th>
                         <th class="px-4 py-4 text-center w-28">No Line</th>
                         <th class="px-4 py-4 text-center w-40">Name Machine</th>
@@ -65,6 +84,11 @@
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
                         <td class="px-3 py-4 text-center">{{ $lines->firstItem() + $index }}</td>
                         
+                        <!-- Isi Data NIK (Terhubung dengan data user pendaftar/pengubah line) -->
+                        <td class="px-4 py-4 text-center font-mono font-bold text-slate-600 dark:text-slate-300">
+                            {{ $item->user->nim ?? '-' }}
+                        </td>
+
                         <!-- Line ID (Key Scanner) -->
                         <td class="px-4 py-4 text-center font-bold">
                             <span class="uppercase">{{ $item->line_id }}</span>
@@ -113,7 +137,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" class="py-12 text-center text-slate-400 italic">No production line data registered.</td></tr>
+                    <tr><td colspan="8" class="py-12 text-center text-slate-400 italic">No production line data registered.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -252,9 +276,4 @@
         Swal.fire({ icon: 'error', title: 'Validation Error', text: "{{ $errors->first() }}" });
     @endif
 </script>
-
-<style>
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .swal2-container { z-index: 10000 !important; }
-</style>
 @endsection

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Production;
 use App\Http\Controllers\Controller;
 use App\Models\Production\ListLineProduction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // Menghilangkan eror garis merah Intelephense
 
 class ListLineProductionController extends Controller
 {
@@ -20,12 +21,14 @@ class ListLineProductionController extends Controller
 
         return view('stock_prod.listLineProduction', compact('lines'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
             'no_line' => 'required',
             'name_machine' => 'required',
         ]);
+
         $lastLine = ListLineProduction::orderBy('id', 'desc')->first();
 
         if (!$lastLine) {
@@ -36,9 +39,11 @@ class ListLineProductionController extends Controller
         }
         $formattedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
         $autoLineId = 'SIIXSMTLINE' . $formattedNumber;
+
         ListLineProduction::create([
-            'line_id' => $autoLineId,
-            'no_line' => $request->no_line,
+            'user_id'      => Auth::user()->nim ?? null, // Sekarang aman masuk database karena sudah ada di $fillable model
+            'line_id'      => $autoLineId,
+            'no_line'      => $request->no_line,
             'name_machine' => $request->name_machine,
         ]);
 
@@ -54,7 +59,8 @@ class ListLineProductionController extends Controller
         ]);
 
         $line->update([
-            'no_line' => $request->no_line,
+            'user_id'      => Auth::user()->nim ?? null, // Mencatat NIM user yang terakhir kali melakukan update
+            'no_line'      => $request->no_line,
             'name_machine' => $request->name_machine,
         ]);
 
