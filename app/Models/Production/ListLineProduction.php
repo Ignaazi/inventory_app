@@ -5,6 +5,7 @@ namespace App\Models\Production;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne; // 🌟 IMPORT HASONE LOGIC
 
 class ListLineProduction extends Model
 {
@@ -20,6 +21,16 @@ class ListLineProduction extends Model
         'no_line',
         'name_machine'
     ];
+
+    /**
+     * 🌟 RELASI BARU: Menghubungkan Line ke Data Stok Aktif di Lantai Produksi
+     * Menggunakan HasOne karena 1 Line bertindak sebagai 1 Slot Monitoring Nozzle.
+     * Local Key & Foreign Key menggunakan 'line_id' sesuai database kamu.
+     */
+    public function stocks(): HasOne
+    {
+        return $this->hasOne(\App\Models\Production\stock_prod::class, 'line_id', 'line_id');
+    }
 
     /**
      * Hubungan relasi murni menggunakan NIM ke tabel users

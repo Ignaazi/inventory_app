@@ -6,39 +6,44 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('stock_prods', function (Blueprint $table) {
-            $table->id(); // Ini untuk "No" (Auto Increment)
+            // 1. ID Utama
+            $table->id(); 
             
-            // AMAN: Diubah jadi string karena menampung kode unik Alfanumerik (e.g., 'SIIXSMTLINE001')
+            // 2. Relasi ke tabel list_line_productions (Menghubungkan entitas line_id)
             $table->string('line_id', 100); 
             
-            // Kolom spesifik Nozzle
-            $table->string('no_nozzle')->default('-');
+            // 3. Relasi ke tabel spareparts (Di-set NULLABLE agar bisa ADD LINE dulu baru isi nozzle)
+            $table->string('no_nozzle')->nullable(); 
             
-            // Relasi ke tabel productions_request (menggunakan nomor request string)
-            $table->string('request_no')->nullable()->default('-');
+            // 4. Relasi ke tabel stock_engs (Di-set NULLABLE untuk menampung alokasi dari Engineering nanti)
+            $table->string('part_no')->nullable();
+            $table->string('sap_code')->nullable();
+            $table->string('category')->nullable(); 
             
-            // Data part & sap yang terintegrasi dengan stock_engs
-            $table->string('part_no')->default('-');
-            $table->string('sap_code')->default('-');
-            
-            // AMAN: Diubah jadi string karena di controller diisi format kode teks 'BC-XXXXX'
-            $table->string('barcode_id')->nullable()->default('-');
-            
-            // AMAN: Diubah jadi string karena menampung token transaksi 'TXO-ENG-XXXXX'
-            $table->string('transaction_out_id')->nullable()->default('-');
-            
-            // Kolom Quantity & Minimum Threshold Stock
+            // 5. Data Transaksional Stok Produksi
             $table->integer('qty')->default(0);
             $table->integer('min_stock')->default(0);
             
-            // Created_at & Updated_at
+            // 6. Created_at & Updated_at
             $table->timestamps();
+
+            // PENTING: Opsional INDEX agar query pencarian relasi string jauh lebih cepat dan enteng
+            $table->index('line_id');
+            $table->index('no_nozzle');
+            $table->index('part_no');
+            $table->index('sap_code');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('stock_prods');

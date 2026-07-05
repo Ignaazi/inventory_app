@@ -2,42 +2,44 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Production\RequestProdController;
+use App\Http\Controllers\Production\StockProdController; // 1. WAJIB IMPORT CONTROLLER INI DI ATAS
 
 // Semua route khusus Production Scanner / Inventory Sparepart Nozzle
 Route::middleware(['web', 'auth'])->group(function () {
     
-    // Mengelompokkan route production/request agar lebih rapi dan scannable
+    // =========================================================================
+    // GRUP 1: PRODUCTION REQUEST (Kodingan Lu yang Sudah Ada)
+    // =========================================================================
     Route::prefix('production/request')->name('prod.request.')->group(function () {
-        
-        // 1. Halaman Form Create Request Baru
         Route::get('/create', [RequestProdController::class, 'create'])->name('create');
-
-        // 2. Proses Simpan Data Baru Pertama Kali
         Route::post('/store', [RequestProdController::class, 'store'])->name('store');
-
-        // 3. Halaman Tabel List Semua Request (listRequestProd.blade.php)
         Route::get('/list', [RequestProdController::class, 'listRequest'])->name('list');
-
-        // 4. Halaman Form Edit Khusus untuk Data Draft (draftRequestProd.blade.php)
         Route::get('/draft/{id}/edit', [RequestProdController::class, 'editDraft'])->name('edit_draft');
-
-        // 5. Proses Update/Kirim Ulang Data dari Form Draft (Method PUT)
         Route::put('/draft/{id}/update', [RequestProdController::class, 'updateDraft'])->name('update_draft');
-
-        // ==================== TAMBAHAN & PERBAIKAN ROUTE BARU ====================
-        
-        /**
-         * FIX UPDATE ACTION: Route ini wajib ada agar action update dari form edit draft 
-         * atau update status request di list bisa dieksekusi oleh RequestProdController!
-         */
         Route::put('/{id}/update', [RequestProdController::class, 'update'])->name('update');
-
-        // 6. Halaman Preview Form Nozzle (Menampilkan formulir resmi/cetak)
         Route::get('/{id}/preview', [RequestProdController::class, 'preview'])->name('preview');
-
-        // 7. Proses Hapus Data Request Permanen (Method DELETE)
         Route::delete('/{id}/delete', [RequestProdController::class, 'destroy'])->name('destroy');
+    });
+
+    // =========================================================================
+    // GRUP 2: NEW UPDATE - PRODUCTION STOCK INVENTORY (TAMBAHKAN KODE INI)
+    // =========================================================================
+    Route::prefix('prod/stock')->name('stock.prod.')->group(function () {
         
+        // Halaman Utama: Monitoring Stok Nozzle per Line
+        Route::get('/', [StockProdController::class, 'index'])->name('index');
+        
+        // Proses Alokasi Add Line / Add Nozzle (Menerima log Out dari Engineering)
+        Route::post('/store', [StockProdController::class, 'nozzleStore'])->name('nozzleStore');
+        
+        // Proses Edit / Penyesuaian Qty & Min Stock via Modal
+        Route::put('/{id}', [StockProdController::class, 'update'])->name('update');
+        
+        // Proses Reset / Mengosongkan kembali info Nozzle di Line (DELETE)
+        Route::delete('/{id}', [StockProdController::class, 'destroy'])->name('destroy');
+        
+        // Laporan Export CSV
+        Route::get('/export/csv', [StockProdController::class, 'exportCSV'])->name('export.csv');
     });
 
 });

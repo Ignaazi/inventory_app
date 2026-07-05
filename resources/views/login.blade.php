@@ -23,12 +23,13 @@
                 The NIK and Password you entered is incorrect.
             </p>
             
-            <button type="button" onclick="closeModal()" class="mt-5 w-full bg-red-500 hover:bg-red-600 text-white font-black py-2.5 rounded-xl shadow-lg transition-colors duration-150 text-xs uppercase tracking-widest">
+            <button type="button" onclick="closeModal()" class="mt-5 w-full bg-red-500 hover:bg-red-600 text-white font-black py-2.5 rounded-xl shadow-lg transition-colors duration-150 text-xs uppercase tracking-widest cursor-pointer">
                 Try Again
             </button>
         </div>
     </div>
     @endif
+    
     <div class="hidden lg:flex w-1/2 bg-white items-center justify-center p-12 relative z-0">
         <div class="absolute top-12 left-12 text-slate-900 font-black text-[11px] tracking-widest uppercase">
             PT SIIX EMS KARAWANG
@@ -91,7 +92,7 @@
                             class="w-full p-3.5 bg-[#EBF2FA] text-slate-900 text-sm font-bold outline-none placeholder-slate-400 tracking-widest shadow-inner" 
                             placeholder="••••••••">
                         <div class="pr-4 pl-2 bg-[#EBF2FA] h-full flex items-center justify-center py-3.5">
-                            <button type="button" onclick="togglePassword()" class="text-slate-400 hover:text-blue-600 transition-colors focus:outline-none">
+                            <button type="button" onclick="togglePassword()" class="text-slate-400 hover:text-blue-600 transition-colors focus:outline-none cursor-pointer">
                                 <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -115,5 +116,39 @@
     </div>
 
     <script src="{{ asset('js/login.js') }}"></script>
+
+    <script>
+        // Fungsi 1: Menutup Modal saat "Try Again" dipencet
+        function closeModal() {
+            const modal = document.getElementById('errorModal');
+            if(modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.remove(); // Hapus modal agar form di belakangnya bisa diketik ulang
+                }, 300);
+            }
+        }
+
+        // Fungsi 2: Mengubah Type Input Password (Show/Hide) & Swap Icon Mata
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput && passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Ganti SVG ke bentuk Mata Terbuka Dicoret
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                `;
+            } else if (passwordInput) {
+                passwordInput.type = 'password';
+                // Kembalikan ke bentuk Mata Normal semula
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                `;
+            }
+        }
+    </script>
 </body>
 </html>

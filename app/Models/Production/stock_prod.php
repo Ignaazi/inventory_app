@@ -9,16 +9,16 @@ class stock_prod extends Model
 {
     use HasFactory;
 
+    // 1. Tentukan nama tabel
     protected $table = 'stock_prods'; 
 
+    // 2. Kolom Baru Sesuai Konsep Database Baru Lu (Kolom sampah lama resmi DIBUANG)
     protected $fillable = [
         'line_id',
         'no_nozzle',
-        'request_no',
         'part_no',
         'sap_code',
-        'barcode_id',
-        'transaction_out_id',
+        'category', // Ditambahkan menampung kategori dari stock_engs
         'qty',
         'min_stock',
     ];
@@ -49,32 +49,51 @@ class stock_prod extends Model
 
     /**
      * 2. RELASI KE TABEL MASTER LINE PRODUCTION (AMBIL NO LINE)
-     * FIXED: Menggunakan nama model 'ListLineProduction' sesuai tabel 'list_line_productions'
+     * FIXED: Menghubungkan foreign key stock_prods.line_id ke master list_line_productions.line_id
      */
     public function line()
     {
-        // Fallback deteksi letak model ListLineProduction kamu (Luar atau dalam sub-folder Production)
+        // Deteksi letak model ListLineProduction kamu (Luar atau dalam sub-folder Production)
         $modelUtama = 'App\\Models\\ListLineProduction';
         $modelSubFolder = 'App\\Models\\Production\\ListLineProduction';
 
-        // Menentukan class model mana yang aktif di aplikasi skripsi kamu
         $chosenModel = class_exists($modelUtama) ? $modelUtama : $modelSubFolder;
 
-        // Hubungkan foreign key stock_prods.line_id ke owner key list_line_productions.line_id
         return $this->belongsTo($chosenModel, 'line_id', 'line_id');
     }
 
     /**
-     * 🔗 3. RELASI BERANTAI KE MASTER STOCK ENGINEERING (StockEng)
-     * Ditambahkan agar pemanggilan $log->stockProd->stockEng->part_no di Blade aman.
-     * Menggunakan dengan default data lokal milik stock_prod itu sendiri sebagai cadangan.
+     * 3. RELASI KE TABEL MASTER SPAREPARTS (Data Nozzle)
+     * Menghubungkan kolom 'no_nozzle' di tabel ini ke kolom 'name' di tabel spareparts
+     */
+    public function sparepart()
+    {
+        // Deteksi letak model Sparepart di aplikasi lu
+        $modelUtama = 'App\\Models\\Sparepart';
+        $modelEngineering = 'App\\Models\\Engineering\\Sparepart';
+        
+        $chosenModel = class_exists($modelEngineering) ? $modelEngineering : $modelUtama;
+
+        return $this->belongsTo($chosenModel, 'no_nozzle', 'name');
+    }
+
+    /**
+     * 4. RELASI KE MASTER STOCK ENGINEERING (StockEng)
+     * Menghubungkan kolom 'sap_code' di tabel ini ke master stock engineering
      */
     public function stockEng()
     {
-        return $this->belongsTo(\App\Models\StockEng::class, 'sap_code', 'sap_code')
+        // Deteksi letak model StockEng di aplikasi lu
+        $modelUtama = 'App\\Models\\StockEng';
+        $modelEngineering = 'App\\Models\\Engineering\\StockEng';
+
+        $chosenModel = class_exists($modelEngineering) ? $modelEngineering : $modelUtama;
+
+        return $this->belongsTo($chosenModel, 'sap_code', 'sap_code')
             ->withDefault([
                 'part_no' => $this->part_no ?? '-',
-                'sap_code' => $this->sap_code ?? '-'
+                'sap_code' => $this->sap_code ?? '-',
+                'category' => $this->category ?? '-'
             ]);
     }
 }
