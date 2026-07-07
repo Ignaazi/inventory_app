@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Production;
 use App\Http\Controllers\Controller; 
 use App\Models\Production\stock_prod;
 use App\Models\Production\ListLineProduction;
-use App\Models\Engineering\StockOutEng; 
+use App\Models\StockEng; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,35 +16,37 @@ class StockProdController extends Controller
      */
     public function index()
     {
-        // Hanya mengambil lini yang SUDAH terdaftar di table stock_prods (dipakai untuk Tab samping & list tabel)
-        // Relasi 'line' digunakan untuk mengambil detail master nama line
-        $lines = stock_prod::with(['line'])->get();
+        // Panggil seluruh master line beserta relasi stoknya
+        $lines = ListLineProduction::with(['stocks'])->orderBy('line_id', 'asc')->get();
 
-        // Mengambil semua template master line untuk opsi pilihan di Modal "ADD LINE"
-        // Lini yang sudah terdaftar diabaikan agar tidak terjadi duplikasi pendaftaran line
-        $registeredLineIds = $lines->pluck('line_id')->toArray();
-        $masterLines = ListLineProduction::whereNotIn('id', $registeredLineIds)->get();
-
-        // Mengambil seluruh log dari Engineering untuk opsi pilihan di Modal "ADD NOZZLE"
-        $logs = StockOutEng::with(['stockEng'])
-                           ->orderBy('created_at', 'desc')
-                           ->get();
+        // Ambil data master stock dari engineering untuk modal ADD NOZZLE
+        $stockEngs = StockEng::orderBy('no_nozzle', 'asc')->get();
     
-        return view('stock_prod.stock_prod', compact('lines', 'masterLines', 'logs'));
+        // Kirim $lines (ListLineProduction) dan $stockEngs ke view
+        return view('stock_prod.stock_prod', compact('lines', 'stockEngs'));
     }
 
     /**
-     * Memproses Request dari Modal (ADD LINE & ADD NOZZLE terpisah lewat action_type)
+     * Memproses Request dari Modal (ADD LINE & ADD NOZZLE terpisah)
      */
     public function nozzleStore(Request $request)
     {
-        // Jalur 1: JIKA YANG DIKLIK ADALAH TOMBOL ADD LINE
         if ($request->input('action_type') === 'line') {
+            // ==========================================
+            // JALUR 1: ADD LINE
+            // ==========================================
             $request->validate([
-                'register_line_id' => 'required|integer'
+                'register_line_id' => 'required'
             ]);
 
-            // Buat record kosong baru di tabel stock_prod agar Line-nya muncul di tab & tabel
+            // Cek apakah line_id ini sudah terdaftar tanpa nozzle di tabel stock_prods
+            $isExist = stock_prod::where('line_id', $request->register_line_id)
+                                 ->whereNull('no_nozzle')
+                                 ->exists();
+            if ($isExist) {
+                return redirect()->back()->with('error', 'Lini Produksi tersebut sudah terdaftar!');
+            }
+
             stock_prod::create([
                 'line_id'    => $request->register_line_id,
                 'no_nozzle'  => null,
@@ -54,38 +56,61 @@ class StockProdController extends Controller
                 'qty'        => 0,
                 'min_stock'  => 0,
             ]);
-
             return redirect()->back()->with('success', 'Lini Produksi Baru Berhasil Didaftarkan ke Sistem!');
         }
 
-        // Jalur 2: JIKA YANG DIKLIK ADALAH TOMBOL ADD NOZZLE
+        // ==========================================
+        // JALUR 2: ADD NOZZLE (Alokasi Master Komponen ke Line)
+        // ==========================================
         $request->validate([
-            'line_id'          => 'required', 
-            'stock_out_log_id' => 'required', 
-            'qty'              => 'required|integer|min:1',
-            'min_stock'        => 'required|integer|min:1',
+            'line_id'      => 'required', 
+            'stock_eng_id' => 'required',
+            'qty'          => 'required|integer|min:1',
+            'min_stock'    => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
         try {
-            $log = StockOutEng::with('stockEng')->findOrFail($request->stock_out_log_id);
+            $engItem = StockEng::findOrFail($request->stock_eng_id);
             
-            // Cari data baris lini yang sudah diregistrasikan sebelumnya
-            $stockProd = stock_prod::where('line_id', $request->line_id)->first();
+            // 🔥 PERBAIKAN: Cari baris berdasarkan Kombinasi Line ID DAN No Nozzle agar data tidak teroverwrite!
+            $stockProd = stock_prod::where('line_id', $request->line_id)
+                                    ->where('no_nozzle', $engItem->no_nozzle)
+                                    ->first();
 
-            if (!$stockProd) {
-                return redirect()->back()->with('error', 'Gagal! Daftarkan lini produksi terlebih dahulu menggunakan tombol ADD LINE.');
+            if ($stockProd) {
+                // Jika jenis nozzle tersebut sudah ada di line ini, kita akumulasikan qty-nya
+                $stockProd->increment('qty', $request->qty);
+                $stockProd->update(['min_stock' => $request->min_stock]);
+            } else {
+                // Cek apakah ada record dummy (line baru yang no_nozzle-nya masih null) untuk dibersihkan/dipakai
+                $dummyLine = stock_prod::where('line_id', $request->line_id)
+                                       ->whereNull('no_nozzle')
+                                       ->first();
+                
+                if ($dummyLine) {
+                    // Pakai record dummy yang sudah ada
+                    $dummyLine->update([
+                        'no_nozzle' => $engItem->no_nozzle,
+                        'part_no'   => $engItem->part_no ?? 'N/A',
+                        'sap_code'  => $engItem->sap_code ?? 'N/A',
+                        'category'  => $engItem->category ?? 'N/A',
+                        'qty'       => $request->qty,
+                        'min_stock' => $request->min_stock,
+                    ]);
+                } else {
+                    // Buat record pasang baru secara mandiri
+                    stock_prod::create([
+                        'line_id'    => $request->line_id,
+                        'no_nozzle'  => $engItem->no_nozzle,
+                        'part_no'    => $engItem->part_no ?? 'N/A',
+                        'sap_code'   => $engItem->sap_code ?? 'N/A',
+                        'category'   => $engItem->category ?? 'N/A',
+                        'qty'        => $request->qty,
+                        'min_stock'  => $request->min_stock,
+                    ]);
+                }
             }
-
-            // Update baris kosongan tadi dengan data nozzle dari Engineering
-            $stockProd->update([
-                'no_nozzle' => $log->no_nozzle,
-                'part_no'   => $log->stockEng->part_no ?? 'N/A',
-                'sap_code'  => $log->stockEng->sap_code ?? 'N/A',
-                'category'  => $log->stockEng->category ?? 'N/A',
-                'qty'       => $request->qty, 
-                'min_stock' => $request->min_stock,
-            ]);
 
             DB::commit();
             return redirect()->back()->with('success', 'Komponen Nozzle Berhasil Dialokasikan ke Lini Produksi!');
@@ -95,9 +120,6 @@ class StockProdController extends Controller
         }
     }
 
-    /**
-     * Penyesuaian Kuantitas / Threshold di Line via Modal Edit
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -114,19 +136,13 @@ class StockProdController extends Controller
         return redirect()->back()->with('success', 'Kapasitas Stok Produksi Berhasil Disesuaikan!');
     }
 
-    /**
-     * Menghapus secara permanen baris pemantauan Lini dari tabel dashboard (Kembali Kosong)
-     */
     public function destroy($id)
     {
         $stock = stock_prod::findOrFail($id);
         $stock->delete(); 
 
-        return redirect()->back()->with('success', 'Lini Produksi Berhasil Dihapus dari Dashboard Pemantauan!');
+        return redirect()->back()->with('success', 'Stok Nozzle pada Lini Berhasil Dikosongkan!');
     }
 
-    public function exportCSV() 
-    { 
-        return redirect()->back()->with('error', 'Fitur Ekspor laporan sedang dikembangkan.'); 
-    }
+    public function exportCSV() { return redirect()->back()->with('error', 'Fitur Ekspor dalam pengembangan.'); }
 }

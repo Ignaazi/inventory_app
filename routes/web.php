@@ -7,7 +7,7 @@ use App\Http\Controllers\EngineeringOverviewController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
 use App\Http\Controllers\Production\ProductionOverviewController;
 use App\Http\Controllers\Production\InProdController;
-use App\Http\Controllers\Costing\CostingOverviewController;
+use App\Http\Controllers\Production\OutProdController; // 🔥 Panggil Controller Out Baru Di Sini
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\StockInEngineeringController;
@@ -21,6 +21,7 @@ use App\Http\Controllers\Engineering\StockOutEngineeringController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 use App\Http\Controllers\Costing\ApprovalController;
+use App\Http\Controllers\Costing\CostingOverviewController;
 use App\Http\Controllers\Engineering\TransactionController;
 
 // 1. Redirect Halaman Utama
@@ -92,7 +93,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
         });
 
-        // 🚀 MAP ROUTE TRANSACTION (MENGGUNAKAN TRANSACTION CONTROLLER)
+        // MAP ROUTE TRANSACTION (MENGGUNAKAN TRANSACTION CONTROLLER)
         Route::prefix('stock-eng/transaction')->name('stock_eng.transaction.')->group(function () {
             Route::get('/in', [TransactionController::class, 'indexIn'])->name('in');
             Route::get('/out', [TransactionController::class, 'indexOut'])->name('out');
@@ -100,7 +101,6 @@ Route::middleware('auth')->group(function () {
             // --- BAGIAN RETURN ---
             Route::get('/return', [TransactionController::class, 'indexReturn'])->name('return');
             
-            // 🌟 RUTE VIEW FORM MANUAL RETURN BIAR ENGGAK ROUTE NOT FOUND LAGI
             Route::get('/return/manual', function () {
                 $stocks = \App\Models\StockEng::all(); 
                 $raks = \App\Models\Rak::all(); 
@@ -128,10 +128,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/prod/request/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
         Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
         
+        // 🛠️ SEKTOR SINKRONISASI PRODUCTION (IN & OUT MANAGEMENT)
         Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
+            // --- MODUL STOCK IN ---
             Route::get('/in', [InProdController::class, 'stockIn'])->name('in');
-            Route::get('/out', [InProdController::class, 'stockOut'])->name('out');
-            Route::post('/store', [InProdController::class, 'store'])->name('store');
+            Route::get('/get-eng-detail/{id}', [InProdController::class, 'getEngineeringDetail'])->name('get_eng_detail');
+            Route::get('/in/manual', [InProdController::class, 'manualIn'])->name('in.manual');
+            Route::post('/in/manual/store', [InProdController::class, 'storeManualIn'])->name('in.store_manual');
+            Route::post('/store', [InProdController::class, 'store'])->name('store'); // Scan/Global Store In
+
+            // --- 🔥 MODUL STOCK OUT REVISI (TERINTEGRASI SAMA OUTPRODCONTROLLER) ---
+            Route::get('/out', [OutProdController::class, 'stockOut'])->name('out');
+            Route::get('/out/manual', [OutProdController::class, 'manualOut'])->name('out.manual');
+            Route::post('/out/manual/store', [OutProdController::class, 'storeManualOut'])->name('out.manual.store');
+            Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); // API AJAX Pendukung autofill
         });
         
         Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
