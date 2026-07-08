@@ -338,51 +338,81 @@
         </div>
       @endif
 
-      @if(in_array(auth()->user()->role, ['admin', 'costing']))
-      <div class="mb-8">
-        <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-          COSTING
-        </h3>
-        <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">CST</div>
-      
-        <ul class="flex flex-col gap-1.5">
-          <li>
-            <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
-            </a>
-          </li>
-      
-          <li>
-            <a href="{{ route('costing.pr.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/incoming-pr*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
-            </a>
-          </li>
-      
-          <li>
-            <a href="{{ route('costing.material.received') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/material*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
-            </a>
-          </li>
-      
-          <li>
-            <a href="/costing/history" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/history*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">History</span>
-            </a>
-          </li>
-      
-          <li>
-            <a href="/costing/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*costing/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1-1H5a1 1 0 01-1-1V4z"/></svg>
-              <span x-show="!sidebarToggle || window.innerWidth < 1024">Report</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-      @endif
+   {{-- 🌟 PERBAIKAN: Role disesuaikan dengan isi ENUM database asli lu ('admin', 'costing', 'engineering') --}}
+   @if(in_array(auth()->user()->role, ['admin', 'costing', 'engineering']))
+   <div class="mb-8" x-data="{ openMenuCosting: '{{ (request()->is('costing/material-received') || request()->is('costing/coating/material-receiving') || request()->is('costing/history*') || request()->is('costing/material-list*')) ? 'material' : 'none' }}' }">
+     <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+       COSTING
+     </h3>
+     <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-bold">CST</div>
+   
+     <ul class="flex flex-col gap-1.5">
+       {{-- 1. Costing Overview (Hanya Admin & Costing) --}}
+       @if(in_array(auth()->user()->role, ['admin', 'costing']))
+       <li>
+         <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+           <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
+         </a>
+       </li>
+       @endif
+   
+       {{-- 2. Approve PR (Hanya Admin & Costing) --}}
+       @if(in_array(auth()->user()->role, ['admin', 'costing']))
+       <li>
+         <a href="{{ route('costing.pr.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/incoming-pr*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+           <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
+         </a>
+       </li>
+       @endif
+   
+       {{-- 3. DROPDOWN UTAMA: Material Received (Bisa dilihat oleh Admin, Costing, & Engineering untuk kebutuhan Sign) --}}
+       <li class="relative">
+         <button 
+           type="button"
+           @click.stop="openMenuCosting = (openMenuCosting === 'material' ? 'none' : 'material')" 
+           class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ (request()->is('costing/material-received') || request()->is('costing/material-list*')) ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+         >
+           <div class="flex items-center gap-3">
+             <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+             <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
+           </div>
+           <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'material' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+         </button>
+         
+         <div x-show="openMenuCosting === 'material'" x-collapse class="overflow-hidden">
+           <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
+             {{-- Sub 1: Material Received Form --}}
+             <li>
+               <a href="{{ route('costing.material.received') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/material-received') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                 <span>Material Received Form</span>
+               </a>
+             </li>
+             {{-- Sub 2: List Material Received --}}
+             <li>
+               <a href="{{ route('costing.material.list') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/material-list*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 00-2 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                 <span>List Material Received</span>
+               </a>
+             </li>
+           </ul>
+         </div>
+       </li>
+   
+       {{-- 4. Report (Hanya Admin & Costing) --}}
+       @if(in_array(auth()->user()->role, ['admin', 'costing']))
+       <li>
+         <a href="/costing/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1-1H5a1 1 0 01-1-1V4z"/></svg>
+           <span x-show="!sidebarToggle || window.innerWidth < 1024">Report</span>
+         </a>
+       </li>
+       @endif
+     </ul>
+   </div>
+   @endif
 
     </nav>
   </div>

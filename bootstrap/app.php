@@ -28,11 +28,20 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/Production/list_line_production.php');
 
-            // 5. 🚀 UPDATE BARU: Route Core Stock Management Production 
+            // 5. Route Core Stock Management Production 
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/production/stock_prod.php');
 
-            // 6. 🌐 UPDATE UTAMA API MOBILE: Mendaftarkan file routes/api.php agar dibaca sistem
+            // 6. 💸 UPDATE MODULAR COSTING & COATING RECEIVING: Load Modular Costing Routes Per File
+            Route::middleware(['web', 'auth'])
+                ->prefix('costing')
+                ->group(function () {
+                    require __DIR__.'/../routes/costing/overviewCosting.php';
+                    require __DIR__.'/../routes/costing/incomingPrCosting.php';
+                    require __DIR__.'/../routes/costing/materialReceivedCosting.php'; // Di sini mencakup route form serah terima coating
+                });
+
+            // 7. 🌐 UPDATE UTAMA API MOBILE: Mendaftarkan file routes/api.php agar dibaca sistem
             Route::middleware('api')
                 ->prefix('api') // Menambahkan prefix 'api/' secara otomatis di depan rute
                 ->group(__DIR__.'/../routes/api.php');

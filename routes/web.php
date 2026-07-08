@@ -7,7 +7,7 @@ use App\Http\Controllers\EngineeringOverviewController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
 use App\Http\Controllers\Production\ProductionOverviewController;
 use App\Http\Controllers\Production\InProdController;
-use App\Http\Controllers\Production\OutProdController; // 🔥 Panggil Controller Out Baru Di Sini
+use App\Http\Controllers\Production\OutProdController; 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\StockInEngineeringController;
@@ -20,8 +20,6 @@ use App\Http\Controllers\Production\RequestProdController;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
-use App\Http\Controllers\Costing\ApprovalController;
-use App\Http\Controllers\Costing\CostingOverviewController;
 use App\Http\Controllers\Engineering\TransactionController;
 
 // 1. Redirect Halaman Utama
@@ -137,23 +135,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/in/manual/store', [InProdController::class, 'storeManualIn'])->name('in.store_manual');
             Route::post('/store', [InProdController::class, 'store'])->name('store'); // Scan/Global Store In
 
-            // --- 🔥 MODUL STOCK OUT REVISI (TERINTEGRASI SAMA OUTPRODCONTROLLER) ---
+            // --- MODUL STOCK OUT ---
             Route::get('/out', [OutProdController::class, 'stockOut'])->name('out');
             Route::get('/out/manual', [OutProdController::class, 'manualOut'])->name('out.manual');
             Route::post('/out/manual/store', [OutProdController::class, 'storeManualOut'])->name('out.manual.store');
-            Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); // API AJAX Pendukung autofill
+            Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); 
         });
         
         Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
-    });
-
-    // --- GRUP COSTING ---
-    Route::middleware('role:admin,costing')->group(function () {
-        Route::get('/costing/overview', [CostingOverviewController::class, 'index'])->name('costing.overview');
-        Route::get('/costing/incoming-pr', [ApprovalController::class, 'index'])->name('costing.pr.index');
-        Route::put('/costing/incoming-pr/{id}/approve', [ApprovalController::class, 'approve'])->name('costing.pr.approve');
-        Route::put('/costing/incoming-pr/{id}/reject', [ApprovalController::class, 'reject'])->name('costing.pr.reject');
-        Route::get('/costing/material-received', [CostingOverviewController::class, 'materialReceived'])->name('costing.material.received');
     });
     
     // --- SHARED / GLOBAL ---
