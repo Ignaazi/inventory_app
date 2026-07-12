@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('coating_material_receivings', function (Blueprint $table) {
+        // Diubah menjadi costing_material_receivings
+        Schema::create('costing_material_receivings', function (Blueprint $table) {
             $table->id();
-            $table->string('receiving_id')->unique(); // Contoh: RC-CTG-20260708-001
+            $table->string('receiving_id')->unique(); // Contoh: RC-CST-20260708-001
             $table->string('material_code');
             $table->string('material_name');
             $table->string('lot_no');
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('coating_material_receivings');
+        Schema::dropIfExists('costing_material_receivings');
     }
 };

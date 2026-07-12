@@ -64,7 +64,7 @@
 
       @if(in_array(auth()->user()->role, ['admin', 'engineering']))
       <div class="mb-8" x-data="{ 
-          openMenu: '{{ request()->is('*eng/purchase-request*') ? 'pr' : (request()->is('*eng/in*', '*eng/out*', '*eng/return*', '*eng/disposal*') ? 'trans' : (request()->is('*barcode*', '*parsing*', '*type*') ? 'barcode' : (request()->is('*eng/approval*', '*approval/history*') ? 'approval' : 'none'))) }}'
+          openMenu: '{{ request()->is('*eng/purchase-request*') ? 'pr' : (request()->is('*eng/material-receiving*') ? 'mat_received' : (request()->is('*eng/in*', '*eng/out*', '*eng/return*', '*eng/disposal*') ? 'trans' : (request()->is('*barcode*', '*parsing*', '*type*') ? 'barcode' : (request()->is('*eng/approval*', '*approval/history*') ? 'approval' : 'none')))) }}'
         }">
         <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           ENGINEERING
@@ -95,7 +95,6 @@
             <button 
               type="button"
               @click.stop="openMenu = (openMenu === 'trans' ? 'none' : 'trans')" 
-              {{-- Menjaga parent menu tetap aktif (highlighted) jika salah satu sub-menu diakses --}}
               class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
             >
               <div class="flex items-center gap-3">
@@ -108,7 +107,6 @@
             <div x-show="openMenu === 'trans'" x-collapse class="overflow-hidden">
               <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
                 
-                {{-- 1. MENU IN --}}
                 <li>
                   <a href="{{ route('stock_eng.transaction.in') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.in') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
@@ -116,7 +114,6 @@
                   </a>
                 </li>
                 
-                {{-- 2. MENU OUT --}}
                 <li>
                   <a href="{{ route('stock_eng.transaction.out') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.out') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -124,7 +121,6 @@
                   </a>
                 </li>
                 
-                {{-- 3. MENU RETURN --}}
                 <li>
                   <a href="{{ route('stock_eng.transaction.return') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.return') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16"/></svg>
@@ -132,7 +128,6 @@
                   </a>
                 </li>
                 
-                {{-- 4. MENU DISPOSAL --}}
                 <li>
                   <a href="{{ route('stock_eng.transaction.disposal') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('stock_eng.transaction.disposal') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -234,6 +229,39 @@
                   <a href="{{ route('purchase.request.history') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*purchase-request/history*') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
                     <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span>History PR</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </li>
+
+          {{-- Dropdown Material Received --}}
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenu = (openMenu === 'mat_received' ? 'none' : 'mat_received')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('*eng/material-receiving*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'mat_received' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="openMenu === 'mat_received'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1">
+                <li>
+                  <a href="{{ route('eng.material.receiving.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('eng.material.receipt.index') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                    <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    <span>List Material Received</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('eng.material.receiving.history') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-all {{ request()->routeIs('eng.material.receipt.history') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400' }}">
+                    <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>History Material Received</span>
                   </a>
                 </li>
               </ul>

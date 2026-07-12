@@ -24,15 +24,19 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/engineering/stock_out.php');
 
-            // 4. Route Master Data Line Production (Sesuai Struktur Folder Baru)
+            // 4. 🛠️ NEW: Route Custom Engineering untuk Material Received Dropdown Module
+            Route::middleware('web')
+                ->group(__DIR__.'/../routes/engineering/eng_list_material_received.php');
+
+            // 5. Route Master Data Line Production (Sesuai Struktur Folder Baru)
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/Production/list_line_production.php');
 
-            // 5. Route Core Stock Management Production 
+            // 6. Route Core Stock Management Production 
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/production/stock_prod.php');
 
-            // 6. 💸 UPDATE MODULAR COSTING & COATING RECEIVING: Load Modular Costing Routes Per File
+            // 7. 💸 UPDATE MODULAR COSTING & COATING RECEIVING: Load Modular Costing Routes Per File
             Route::middleware(['web', 'auth'])
                 ->prefix('costing')
                 ->group(function () {
@@ -41,7 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     require __DIR__.'/../routes/costing/materialReceivedCosting.php'; // Di sini mencakup route form serah terima coating
                 });
 
-            // 7. 🌐 UPDATE UTAMA API MOBILE: Mendaftarkan file routes/api.php agar dibaca sistem
+            // 8. 🌐 UPDATE UTAMA API MOBILE: Mendaftarkan file routes/api.php agar dibaca sistem
             Route::middleware('api')
                 ->prefix('api') // Menambahkan prefix 'api/' secara otomatis di depan rute
                 ->group(__DIR__.'/../routes/api.php');

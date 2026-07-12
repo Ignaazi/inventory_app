@@ -57,8 +57,8 @@
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Tracking Status</td>
                             <td class="py-2.5 px-4 font-bold uppercase">
-                                <span class="px-2 py-0.5 rounded text-[10px] border {{ $signature->signature_status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-amber-100 text-amber-800 border-amber-300' }}">
-                                    {{ str_replace('_', ' ', $signature->signature_status) }}
+                                <span class="px-2 py-0.5 rounded text-[10px] border {{ ($signature->signature_status ?? $signature->status) === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-amber-100 text-amber-800 border-amber-300' }}">
+                                    {{ str_replace('_', ' ', $signature->signature_status ?? $signature->status) }}
                                 </span>
                             </td>
                         </tr>
@@ -68,6 +68,7 @@
 
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
                 
+                {{-- 1. PREPARED BY (COSTING STAFF) --}}
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">Prepared By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
@@ -77,39 +78,48 @@
                             <span class="text-slate-300 italic text-[8px] m-auto">( No Signature )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase underline truncate px-1">
-                        {{ $signature->costing_staff_name ? '( ' . $signature->costing_staff_name . ' )' : '( _________________ )' }}
+                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase underline truncate px-1 text-[10px]">
+                        {{-- Menggunakan field name bawaan pembuat form --}}
+                        {{ $signature->created_by_name ? '( ' . $signature->created_by_name . ' )' : '( Costing Staff )' }}
                     </div>
                 </div>
 
+                {{-- 2. CHECKED BY (ENGINEERING STAFF) --}}
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">Checked By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
-                        @if($signature->engineering_signature_path && file_exists(public_path($signature->engineering_signature_path)))
-                            <img src="{{ asset($signature->engineering_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Staff Eng Signature">
-                        @elseif($signature->signature_status === 'rejected')
+                        @php
+                            $engPath = $signature->engineering_signature_path ?? $signature->eng_signature_path;
+                        @endphp
+                        @if($engPath && file_exists(public_path($engPath)))
+                            <img src="{{ asset($engPath) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Staff Eng Signature">
+                        @elseif(($signature->signature_status ?? $signature->status) === 'rejected')
                             <span class="text-red-500 font-black text-[10px] border border-red-500 bg-red-50 px-2 py-0.5 rounded m-auto">REJECTED</span>
                         @else
                             <span class="text-slate-300 italic text-[8px] m-auto">( Waiting Staff Eng )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1">
+                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1 text-[10px]">
                         {{ $signature->engineering_staff_name ? '( ' . $signature->engineering_staff_name . ' )' : '( _________________ )' }}
                     </div>
                 </div>
 
+                {{-- 3. APPROVED BY (ENGINEERING SPV) --}}
                 <div class="flex flex-col justify-between h-36 bg-white">
                     <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">Approved By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
-                        @if($signature->engineering_spv_signature_path && file_exists(public_path($signature->engineering_spv_signature_path)))
-                            <img src="{{ asset($signature->engineering_spv_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="SPV Signature">
-                        @elseif($signature->signature_status === 'rejected')
+                        @php
+                            $spvPath = $signature->engineering_spv_signature_path ?? $signature->eng_spv_signature_path;
+                        @endphp
+                        @if($spvPath && file_exists(public_path($spvPath)))
+                            <img src="{{ asset($spvPath) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="SPV Signature">
+                        @elseif(($signature->signature_status ?? $signature->status) === 'rejected')
                             <span class="text-slate-400 italic text-[8px] m-auto">- Stopped -</span>
                         @else
                             <span class="text-slate-300 italic text-[8px] m-auto">( Waiting SPV Eng )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1">
+                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1 text-[10px]">
                         {{ $signature->engineering_spv_name ? '( ' . $signature->engineering_spv_name . ' )' : '( _________________ )' }}
                     </div>
                 </div>

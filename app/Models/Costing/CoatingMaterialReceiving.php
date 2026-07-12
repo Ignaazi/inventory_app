@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Costing; // Menyesuaikan subfolder Costing biar rapi
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CoatingMaterialReceiving extends Model
+class CostingMaterialReceiving extends Model
 {
     use HasFactory;
 
-    // Menentukan nama tabel secara eksplisit
-    protected $table = 'coating_material_receivings';
+
+    protected $table = 'costing_material_receivings';
 
     // Kolom yang diizinkan untuk mass assignment
     protected $fillable = [
@@ -24,7 +24,7 @@ class CoatingMaterialReceiving extends Model
         'comment'
     ];
 
-    // Mengatur agar casts tanggal otomatis (opsional untuk Laravel modern)
+    // Mengatur agar casts tanggal otomatis
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
