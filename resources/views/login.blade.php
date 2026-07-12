@@ -43,7 +43,7 @@
             </div>
             
             <div class="mt-8">
-                <h2 class="text-[#1E293B] text-2xl font-black uppercase tracking-tight">SYSTEM SPAREPART MANAGEMENT</h2>
+                <h2 class="text-[#1E293B] text-2xl font-black uppercase tracking-tight">SPAREPART MANAGEMENT SYSTEM</h2>
                 <p class="text-slate-400 text-sm font-semibold mt-1">Precision Nozzle Tracking & Stock Infrastructure</p>
             </div>
         </div>
