@@ -428,16 +428,6 @@
            </ul>
          </div>
        </li>
-   
-       {{-- 4. Report (Hanya Admin & Costing) --}}
-       @if(in_array(auth()->user()->role, ['admin', 'costing']))
-       <li>
-         <a href="/costing/report" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all {{ request()->is('costing/report*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1-1H5a1 1 0 01-1-1V4z"/></svg>
-           <span x-show="!sidebarToggle || window.innerWidth < 1024">Report</span>
-         </a>
-       </li>
-       @endif
      </ul>
    </div>
    @endif

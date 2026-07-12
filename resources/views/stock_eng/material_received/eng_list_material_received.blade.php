@@ -1,143 +1,232 @@
 @extends('admin')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
 
-<div class="mx-auto w-full max-w-7xl pb-12 px-4 sm:px-6">
+  .approval-view, .approval-view * {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  .table-row-item {
+    transition: all 0.2s ease-in-out;
+  }
+</style>
+
+<div class="approval-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
+  
+  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
+        List Eng Material Received
+      </h2>
+      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">PT SIIX EMS INDONESIA • ENGINEERING SECTION</p>
+    </div>
+    <a href="{{ route('eng.material.receiving.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase py-2.5 px-4 shadow-md transition-all active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Confirm Material Received
+    </a>
+  </div>
+
+  @if(session('success'))
+      <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm">
+          SYSTEM NOTIFICATION: {{ session('success') }}
+      </div>
+  @endif
+
+  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm sm:px-6">
     
-    @if(session('success'))
-    <div class="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 text-green-800 dark:text-green-400 shadow-sm flex items-center gap-3">
-        <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
-        <div class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-            <span>SYSTEM NOTIFICATION:</span>
-            <span class="font-bold text-slate-900 dark:text-white normal-case">{{ session('success') }}</span>
-        </div>
-    </div>
-    @endif
-
-    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                List Eng Material Received
-            </h2>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">PT SIIX EMS INDONESIA • ENGINEERING SECTION</p>
-        </div>
-        <a href="{{ route('eng.material.receiving.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs uppercase py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
+      
+      <div class="relative w-full lg:w-72">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            Confirm Material Received
-        </a>
+        </span>
+        <input type="text" placeholder="Search Request..." class="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-semibold text-xs outline-none transition-all focus:border-indigo-500 text-slate-950 dark:text-white placeholder-slate-400">
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <button type="button" onclick="filterMaterialTable('all', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
+            All
+          </button>
+          <button type="button" onclick="filterMaterialTable('submitted_by_costing', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            From Costing
+          </button>
+          <button type="button" onclick="filterMaterialTable('approved_by_spv', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Pending SPV
+          </button>
+          <button type="button" onclick="filterMaterialTable('completed', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Completed
+          </button>
+          <button type="button" onclick="filterMaterialTable('rejected', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+            Discrepancy
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark rounded-xl shadow-sm overflow-hidden">
-        <div class="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-strokedark bg-slate-50/50 dark:bg-slate-800/40">
-            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Recent History Received</h3>
-            <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
-                <button type="button" onclick="filterMaterialTable('all', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white">All</button>
-                <button type="button" onclick="filterMaterialTable('submitted_by_costing', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500">From Costing</button>
-                <button type="button" onclick="filterMaterialTable('approved_by_spv', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500">Verified (Pending SPV)</button>
-                <button type="button" onclick="filterMaterialTable('completed', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500">Completed</button>
-                <button type="button" onclick="filterMaterialTable('rejected', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500">Discrepancy</button>
-            </div>
-        </div>
+    <div class="w-full overflow-x-auto block align-middle">
+      <table class="min-w-full text-left border-collapse mx-auto" id="material-table">
+        <thead>
+          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">NO</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Receiving Code</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">PR Code</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Qty Received</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Status</th>
+            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">1. Costing Sign</th>
+            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">2. Eng Staff Check</th>
+            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">3. Eng Spv App</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Created At</th>
+            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-44 whitespace-nowrap">Action Decision</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 font-medium text-slate-950 dark:text-white">
+          @forelse($receivings as $index => $item)
+          <tr class="material-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
+            
+            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
+              {{ $receivings->firstItem() + $index }}
+            </td>
 
-        <div class="max-w-full overflow-x-auto">
-            <table class="w-full table-auto text-xs text-left border-collapse font-sans">
-                <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200 dark:border-strokedark">
-                        <th class="py-3 px-3 text-center w-12">No</th>
-                        <th class="py-3 px-4">Receiving Code</th>
-                        <th class="py-3 px-4">PR Code</th>
-                        <th class="py-3 px-4 text-center">Qty Received</th>
-                        <th class="py-3 px-4 text-center">Status</th>
-                        <th class="py-3 px-4 text-center">1. Costing Sign</th> 
-                        <th class="py-3 px-4 text-center">2. Eng Staff Check</th>
-                        <th class="py-3 px-4 text-center">3. Eng Spv App</th>
-                        <th class="py-3 px-4 leading-normal">Created At</th>
-                        <th class="py-3 px-4 text-center">Action</th>
-                    </tr>
-                </thead>
+            <td class="py-3 px-4 text-xs font-bold text-blue-600 dark:text-blue-400 font-mono tracking-wide whitespace-nowrap">
+              {{ $item->receiving_code }}
+            </td>
+            
+            <td class="py-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase whitespace-nowrap">
+              {{ $item->pr_code }}
+            </td>
 
-                <tbody class="divide-y divide-slate-100 dark:divide-strokedark text-slate-900 dark:text-white font-bold">
-                    @forelse($receivings as $index => $item)
-                    <tr class="material-row-item hover:bg-slate-50/80 transition-colors whitespace-nowrap">
-                        <td class="py-3.5 px-3 text-center">{{ $receivings->firstItem() + $index }}</td>
-                        <td class="py-3.5 px-4 font-mono text-blue-600">{{ $item->receiving_code }}</td>
-                        <td class="py-3.5 px-4 tracking-tight">{{ $item->pr_code }}</td>
-                        <td class="py-3.5 px-3 text-center">{{ number_format($item->qty_received) }} <span class="text-[10px] text-slate-500 font-normal">Pcs</span></td>
-                        <td class="py-3.5 px-4 text-center">
-                            <span class="status-badge inline-flex items-center rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wide border 
-                                {{ $item->status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                  ($item->status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200') }}">
-                                {{ $item->status === 'submitted_by_costing' ? 'INCOMING COSTING' : str_replace('_', ' ', $item->status) }}
-                            </span>
-                        </td>
+            <td class="py-3 px-4 text-xs font-bold text-center text-slate-950 dark:text-white whitespace-nowrap">
+              {{ number_format($item->qty_received) }} <span class="text-[10px] text-slate-400 font-normal">Pcs</span>
+            </td>
+            
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <span class="status-badge inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
+                @if($item->status == 'completed') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
+                @elseif($item->status == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
+                @else bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40 @endif">
+                {{ $item->status === 'submitted_by_costing' ? 'Incoming Costing' : ($item->status === 'approved_by_spv' ? 'Pending SPV' : str_replace('_', ' ', ucfirst($item->status))) }}
+              </span>
+            </td>
 
-                        {{-- 1. Costing Sign --}}
-                        <td class="py-3.5 px-4 text-center">
-                            {!! $item->costing_signature_path ? '<span class="text-green-600 text-[10px]">🟢 ISSUED</span>' : '<span class="text-slate-400 italic text-[10px]">⚪ EMPTY</span>' !!}
-                        </td>
-                        {{-- 2. Eng Staff Check --}}
-                        <td class="py-3.5 px-4 text-center">
-                            {!! $item->eng_signature_path ? '<span class="text-green-600 text-[10px]">🟢 VERIFIED</span>' : '<span class="text-slate-400 italic text-[10px]">⚪ WAITING</span>' !!}
-                        </td>
-                        {{-- 3. Eng Spv App --}}
-                        <td class="py-3.5 px-4 text-center">
-                            {!! $item->eng_spv_signature_path ? '<span class="text-emerald-700 text-[10px]">🟢 COMPLETED</span>' : '<span class="text-slate-400 italic text-[10px]">⚪ WAITING</span>' !!}
-                        </td>
-                        
-                        <td class="py-3.5 px-4">
-                            <div>{{ $item->created_at ? $item->created_at->format('d/m/y') : '-' }}</div>
-                            <div class="text-[10px] text-slate-400 font-normal">{{ $item->created_at ? $item->created_at->format('H:i') . ' WIB' : '' }}</div>
-                        </td>
-                        
-                        <td class="py-3.5 px-4 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
-                                
-                                @if($item->status === 'submitted_by_costing')
-                                  {{-- 🌟 FIX: Diarahkan ke .create membawa ID untuk lanjut ttd staff --}}
-                                       <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold tracking-wide transition-all shadow-sm active:scale-90 flex items-center gap-1" title="Verify Physical Goods">
-                                        ⚡ VERIFY GOODS
-                                       </a>
-                                  @elseif($item->status === 'approved_by_spv')
-                                    {{-- 🌟 FIX: Diarahkan ke .create membawa ID untuk lanjut ttd supervisor --}}
-                                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold tracking-wide transition-all shadow-sm active:scale-90 flex items-center gap-1" title="Supervisor Final Approval">
-                                        🔑 SPV APPROVE
-                                    </a>
-                                    @else
-                                        {{-- Jika status completed / rejected, baru lempar ke view preview biasa (.show) --}}
-                                        <a href="{{ route('eng.material.receiving.show', $item->id) }}" class="w-7 h-7 inline-flex items-center justify-center bg-slate-600 hover:bg-slate-700 text-white rounded-lg shadow-md transition-all active:scale-90" title="View Document">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                        </a>
-                                    @endif
+            <td class="py-2 px-6 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
+                    @if($item->costing_signature_path && file_exists(public_path($item->costing_signature_path)))
+                        <img src="{{ asset($item->costing_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
+                    @else
+                        <span class="text-slate-400 italic text-[9px] font-semibold">Empty</span>
+                    @endif
+                </div>
+            </td>
 
-                                <form id="delete-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
-                                    @csrf @method('DELETE')
-                                </form>
-                                <button type="button" onclick="confirmDeleteMaterial('{{ $item->id }}', '{{ $item->pr_code }}')" class="w-7 h-7 inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-md transition-all active:scale-90" title="Delete Form">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="10" class="text-center py-10 text-slate-400 italic">No data entries.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="p-4">
-            {{ $receivings->links() }}
-        </div>
+            <td class="py-2 px-6 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
+                    @if(($item->engineering_signature_path && file_exists(public_path($item->engineering_signature_path))) || ($item->eng_signature_path && file_exists(public_path($item->eng_signature_path))))
+                        <img src="{{ asset($item->engineering_signature_path ?? $item->eng_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
+                    @else
+                        <span class="text-amber-600 italic text-[9px] font-semibold">Waiting</span>
+                    @endif
+                </div>
+            </td>
+
+            <td class="py-2 px-6 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
+                    @if(($item->engineering_spv_signature_path && file_exists(public_path($item->engineering_spv_signature_path))) || ($item->eng_spv_signature_path && file_exists(public_path($item->eng_spv_signature_path))))
+                        <img src="{{ asset($item->engineering_spv_signature_path ?? $item->eng_spv_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
+                    @else
+                        <span class="text-amber-600 italic text-[9px] font-semibold">Waiting</span>
+                    @endif
+                </div>
+            </td>
+
+            <td class="py-3 px-4 text-xs whitespace-nowrap">
+              <div class="font-bold text-slate-800 dark:text-slate-200">
+                {{ $item->created_at ? $item->created_at->format('d/m/y') : '-' }}
+              </div>
+              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
+                {{ $item->created_at ? $item->created_at->format('H:i') : '' }} WIB
+              </div>
+            </td>
+            
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="flex items-center justify-center gap-1.5">
+                @if($item->status === 'submitted_by_costing')
+                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
+                       class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
+                        ⚡ Verify Goods
+                    </a>
+                @elseif($item->status === 'approved_by_spv')
+                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
+                       class="px-2.5 py-1.5 bg-gradient-to-r from-amber-400 to-purple-600 hover:from-amber-500 hover:to-purple-700 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
+                        🔑 Spv Approve
+                    </a>
+                @else
+                    <a href="{{ route('eng.material.receiving.show', $item->id) }}" class="px-2.5 py-1.5 bg-gray-600 hover:bg-gray-700 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]" title="View Document">
+                        View Doc
+                    </a>
+                @endif
+
+                <form id="delete-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
+                    @csrf @method('DELETE')
+                </form>
+                <button type="button" onclick="confirmDeleteMaterial('{{ $item->id }}', '{{ $item->pr_code }}')" class="px-2 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-black rounded-lg text-[10px] uppercase tracking-wide transition-all active:scale-[0.98]" title="Delete Form">
+                    Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+          @empty
+          <tr>
+            <td colspan="10" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
+              No Material Received Entries Queue Found.
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
+
+    <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-1 border-t border-gray-100 pt-5 dark:border-gray-800">
+      <p class="text-xs font-extrabold text-slate-950 dark:text-white">
+        Showing {{ $receivings->firstItem() ?? 0 }} to {{ $receivings->lastItem() ?? 0 }} of {{ $receivings->total() ?? 0 }} entries
+      </p>
+      <div class="flex items-center">
+        {{ $receivings->links() }}
+      </div>
+    </div>
+
+  </div>
 </div>
+
+<style>
+  nav[role="navigation"] svg {
+    width: 16px;
+    height: 16px;
+    display: inline;
+  }
+  nav[role="navigation"] div:first-child {
+    display: none;
+  }
+  .pagination .page-item.active .page-link {
+    background-color: #3C50E0 !important;
+    border-color: #3C50E0 !important;
+    color: white !important;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .pagination .page-link {
+    color: #0f172a !important; 
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+</style>
 
 <script>
 function confirmDeleteMaterial(id, prCode) {
@@ -157,29 +246,37 @@ function confirmDeleteMaterial(id, prCode) {
     });
 }
 
-function filterMaterialTable(status, btn) {
-    const rows = document.querySelectorAll('.material-row-item');
+function filterMaterialTable(status, element) {
     const buttons = document.querySelectorAll('.filter-btn');
-    
-    buttons.forEach(b => {
-        b.classList.remove('bg-white', 'text-slate-900', 'shadow-sm', 'dark:bg-slate-700', 'dark:text-white');
-        b.classList.add('text-slate-500');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
     });
-    
-    btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm', 'dark:bg-slate-700', 'dark:text-white');
-    btn.classList.remove('text-slate-500');
 
+    if (element) {
+      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+    }
+
+    const rows = document.querySelectorAll('.material-row-item');
+    
     rows.forEach(row => {
-        const badge = row.querySelector('.status-badge').textContent.trim().toLowerCase().replace(/\s+/g, '_');
-        if (status === 'all') {
-            row.style.display = '';
-        } else if (status === 'submitted_by_costing' && badge === 'incoming_costing') {
-            row.style.display = '';
-        } else if (badge === status.toLowerCase()) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+      if (status === 'all') {
+        row.style.display = '';
+        return;
+      }
+
+      const badgeText = row.querySelector('.status-badge').textContent.trim().toLowerCase().replace(/\s+/g, '_');
+
+      if (status === 'submitted_by_costing' && badgeText === 'incoming_costing') {
+         row.style.display = '';
+      } else if (status === 'approved_by_spv' && badgeText === 'pending_spv') {
+         row.style.display = '';
+      } else if (badgeText === status.toLowerCase()) {
+         row.style.display = '';
+      } else {
+         row.style.display = 'none';
+      }
     });
 }
 </script>

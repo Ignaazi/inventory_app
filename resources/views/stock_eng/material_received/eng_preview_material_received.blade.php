@@ -52,7 +52,7 @@
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Item / Material Name</td>
-                            <td class="py-2.5 px-4 font-bold text-black uppercase">{{ $receiving->item_name }}</td>
+                            <td class="py-2.5 px-4 font-bold text-black uppercase">{{ $receiving->item_name ?? $receiving->sparepart_name ?? '-' }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Quantity Received</td>
@@ -65,8 +65,8 @@
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Tracking Status TTD</td>
                             <td class="py-2.5 px-4 font-bold uppercase">
-                                <span class="px-2 py-0.5 rounded text-[10px] border {{ $receiving->status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-amber-100 text-amber-800 border-amber-300' }}">
-                                    {{ str_replace('_', ' ', $receiving->status) }}
+                                <span class="px-2 py-0.5 rounded text-[10px] border {{ $receiving->signature_status === 'completed' || $receiving->status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' : ($receiving->signature_status === 'rejected' || $receiving->status === 'rejected' ? 'bg-red-100 text-red-800 border-red-300' : 'bg-amber-100 text-amber-800 border-amber-300') }}">
+                                    {{ str_replace('_', ' ', $receiving->signature_status ?? $receiving->status) }}
                                 </span>
                             </td>
                         </tr>
@@ -75,49 +75,65 @@
             </div>
 
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
+                
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">1. Prepared By</div>
+                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">1. Acknowledged By (Costing)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
-                        @if($receiving->eng_signature_path && file_exists(public_path($receiving->eng_signature_path)))
-                            <img src="{{ asset($receiving->eng_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Eng Staff Signature">
+                        @if($receiving->costing_signature_path && file_exists(public_path($receiving->costing_signature_path)))
+                            <img src="{{ asset($receiving->costing_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Costing Signature">
                         @else
-                            <span class="text-slate-300 italic text-[8px] m-auto">( No Signature )</span>
+                            <span class="text-slate-300 italic text-[8px] m-auto">( No Base Signature )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase underline truncate px-1">
-                        {{ $receiving->created_by_name ? '( ' . $receiving->created_by_name . ' )' : '( _________________ )' }}
+                    <div class="border-t border-slate-200 py-1 bg-white truncate px-1">
+                        <p class="font-bold uppercase text-black underline text-[10px]">
+                            {{ $receiving->costing_staff_name ? $receiving->costing_staff_name : ($receiving->created_by_name ?? 'Costing Staff') }}
+                        </p>
+                        <p class="text-[7px] text-slate-400 font-semibold mt-0.5">
+                            {{ $receiving->costing_signed_at ? $receiving->costing_signed_at->format('d/m/Y H:i') : '' }}
+                        </p>
                     </div>
                 </div>
 
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">2. Checked By</div>
+                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">2. Prepared By (Eng Staff)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
-                        @if($receiving->status === 'approved_by_spv' || $receiving->status === 'completed')
-                            <span class="text-green-700 font-bold text-[10px] m-auto">🟢 SIGNED BY SPV</span>
-                        @elseif($receiving->status === 'rejected')
-                            <span class="text-red-500 font-black text-[10px] border border-red-500 bg-red-50 px-2 py-0.5 rounded m-auto">REJECTED</span>
+                        @if($receiving->engineering_signature_path && file_exists(public_path($receiving->engineering_signature_path)))
+                            <img src="{{ asset($receiving->engineering_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Eng Staff Signature">
+                        @elseif($receiving->eng_signature_path && file_exists(public_path($receiving->eng_signature_path)))
+                            <img src="{{ asset($receiving->eng_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Eng Staff Signature Back">
                         @else
-                            <span class="text-slate-300 italic text-[8px] m-auto">( Waiting SPV Eng )</span>
+                            <span class="text-slate-300 italic text-[8px] m-auto">( Waiting Staff Sign )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1">
-                        ( Supervisor Engineering )
+                    <div class="border-t border-slate-200 py-1 bg-white truncate px-1">
+                        <p class="font-bold uppercase text-black underline text-[10px]">
+                            {{ $receiving->engineering_staff_name ? $receiving->engineering_staff_name : '_________________' }}
+                        </p>
+                        <p class="text-[7px] text-slate-400 font-semibold mt-0.5">
+                            {{ $receiving->engineering_signed_at ? $receiving->engineering_signed_at->format('d/m/Y H:i') : 'Engineering Staff' }}
+                        </p>
                     </div>
                 </div>
 
                 <div class="flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">3. Acknowledged By</div>
+                    <div class="bg-slate-50 font-bold border-b border-black py-1 text-[9px] text-slate-800 uppercase">3. Approved By (Eng SPV)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden p-1">
-                        @if($receiving->status === 'completed')
-                            <span class="text-emerald-700 font-bold text-[10px] m-auto">🟢 FULL APPROVED</span>
-                        @elseif($receiving->status === 'rejected')
-                            <span class="text-slate-400 italic text-[8px] m-auto">- Stopped -</span>
+                        @if($receiving->engineering_spv_signature_path && file_exists(public_path($receiving->engineering_spv_signature_path)))
+                            <img src="{{ asset($receiving->engineering_spv_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Eng SPV Signature">
+                        @elseif($receiving->eng_spv_signature_path && file_exists(public_path($receiving->eng_spv_signature_path)))
+                            <img src="{{ asset($receiving->eng_spv_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain mx-auto block" alt="Eng SPV Signature Back">
                         @else
-                            <span class="text-slate-300 italic text-[8px] m-auto">( Waiting Costing Section )</span>
+                            <span class="text-slate-300 italic text-[8px] m-auto">( Waiting SPV Approval )</span>
                         @endif
                     </div>
-                    <div class="border-t border-slate-200 py-1.5 bg-white font-bold uppercase truncate px-1">
-                        ( Costing Department )
+                    <div class="border-t border-slate-200 py-1 bg-white truncate px-1">
+                        <p class="font-bold uppercase text-black underline text-[10px]">
+                            {{ $receiving->engineering_spv_name ? $receiving->engineering_spv_name : '_________________' }}
+                        </p>
+                        <p class="text-[7px] text-slate-400 font-semibold mt-0.5">
+                            {{ $receiving->engineering_spv_signed_at ? $receiving->engineering_spv_signed_at->format('d/m/Y H:i') : 'Engineering Supervisor' }}
+                        </p>
                     </div>
                 </div>
             </div>
