@@ -19,7 +19,7 @@
   <!-- HEADER LOGO AREA -->
   <div
     :class="(sidebarToggle && window.innerWidth >= 1024) ? 'justify-center px-0' : 'justify-between px-6'"
-    class="flex items-center h-[65px] border-b border-gray-50 dark:border-slate-800 transition-all duration-300 w-full"
+    class="flex items-center h-[65  px] border-b border-gray-50 dark:border-slate-800 transition-all duration-300 w-full"
   >
     <a href="/admin" class="flex items-center justify-center w-full">
       <div 
@@ -383,7 +383,7 @@
       @endif
 
    <!-- ================= COSTING MENU ================= -->
-   @if(in_array(auth()->user()->role, ['admin', 'costing', 'engineering']))
+   @if(in_array(auth()->user()->role, ['admin', 'costing',]))
    <div class="mb-8" x-data="{ openMenuCosting: '{{ request()->routeIs('costing.material.*') ? 'material' : 'none' }}' }">
      <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
        COSTING
