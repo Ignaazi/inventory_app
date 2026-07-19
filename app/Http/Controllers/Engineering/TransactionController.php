@@ -7,9 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Engineering\StockOutEng; 
 use App\Models\StockInEng; 
-// 🚀 IMPORT MODEL BARU UNTUK RETURN
 use App\Models\Engineering\StockReturnEng; 
-use App\Models\StockEng; // Digunakan jika lu mau update stock internal saat barang di-return
+use App\Models\StockEng; 
 
 class TransactionController extends Controller
 {
@@ -18,7 +17,8 @@ class TransactionController extends Controller
      */
     public function indexIn()
     {
-        $history = StockInEng::with('stockEng')->latest()->paginate(10);
+        // 🌟 PEMBARUAN: Eager load relasi sparepart agar data nama nozzle dari master siap digunakan
+        $history = StockInEng::with('stockEng.sparepart')->latest()->paginate(10);
         return view('stock_eng.transaction.in', compact('history'));
     }
 
@@ -27,7 +27,8 @@ class TransactionController extends Controller
      */
     public function indexOut()
     {
-        $history = StockOutEng::with(['stockEng', 'rak', 'dbBarcode'])->latest()->paginate(10);
+        // 🌟 PEMBARUAN: Eager load relasi sparepart untuk pelacakan nama nozzle keluar
+        $history = StockOutEng::with(['stockEng.sparepart', 'rak', 'dbBarcode'])->latest()->paginate(10);
         return view('stock_eng.transaction.out', compact('history'));
     }
 
@@ -36,8 +37,8 @@ class TransactionController extends Controller
      */
     public function indexReturn()
     {
-        // 🚀 Tarik data asli dari tabel stock_return_logs beserta relasi lengkapnya
-        $history = StockReturnEng::with(['stockEng', 'rak', 'dbBarcode'])
+        // 🌟 PEMBARUAN: Memuat relasi sparepart terdalam agar tidak memicu column not found di view history return
+        $history = StockReturnEng::with(['stockEng.sparepart', 'rak', 'dbBarcode'])
                     ->latest()
                     ->paginate(10);
 
@@ -49,21 +50,24 @@ class TransactionController extends Controller
      */
     public function storeReturn(Request $request)
     {
-        // 1. Validasi Input Form (Sesuaikan dengan field di view lu)
+        // 1. Validasi Input Form
         $request->validate([
             'nik'                  => 'required|string',
             'stock_eng_id'         => 'required|integer',
             'barcode_id'           => 'required|integer',
             'qty_return'           => 'required|integer|min:1',
             'rak_id'               => 'nullable|integer',
-            'no_nozzle'            => 'nullable|string',
             'request_sparepart_id' => 'nullable|string',
             'comment'              => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            // 2. LOGIC AUTO INCREMENT ID: RETURNEY001, RETURNEY002, dst.
+            // 🌟 2. AMBIL MASTER DATA NOZZLE LANGSUNG DARI RELASI SPAREPART
+            $stock = StockEng::with('sparepart')->findOrFail($request->stock_eng_id);
+            $namaNozzleMaster = $stock->sparepart->name ?? 'N/A';
+
+            // 3. LOGIC AUTO INCREMENT ID: RETURNEY001, RETURNEY002, dst.
             $latestReturn = StockReturnEng::orderBy('id', 'desc')->first();
             
             if (!$latestReturn) {
@@ -75,14 +79,14 @@ class TransactionController extends Controller
                 $newReturnId = 'RETURNEY' . sprintf('%03d', $number + 1);
             }
 
-            // 3. Simpan data ke tabel stock_return_logs
+            // 4. Simpan data ke tabel stock_return_logs dengan data No Nozzle otomatis terisi dari master db
             $returnLog = StockReturnEng::create([
                 'return_id'            => $newReturnId,
                 'nik'                  => $request->nik,
                 'request_sparepart_id' => $request->request_sparepart_id,
                 'barcode_id'           => $request->barcode_id,
                 'stock_eng_id'         => $request->stock_eng_id,
-                'no_nozzle'            => $request->no_nozzle,
+                'no_nozzle'            => $namaNozzleMaster, // 🌟 FIX AUTO ISI: Mengikuti master data sparepart
                 'rak_id'               => $request->rak_id,
                 'qty_return'           => $request->qty_return,
                 'status'               => 'SUCCESS',
@@ -90,11 +94,8 @@ class TransactionController extends Controller
                 'comment'              => $request->comment ?? '-',
             ]);
 
-            // 4. OPTIONAL LOGIC (Menambah kembali stock engineering yang dikembalikan)
-            $stock = StockEng::find($request->stock_eng_id);
-            if ($stock) {
-                $stock->increment('stock', $request->qty_return); // Auto nambah stok di master tabel
-            }
+            // 🌟 5. UPDATE STOCK INTERNAL (Menggunakan kolom 'qty' sesuai struktur tabel utama stock_engs)
+            $stock->increment('qty', $request->qty_return); 
 
             DB::commit();
             return redirect()->back()->with('success', 'Transaction Return ' . $newReturnId . ' saved successfully and stock updated!');

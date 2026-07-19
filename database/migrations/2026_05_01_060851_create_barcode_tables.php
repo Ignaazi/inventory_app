@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         // Tabel Type Barcode (Struktur Komponen Pembuat Barcode)
@@ -20,14 +23,17 @@ return new class extends Migration
 
         // Tabel DB Barcode (Halaman Final Barcode Data - Sekali Pakai)
         Schema::create('db_barcodes', function (Blueprint $table) {
-            $table->id(); // Ini auto increment angka bawaan (1, 2, 3 untuk primary key internal)
+            $table->id(); // Primary key internal
             
-            // 🌟 REVISI BARU: Kolom Kode Unik Barcode Custom Lu (SIIXENG001, SIIXENG002, dst.)
-            $table->string('barcode_id')->unique(); 
+            // Kode Unik Barcode Custom (Contoh: SIIXENG001, SIIXENG002, dst.)
+            $table->string('barcode_id')->unique();
             
-            $table->string('barcode_type')->default('QR CODE'); 
-            $table->string('barcode_size')->default('40x40 mm'); 
-            $table->text('final_content'); // Hasil teks/content di dalam barcodenya
+            $table->string('barcode_type')->default('QR CODE');
+            $table->string('barcode_size')->default('40x40 mm');
+            $table->text('final_content'); // Hasil teks/content di dalam barcode
+            
+            // Kolom NIK Pembuat/Pencetak awal barcode
+            $table->string('creator_nik')->nullable();
             
             // Status Siklus Barcode Sekali Pakai
             $table->enum('current_lifecycle', ['AVAILABLE', 'USED_IN', 'USED_OUT', 'RETURNED', 'DISPOSAL'])->default('AVAILABLE');
@@ -35,9 +41,18 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
+        // Matikan check foreign key biar pas drop table db_barcodes gak dicegat oleh barcode_parsings
+        Schema::disableForeignKeyConstraints();
+
         Schema::dropIfExists('type_barcodes');
         Schema::dropIfExists('db_barcodes');
+
+        // Nyalakan kembali setelah proses drop selesai
+        Schema::enableForeignKeyConstraints();
     }
 };

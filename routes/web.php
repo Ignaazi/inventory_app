@@ -155,13 +155,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/stock-engineering/{id}', 'destroy')->name('stock.eng.destroy');
         Route::get('/stock-engineering-export', 'export')->name('stock.eng.export');
         Route::post('/rak-store', 'storeRak')->name('rak.store');
-        Route::get('/eng/in/scan', 'inScan')->name('eng.in.scan');
-        Route::get('/eng/in/manual', 'inManual')->name('eng.in.manual');
         Route::post('/eng/in/update', 'updateStockIn')->name('stock.eng.in.update');
     });
 
+    // --- MODUL UTAMA STOCK IN ENGINEERING ---
     Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
+    Route::get('/eng/in/manual', [StockInEngineeringController::class, 'manual'])->name('eng.in.manual'); 
+    Route::get('/eng/in/scan', [StockInEngineeringController::class, 'scan'])->name('eng.in.scan');
     Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
+    
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
     Route::delete('/approval/history/{id}', [HistoryApprovalController::class, 'destroy'])->name('approval.history.destroy');

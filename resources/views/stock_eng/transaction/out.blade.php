@@ -8,7 +8,6 @@
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
   }
 
-  /* Custom Clean Hover & Shadow matching image_d4fed2.png */
   .photo-grad-btn {
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
@@ -48,19 +47,6 @@
     </div>
   </div>
 
-  {{-- FLASH MESSAGES NOTIFICATION LOGS --}}
-  @if(session('success'))
-    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
-      <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
-    </div>
-  @endif
-
-  @if(session('error'))
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 dark:bg-red-950/20 dark:border-red-900 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
-      <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
-    </div>
-  @endif
-
   {{-- CONTAINER DATA TABLE --}}
   <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-4 pt-4 dark:border-gray-800 dark:bg-slate-900 shadow-sm sm:px-6">
     {{-- TABLE FILTER CONTROL --}}
@@ -89,18 +75,6 @@
             Scan Out
           </button>
         </div>
-
-        <button
-          class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700/50 transition-colors"
-        >
-          <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.29004 5.90393H17.7067" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M17.7075 14.0961H2.29085" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331 12.0826 3.33331Z" stroke-width="1.8" />
-            <path d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z" stroke-width="1.8" />
-          </svg>
-          Filter
-        </button>
       </div>
     </div>
 
@@ -126,9 +100,65 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
           @forelse($history as $key => $log)
+          @php
+            $reqSparepartNo = '-';
+            $noNozzleText = '-';
+            $namaRakText = '-';
+
+            if (!empty($log->barcode_id)) {
+                // 1. Ambil info Barcode langsung menggunakan ID angka dari log
+                $dbBarcodeRow = \DB::table('db_barcodes')->where('id', $log->barcode_id)->first();
+                
+                // Jika tidak ketemu pakai ID angka, coba cari pakai string barcode
+                if (!$dbBarcodeRow) {
+                    $dbBarcodeRow = \DB::table('db_barcodes')->where('barcode_id', $log->barcode_id)->first();
+                }
+                
+                if ($dbBarcodeRow) {
+                    // 2. Hubungkan ke barcode_parsings menggunakan id dari db_barcodes[cite: 1]
+                    $parsingRow = \DB::table('barcode_parsings')->where('barcode_db_id', $dbBarcodeRow->id)->first();
+                    
+                    if ($parsingRow) {
+                        // 3. Hubungkan ke production_requests menggunakan production_request_id asli dari tabel[cite: 1]
+                        $prodRequestRow = \DB::table('production_requests')->where('id', $parsingRow->production_request_id)->first();
+                        if ($prodRequestRow) {
+                            $reqSparepartNo = $prodRequestRow->request_no ?? '-';
+                            $noNozzleText = $prodRequestRow->no_nozzle ?? '-';
+                        }
+                    }
+
+                    // Ambil nama rak jika ada relasi rak_id
+                    if (!empty($dbBarcodeRow->rak_id)) {
+                        $rakRow = \DB::table('raks')->where('id', $dbBarcodeRow->rak_id)->value('nama_rak');
+                        if($rakRow) $namaRakText = $rakRow;
+                    }
+                }
+
+                // STRATEGI FALLBACK: Jika db_barcodes bypass gagal, langsung loncat tembak ke barcode_parsings pakai ID log[cite: 1]
+                if ($reqSparepartNo === '-') {
+                    $parsingFallback = \DB::table('barcode_parsings')->where('barcode_db_id', $log->barcode_id)->first();
+                    if ($parsingFallback) {
+                        $prodRequestRow = \DB::table('production_requests')->where('id', $parsingFallback->production_request_id)->first();
+                        if ($prodRequestRow) {
+                            $reqSparepartNo = $prodRequestRow->request_no ?? '-';
+                            $noNozzleText = $prodRequestRow->no_nozzle ?? '-';
+                        }
+                    }
+                }
+            }
+
+            // Fallback internal log / master jika data nozzle & rak dari request di atas kosong
+            if ($noNozzleText === '-') {
+                $noNozzleText = $log->no_nozzle ?? ($log->stockEng->no_nozzle ?? '-');
+            }
+            if ($namaRakText === '-') {
+                $namaRakText = $log->rak->nama_rak ?? ($log->stockEng->rak->nama_rak ?? '-');
+            }
+          @endphp
+          
           <tr class="table-row-item hover:bg-gray-50/60 transition-colors duration-200 dark:hover:bg-white/[0.02]">
             {{-- 1. NO --}}
-            <td class="py-2 px-3 text-[11px] font-extrabold text-slate-950 dark:text-white">
+            <td class="py-2 px-3 text-[11px] font-extrabold text-slate-955 dark:text-white">
               {{ $history->firstItem() + $key }}
             </td>
             {{-- 2. TRANSACTION OUT ID --}}
@@ -139,21 +169,21 @@
             <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white whitespace-nowrap">
               {{ $log->nik }}
             </td>
-            {{-- 4. REQUEST SPAREPART ID --}}
-            <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white text-center font-mono whitespace-nowrap">
-              {{ $log->request_sparepart_id ?? '-' }}
+            {{-- 4. REQ SPAREPART ID --}}
+            <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white text-center font-mono whitespace-nowrap text-blue-600 dark:text-blue-400">
+              {{ $reqSparepartNo }}
             </td>
             {{-- 5. BARCODE ID --}}
             <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
-              {{ $log->dbBarcode->barcode_id ?? '-' }}
+              {{ $log->barcode_id ?? '-' }}
             </td>
             {{-- 6. NO NOZZLE --}}
-            <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
-              {{ $log->no_nozzle ?? ($log->stockEng->no_nozzle ?? '-') }}
+            <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+              {{ $noNozzleText }}
             </td>
             {{-- DATA NO RAK --}}
             <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono whitespace-nowrap">
-              {{ $log->rak->nama_rak ?? '-' }}
+              {{ $namaRakText }}
             </td>
             {{-- 7. QTY OUT --}}
             <td class="py-2 px-3 text-center">
@@ -278,8 +308,11 @@
         return;
       }
 
-      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
-      const remarkText = row.querySelector('.remark-cell').textContent.trim().toLowerCase();
+      const statusCell = row.querySelector('.status-cell');
+      const sampleRemarkCell = row.querySelector('.remark-cell');
+
+      const statusText = statusCell ? statusCell.textContent.trim().toLowerCase() : '';
+      const remarkText = sampleRemarkCell ? sampleRemarkCell.textContent.trim().toLowerCase() : '';
 
       if (criteria === 'success' || criteria === 'pending') {
         if (statusText === criteria) {

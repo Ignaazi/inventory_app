@@ -66,11 +66,12 @@
 <body
     x-data="{ 
         'darkMode': false, 
-        'sidebarToggle': false
+        'sidebarToggle': localStorage.getItem('sidebarState') !== null ? localStorage.getItem('sidebarState') === 'true' : window.innerWidth >= 1024
     }"
     x-init="
         darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+        $watch('sidebarToggle', value => localStorage.setItem('sidebarState', value));
         feather.replace();
     "
     :class="{'dark bg-boxdark-2 text-bodydark1': darkMode === true}"

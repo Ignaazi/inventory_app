@@ -49,7 +49,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
                 <form action="{{ url()->current() }}" method="GET">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search SAP Code, Part Number, Name..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
                 </form>
             </div>
         </div>
@@ -59,7 +59,9 @@
                 <thead>
                     <tr class="text-[10px] font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
                         <th class="px-3 py-4 text-center w-12">NO</th>
-                        <th class="px-4 py-4 text-center w-12">No Nozzle</th>
+                        <th class="px-4 py-4 text-center w-28">SAP Code</th>
+                        <th class="px-4 py-4 text-center w-36">Part Number</th>
+                        <th class="px-4 py-4 text-center w-48">Sparepart Name</th>
                         <th class="px-4 py-4 text-center w-20">Image</th>
                         <th class="px-4 py-4 text-center w-24">Category</th>
                         <th class="px-3 py-4 text-center w-20">Length</th>
@@ -74,6 +76,17 @@
                     @forelse($spareparts as $index => $item)
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
                         <td class="px-3 py-4 text-center font-bold text-slate-500">{{ $spareparts->firstItem() + $index }}</td>
+                        
+                        {{-- 🌟 TAMPILAN SAP CODE --}}
+                        <td class="px-4 py-4 text-center font-bold text-slate-600 dark:text-slate-300">
+                            {{ $item->sap_code ?? '-' }}
+                        </td>
+
+                        {{-- 🌟 TAMPILAN PART NUMBER --}}
+                        <td class="px-4 py-4 text-center font-extrabold text-slate-700 dark:text-slate-200">
+                            {{ $item->part_number ?? '-' }}
+                        </td>
+
                         <td class="px-4 py-4 font-bold max-w-[200px] truncate text-center text-slate-800 dark:text-white" title="{{ $item->name }}">{{ $item->name }}</td>
                         
                         <td class="px-4 py-2">
@@ -135,7 +148,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="10" class="py-12 text-center text-slate-400 italic font-semibold">Data not found.</td></tr>
+                    <tr><td colspan="12" class="py-12 text-center text-slate-400 italic font-semibold">Data not found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -154,22 +167,42 @@
 
 {{-- MODAL FORM SPAREPART --}}
 <div id="modalSparepart" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 id="modalTitle" class="text-lg font-bold text-slate-800 dark:text-white">Add Sparepart</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 transition-all transform scale-100">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+            <h3 id="modalTitle" class="text-lg font-extrabold text-slate-800 dark:text-white tracking-tight">Add Sparepart</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
-        <form id="sparepartForm" method="POST" enctype="multipart/form-data" class="p-6">
+        <form id="sparepartForm" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
             @csrf
             <div id="methodField"></div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                {{-- 🌟 INPUT SAP CODE --}}
+                <div>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">SAP Code</label>
+                    <input type="text" name="sap_code" id="sap_code" placeholder="e.g. 10002345" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-semibold">
+                </div>
+                
+                {{-- 🌟 INPUT PART NUMBER --}}
+                <div>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Part Number</label>
+                    <input type="text" name="part_number" id="part_number" placeholder="e.g. PN-9982-X" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-semibold">
+                </div>
+            </div>
+
             <div class="grid grid-cols-3 gap-4">
                 <div class="col-span-3">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Sparepart Name</label>
-                    <input type="text" name="name" id="name" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-semibold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Sparepart Name</label>
+                    <input type="text" name="name" id="name" placeholder="e.g. Nozzle Head Unit" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-semibold" required>
                 </div>
+
                 <div class="col-span-3">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Category</label>
-                    <select name="category" id="category" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-semibold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Category</label>
+                    <select name="category" id="category" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-semibold" required>
                         <option value="NOZZLE">NOZZLE</option>
                         <option value="FEEDER">FEEDER</option>
                         <option value="MOTOR">MOTOR</option>
@@ -178,26 +211,27 @@
                 </div>
                 
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Length</label>
-                    <input type="number" step="0.01" name="length" id="length" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Length (mm)</label>
+                    <input type="number" step="0.01" name="length" id="length" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-bold" required>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Width</label>
-                    <input type="number" step="0.01" name="width" id="width" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Width (mm)</label>
+                    <input type="number" step="0.01" name="width" id="width" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-bold" required>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Thickness</label>
-                    <input type="number" step="0.01" name="thickness" id="thickness" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Thickness (mm)</label>
+                    <input type="number" step="0.01" name="thickness" id="thickness" placeholder="0.00" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:text-white font-bold" required>
                 </div>
 
-                <div class="col-span-3 mt-2">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Photo Upload</label>
-                    <input type="file" name="image" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200 hover:file:bg-slate-200">
+                <div class="col-span-3">
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Photo Upload</label>
+                    <input type="file" name="image" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200 dark:hover:file:bg-slate-700 transition-all cursor-pointer">
                 </div>
             </div>
-            <div class="mt-8 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all tracking-wide">Save Data</button>
+            
+            <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all active:scale-95 tracking-wide">Save Data</button>
             </div>
         </form>
     </div>
@@ -243,6 +277,10 @@
             form.action = "/eng/list-sparepart/" + data.id;
             methodField.innerHTML = '<input type="hidden" name="_method" value="PUT">';
             
+            // 🌟 Isi otomatis data SAP Code dan Part Number saat Edit
+            document.getElementById('sap_code').value = data.sap_code ?? '';
+            document.getElementById('part_number').value = data.part_number ?? '';
+
             document.getElementById('name').value = data.name;
             document.getElementById('category').value = data.category;
             document.getElementById('length').value = data.length;
@@ -335,7 +373,7 @@
 
 <style>
     /* 3. STYLE CONFIG GLOBAL UNTUK NUNITO FONT */
-    .font-nunito { font-family: 'Nunito', sans-serif !important; }
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container { font-family: 'Nunito', sans-serif !important; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .swal2-container { z-index: 10000 !important; }
     

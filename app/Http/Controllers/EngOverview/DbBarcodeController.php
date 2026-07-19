@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\EngOverview;
 
 use App\Http\Controllers\Controller;
-use App\Models\DbBarcode; // Pastikan model ini mengarah ke model db_barcodes lu
+use App\Models\DbBarcode; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class DbBarcodeController extends Controller
 {
@@ -24,11 +25,12 @@ class DbBarcodeController extends Controller
      */
     public function store(Request $request)
     {
-        // Gunakan Validator manual agar jika gagal bisa dikembalikan dalam bentuk JSON error ke Javascript
+        // 1. Validasi input dari request JSON
         $validator = Validator::make($request->all(), [
-            'barcode_type'  => 'required|string',
-            'barcode_size'  => 'required|string',
-            'final_content' => 'required|string',
+            'production_request_id' => 'required', 
+            'barcode_type'          => 'required|string',
+            'barcode_size'          => 'required|string',
+            'final_content'         => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -38,54 +40,68 @@ class DbBarcodeController extends Controller
             ], 422);
         }
 
+        // Ambil NIM/NIK dari user login, jika kosong gunakan fallback 123456
+        $currentCreatorNim = Auth::user()->nim ?? Auth::user()->nik ?? '123456';
+
         DB::beginTransaction();
         try {
-            // LOGIKA OTOMATIS GENERATE KODE UNIK (SIIXENG001, SIIXENG002, dst.)
-            $latestBarcode = DbBarcode::latest('id')->first();
+            // 2. LOGIKA OTOMATIS GENERATE KODE UNIK
+            $latestBarcode = DB::table('db_barcodes')->orderBy('id', 'desc')->first();
             
             if (!$latestBarcode) {
                 $nextBarcodeId = 'SIIXENG001';
             } else {
-                // Mengambil angka di belakang string 'SIIXENG' (Mulai indeks ke-7)
                 $number = (int) substr($latestBarcode->barcode_id, 7);
-                // Menambahkan +1 dan memformatnya kembali jadi 3 digit (002, 003, dst.)
                 $nextBarcodeId = 'SIIXENG' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
             }
 
-            // Simpan data baru ke tabel db_barcodes
-            $newBarcode = DbBarcode::create([
-                'barcode_id'        => $nextBarcodeId, // Isinya SIIXENG001
+            // 3. INSERT KE TABEL db_barcodes (Menggunakan kolom 'nik')
+            $insertedId = DB::table('db_barcodes')->insertGetId([
+                'barcode_id'        => $nextBarcodeId, 
                 'barcode_type'      => $request->barcode_type,
                 'barcode_size'      => $request->barcode_size,
                 'final_content'     => $request->final_content,
-                'current_lifecycle' => 'AVAILABLE', // Default siap pakai
+                'nik'               => $currentCreatorNim, // 🌟 Menggunakan 'nik' sesuai struktur tabel
+                'current_lifecycle' => 'USED_IN',
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+
+            // 4. INSERT KE TABEL barcode_parsings (Sesuai dengan file migration yang kamu kirim)
+            DB::table('barcode_parsings')->insert([
+                'barcode_db_id'         => $insertedId, 
+                'production_request_id' => $request->production_request_id, 
+                'nik'                   => $currentCreatorNim, // 🌟 DISESUAIKAN: Menggunakan 'nik' sesuai file migration lu!
+                'qty_parsed'            => 1,
+                'description'           => 'Barcode generated and locked for production request ID: ' . $request->production_request_id,
+                'created_at'            => now(),
+                'updated_at'            => now(),
             ]);
 
             DB::commit();
 
-            // Kembalikan response sukses berbentuk JSON agar ditangkap dengan benar oleh JavaScript halaman customizer
             return response()->json([
                 'success' => true,
-                'message' => 'Barcode ' . $nextBarcodeId . ' berhasil disimpan!',
-                'data'    => $newBarcode
+                'message' => 'Barcode ' . $nextBarcodeId . ' berhasil disimpan dan dikunci untuk PR!',
+                'barcode_id' => $nextBarcodeId
             ], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal simpan ke database: ' . $e->getMessage()
+                'message' => 'Gagal simpan ke DB: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Menghapus data barcode jika diperlukan
+     * Menghapus data barcode
      */
     public function destroy($id)
     {
-        $barcode = DbBarcode::findOrFail($id);
-        $barcode->delete();
+        DB::table('barcode_parsings')->where('barcode_db_id', $id)->delete();
+        DB::table('db_barcodes')->where('id', $id)->delete();
 
         return redirect()->back()->with('success', 'Data barcode berhasil dihapus dari database!');
     }

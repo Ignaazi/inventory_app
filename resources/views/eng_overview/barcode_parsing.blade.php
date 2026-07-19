@@ -6,7 +6,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
   .barcode-customizer-view, .barcode-customizer-view * {
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
@@ -58,13 +58,37 @@
                     <h2 class="text-sm font-black uppercase mb-6 text-slate-800 dark:text-white">Final Settings</h2>
                     
                     <form id="barcodeConfigForm" class="space-y-4">
+                        <!-- SELECT PRODUCTION REQUEST -->
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">Production Request</label>
+                            <select id="production_request_id" class="w-full bg-slate-50 dark:bg-meta-4 border border-slate-200 dark:border-strokedark rounded-lg px-4 py-3 font-bold text-sm outline-none focus:border-indigo-500">
+                                <option value="" disabled selected>-- Select Production Request --</option>
+                                @foreach($productionRequests as $pr)
+                                    <option value="{{ $pr->id }}">Req No: {{ $pr->request_no ?? $pr->id }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- 🚀 DROPDOWN FIX: TARGET ITEM & LOKASI RAK (Tanpa Nozzle) -->
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">Target Item & Warehouse Location (Rak)</label>
+                            <select id="stock_eng_id" class="w-full bg-slate-50 dark:bg-meta-4 border border-slate-200 dark:border-strokedark rounded-lg px-4 py-3 font-bold text-sm outline-none focus:border-indigo-500">
+                                <option value="" disabled selected>-- Select Item & Rak Location --</option>
+                                @foreach($stockEngineering as $st)
+                                    <option value="{{ $st->stock_id }}">
+                                        {{ $st->part_name }} | Rak: {{ $st->rak_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div>
                             <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">Barcode Type</label>
                             <select id="barcode_type" class="w-full bg-slate-50 dark:bg-meta-4 border border-slate-200 dark:border-strokedark rounded-lg px-4 py-3 font-bold text-sm outline-none focus:border-indigo-500">
                                 <option value="QR CODE">QR CODE</option>
+                                <option value="DATA MATRIX">DATA MATRIX</option>
                                 <option value="2D CODE">2D CODE (PDF417)</option>
                                 <option value="3D CODE">3D CODE (Color Barcode)</option>
-                                <option value="DATA MATRIX">DATA MATRIX</option>
                             </select>
                         </div>
 
@@ -239,6 +263,8 @@
     function clearComposite() {
         compositeComponents = [];
         renderComposite();
+        document.getElementById('production_request_id').value = "";
+        document.getElementById('stock_eng_id').value = ""; 
         document.getElementById('barcode_preview_area').innerHTML = '<p class="text-slate-400 font-black uppercase text-[10px]">No Barcode Generated</p>';
         document.getElementById('barcode_info').classList.add('hidden');
     }
@@ -254,9 +280,19 @@
     async function submitToDatabase() {
         const type = document.getElementById('barcode_type').value;
         const content = document.getElementById('barcode_content').value;
+        const prodRequestId = document.getElementById('production_request_id').value;
+        const stockEngId = document.getElementById('stock_eng_id').value; 
         
         const sizeSelect = document.getElementById('barcode_size');
         const sizeText = sizeSelect.options[sizeSelect.selectedIndex].text;
+
+        if (!prodRequestId) {
+            return Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'ANDA WAJIB MEMILIH DOKUMEN PRODUCTION REQUEST TERLEBIH DAHULU!' });
+        }
+
+        if (!stockEngId) {
+            return Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'ANDA WAJIB MEMILIH TARGET ITEM & LOKASI RAK TERLEBIH DAHULU!' });
+        }
 
         if (!content.trim() || compositeComponents.length === 0) {
             return Swal.fire({ icon: 'error', title: 'Simpan Gagal', text: 'Struktur composite masih kosong! Tidak ada data untuk disimpan.' });
@@ -286,6 +322,8 @@
                     'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify({
+                    production_request_id: prodRequestId,
+                    stock_eng_id: stockEngId, 
                     barcode_type: type,
                     barcode_size: sizeText, 
                     final_content: content,
@@ -293,18 +331,16 @@
                 })
             });
 
-            if (response.redirected) {
-                await Swal.fire({ icon: 'success', title: 'Sukses', text: 'Barcode Berhasil Dibuat dan Disimpan!' });
-                generatePreview();
-                return;
-            }
-
             const result = await response.json();
             if (result.success || response.status === 200) {
-                await Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data berhasil di-generate dan masuk ke database!' });
+                await Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Berhasil', 
+                    text: result.message || `Barcode ${result.barcode_id} berhasil disimpan dan dikunci!` 
+                });
                 generatePreview();
             } else {
-                Swal.fire({ icon: 'error', title: 'Gagal Validasi', text: result.message || 'Periksa log validasi controller!' });
+                Swal.fire({ icon: 'error', title: 'Gagal Validasi', text: result.message || 'Periksa kelengkapan form input!' });
             }
         } catch (error) {
             Swal.fire({ icon: 'error', title: 'Error Sistem', text: 'Terjadi kegagalan saat menghubungi server database.' });

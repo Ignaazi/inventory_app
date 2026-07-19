@@ -58,33 +58,116 @@
 </script>
 
 <header
-  x-data="{ dropdownOpen: false, notifyOpen: false, profileModalOpen: false }"
+  x-data="{ 
+    dropdownOpen: false, 
+    notifyOpen: false, 
+    profileModalOpen: false,
+    
+    // VARIABEL SEARCH MODULE
+    searchQuery: '',
+    isSearchOpen: false,
+    allModules: [],
+    
+    // FUNGSI INIT UNTUK SEARCH & SIDEBAR STATE
+    initHeader() {
+        // 1. Sinkronisasi State Sidebar dengan LocalStorage agar tidak terbuka otomatis saat pindah halaman
+        if (localStorage.getItem('sidebarState') !== null) { 
+            sidebarToggle = localStorage.getItem('sidebarState') === 'true';
+        }
+        
+        // Memantau klik hamburger dan menyimpannya secara real-time
+        $watch('sidebarToggle', value => {
+            localStorage.setItem('sidebarState', value);
+        });
+
+        // 2. Ambil semua link dari sidebar untuk Search Dropdown
+        setTimeout(() => {
+            let links = document.querySelectorAll('.sidebar-responsive a');
+            let modules = [];
+            links.forEach(link => {
+                let text = link.innerText.trim();
+                let href = link.getAttribute('href');
+                if(text && href && href !== '#' && !href.includes('javascript')) {
+                    // Hindari duplikat nama
+                    if(!modules.find(m => m.text === text)) {
+                        modules.push({ text, href });
+                    }
+                }
+            });
+            this.allModules = modules;
+        }, 500); // jeda sedikit agar sidebar selesai dirender
+    },
+    
+    // Filter hasil pencarian berdasarkan input
+    get searchResults() {
+        if(this.searchQuery.trim() === '') return [];
+        return this.allModules.filter(m => m.text.toLowerCase().includes(this.searchQuery.toLowerCase())).slice(0, 6);
+    }
+  }"
+  x-init="initHeader()"
   class="sticky top-0 z-50 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
 >
   <div class="flex w-full items-center justify-between px-4 py-3 sm:px-5 lg:px-9">
     
     <!-- LEFT CONTENT: SIDEBAR TOGGLE & SEARCH -->
     <div class="flex items-center gap-5">
+      <!-- HAMBURGER BUTTON -->
       <button
         @click.stop="sidebarToggle = !sidebarToggle"
-        class="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+        class="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 transition-all active:scale-95"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
 
+      <!-- SEARCH BAR -->
       <div class="hidden sm:block">
-        <div class="relative">
+        <div class="relative" @click.outside="isSearchOpen = false">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </span>
           <input 
             type="text" 
-            placeholder="Search or type command..." 
-            class="w-64 rounded-2xl border border-gray-200 bg-gray-50 py-2 pl-11 pr-4 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-800 dark:text-white lg:w-[440px]"
+            x-model="searchQuery"
+            @focus="isSearchOpen = true"
+            @keydown.escape="isSearchOpen = false; searchQuery = ''"
+            placeholder="Search modules..." 
+            class="w-64 rounded-2xl border border-gray-200 bg-gray-50 py-2 pl-11 pr-4 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-800 dark:bg-gray-800 dark:text-white lg:w-[440px] transition-all"
           >
           <span class="absolute inset-y-0 right-3 flex items-center">
             <kbd class="hidden rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400 sm:inline-block dark:border-gray-700 dark:bg-gray-800">⌘ K</kbd>
           </span>
+
+          <!-- DROPDOWN HASIL SEARCH -->
+          <div 
+            x-show="isSearchOpen && searchQuery.length > 0" 
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-100"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-2"
+            x-cloak
+            class="absolute top-full left-0 mt-3 w-full rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-gray-800 dark:bg-slate-900 overflow-hidden z-[100]"
+          >
+              <template x-if="searchResults.length > 0">
+                  <ul class="py-2">
+                      <li class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-gray-50 dark:border-gray-800 mb-1">Modules Found</li>
+                      <template x-for="item in searchResults" :key="item.text">
+                          <li>
+                              <a :href="item.href" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-400 transition-colors">
+                                  <svg class="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                                  <span x-text="item.text" class="font-semibold"></span>
+                              </a>
+                          </li>
+                      </template>
+                  </ul>
+              </template>
+              <template x-if="searchResults.length === 0">
+                  <div class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                      No matching modules found for <br><span class="font-bold text-slate-800 dark:text-slate-200" x-text="`'${searchQuery}'`"></span>
+                  </div>
+              </template>
+          </div>
         </div>
       </div>
     </div>
@@ -95,7 +178,7 @@
       <!-- DARK MODE TOGGLE -->
       <button
         @click.prevent="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); if(darkMode){ document.documentElement.classList.add('dark') } else { document.documentElement.classList.remove('dark') }"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+        class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 transition-all active:scale-95"
       >
         <svg x-show="!darkMode" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
         <svg x-show="darkMode" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
@@ -105,7 +188,7 @@
       <div class="relative" @click.outside="notifyOpen = false">
         <button
           @click="notifyOpen = !notifyOpen"
-          class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 transition-all active:scale-95"
         >
           <span class="absolute top-2 right-2 flex h-2 w-2">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -125,7 +208,7 @@
             <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold dark:bg-blue-900/30">New</span>
           </div>
           <div class="max-h-64 overflow-y-auto">
-             <div class="p-4 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+             <div class="p-4 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 <p class="text-xs font-bold text-gray-800 dark:text-white">Engineering Stock Alert</p>
                 <p class="text-[10px] text-gray-500 mt-0.5">Stock below threshold (10 pcs remaining).</p>
              </div>
@@ -136,7 +219,7 @@
       <!-- HEADER USER BLOCK -->
       <div class="relative ml-1" @click.outside="dropdownOpen = false">
         <button @click="dropdownOpen = !dropdownOpen" class="flex items-center gap-3 group">
-          <div class="h-10 w-10 overflow-hidden rounded-full ring-2 ring-blue-500/10 shadow-sm border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-105">
+          <div class="h-10 w-10 overflow-hidden rounded-full ring-2 ring-indigo-500/10 shadow-sm border border-gray-200 dark:border-gray-700 transition-transform group-hover:scale-105">
             <img 
               id="header-profile-img"
               src="{{ Auth::user()->profile_photo_path ? asset('storage/'.Auth::user()->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff' }}" 
@@ -144,14 +227,13 @@
             >
           </div>
           <div class="hidden text-left lg:block">
-            <!-- Teks nama hitam bersih (text-slate-900) & tidak bold (font-normal) -->
             <p class="text-sm font-normal text-slate-900 dark:text-gray-100 leading-tight">{{ Auth::user()->name }}</p>
             <p class="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{{ Auth::user()->role }}</p>
           </div>
           <svg :class="dropdownOpen && 'rotate-180'" class="h-4 w-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </button>
 
-        <!-- RE-DESIGNED DROPDOWN (Berdasarkan sample image_093e3e.png) -->
+        <!-- RE-DESIGNED DROPDOWN -->
         <div
           x-show="dropdownOpen"
           x-cloak
@@ -161,13 +243,11 @@
           x-transition:leave="transition ease-in duration-100"
           x-transition:leave-start="opacity-100 scale-100"
           x-transition:leave-end="opacity-0 scale-95"
-          class="custom-dropdown absolute right-0 mt-2 w-64 overflow-hidden rounded-2xl"
+          class="custom-dropdown absolute right-0 mt-2 w-64 overflow-hidden rounded-2xl z-50"
         >
           <!-- User Profile Header Info Block -->
           <div class="pt-5 px-5 pb-4">
-            <!-- Teks nama hitam bersih (text-slate-900) & tidak bold (font-normal) -->
             <h5 class="text-base font-normal text-slate-900 dark:text-white leading-snug">{{ Auth::user()->name }}</h5>
-            <!-- Pemisah diganti menggunakan garis tegak (|) -->
             <p class="text-xs text-slate-400 dark:text-slate-400 font-medium mt-1 truncate">
               {{ Auth::user()->role }} <span class="mx-0.5 text-slate-300 dark:text-slate-600">|</span> {{ Auth::user()->nim }}
             </p>

@@ -76,7 +76,7 @@
                 <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search machine, nozzle name, sap code..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search machine, nozzle name, sap code..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
             </div>
 
             {{-- MENU TABS PER LINE --}}
@@ -87,7 +87,7 @@
                 
                 @foreach($lines as $item)
                     @php $displayLineName = $item->no_line ?? $item->name_machine ?? 'LINE-'.$item->line_id; @endphp
-                    <button onclick="filterLine('{{ $displayLineName }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 whitespace-nowrap uppercase">
+                    <button onclick="filterLine('{{ $displayLineName }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 whitespace-nowrap uppercase">
                         {{ $displayLineName }}
                     </button>
                 @endforeach
@@ -116,59 +116,60 @@
                     @php $insertedCount = 0; @endphp
                     
                     @foreach($lines as $index => $item)
-                        {{-- FIX UTAMA: Kita panggil data mengecek lewat relasi $item->stocks --}}
-                        @if($item->stocks && $item->stocks->no_nozzle !== null)
-                            @php 
-                                $insertedCount++;
-                                $displayLineName = $item->no_line ?? $item->name_machine ?? 'LINE-'.$item->line_id;
-                                $stock = $item->stocks;
-                            @endphp
-                            <tr class="row-prod hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all" data-line="{{ $displayLineName }}">
-                                <td class="px-4 py-4 text-center text-slate-500 font-bold">{{ $insertedCount }}</td>
-                                <td class="px-4 py-4 text-center font-extrabold text-sm text-slate-800 dark:text-white uppercase tracking-tight">{{ $displayLineName }}</td>
-                                
-                                <td class="px-4 py-4 text-center">
-                                    <div class="flex items-center justify-center">
-                                        <div class="h-2.5 w-2.5 rounded-full {{ $stock->qty <= $stock->min_stock ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' }}"></div>
-                                    </div>
-                                </td>
-                                
-                                <td class="px-4 py-4 text-center font-bold text-slate-800 dark:text-white">{{ $stock->no_nozzle }}</td>
-                                <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-slate-600 dark:text-slate-400">{{ $stock->part_no }}</td>
-                                <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-indigo-600 dark:text-indigo-400">{{ $stock->sap_code }}</td>
-                                <td class="px-4 py-4 text-center font-bold text-slate-600 dark:text-slate-400 uppercase">{{ $stock->category }}</td>
-                                <td class="px-4 py-4 text-center font-extrabold text-slate-900 dark:text-white">{{ $stock->qty }}</td>
-                                <td class="px-4 py-4 text-center font-extrabold text-slate-500 dark:text-slate-400">{{ $stock->min_stock }}</td>
-                                
-                                <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
-                                    @if($stock->updated_at)
-                                        {{ \Carbon\Carbon::parse($stock->updated_at)->format('d/m/y') }}
-                                        <br><span class="text-[9px] text-slate-400 font-medium">{{ \Carbon\Carbon::parse($stock->updated_at)->format('H:i') }} WIB</span>
+                        @php 
+                            $insertedCount++;
+                            $displayLineName = $item->no_line ?? $item->name_machine ?? 'LINE-'.$item->line_id;
+                            $stock = $item->stocks;
+                        @endphp
+                        <tr class="row-prod hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all" data-line="{{ $displayLineName }}">
+                            <td class="px-4 py-4 text-center text-slate-500 font-bold">{{ $insertedCount }}</td>
+                            <td class="px-4 py-4 text-center font-extrabold text-sm text-slate-800 dark:text-white uppercase tracking-tight">{{ $displayLineName }}</td>
+                            
+                            <td class="px-4 py-4 text-center">
+                                <div class="flex items-center justify-center">
+                                    @if(!$stock || !$stock->no_nozzle || $stock->no_nozzle === 'N/A' || $stock->no_nozzle === '-')
+                                        <div class="h-2.5 w-2.5 rounded-full bg-slate-300 shadow-[0_0_8px_rgba(203,213,225,0.8)]" title="Belum Dikonfigurasi"></div>
+                                    @elseif($stock->qty <= 0)
+                                        <div class="h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" title="Stok Habis (0)"></div>
+                                    @elseif($stock->qty <= $stock->min_stock)
+                                        <div class="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" title="Stok Menipis"></div>
                                     @else
-                                        -
+                                        <div class="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" title="Stok Aman"></div>
                                     @endif
-                                </td>
-                                
-                                <td class="px-6 py-4 text-center">
-                                    <div class="flex items-center justify-center gap-1.5">
+                                </div>
+                            </td>
+                            
+                            <td class="px-4 py-4 text-center font-bold text-slate-800 dark:text-white">{{ ($stock && $stock->no_nozzle) ? $stock->no_nozzle : '-' }}</td>
+                            <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-slate-600 dark:text-slate-400">{{ ($stock && $stock->part_no) ? $stock->part_no : '-' }}</td>
+                            <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-indigo-600 dark:text-indigo-400">{{ ($stock && $stock->sap_code) ? $stock->sap_code : '-' }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-slate-600 dark:text-slate-400 uppercase">{{ ($stock && $stock->category) ? $stock->category : '-' }}</td>
+                            <td class="px-4 py-4 text-center font-extrabold text-slate-900 dark:text-white">{{ $stock->qty ?? 0 }}</td>
+                            <td class="px-4 py-4 text-center font-extrabold text-slate-500 dark:text-slate-400">{{ $stock->min_stock ?? 0 }}</td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
+                                @if($stock && $stock->updated_at && $stock->no_nozzle)
+                                    {{ \Carbon\Carbon::parse($stock->updated_at)->format('d/m/y') }}
+                                    <br><span class="text-[9px] text-slate-400 font-medium">{{ \Carbon\Carbon::parse($stock->updated_at)->format('H:i') }} WIB</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    @if($stock && $stock->no_nozzle && $stock->no_nozzle !== 'N/A' && $stock->no_nozzle !== '-')
                                         <button onclick="openModal('edit', {{ json_encode($stock) }}, '{{ $displayLineName }}')" class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                                         <form action="{{ route('stock.prod.destroy', $stock->id) }}" method="POST" class="inline form-delete">
                                             @csrf @method('DELETE')
                                             <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                                         </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endif
-                    @endforeach
-                
-                    @if($insertedCount == 0)
-                        <tr>
-                            <td colspan="11" class="py-12 text-center text-slate-400 italic font-semibold">
-                                No active nozzles allocated to any line yet. Click "ADD NOZZLE" to configure stock.
+                                    @else
+                                        <span class="text-slate-400 italic text-[11px]">Ready to Add</span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
-                    @endif
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -195,7 +196,7 @@
                     <select name="register_line_id" id="register_line_id" class="w-full rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold uppercase">
                         <option value="" disabled selected>-- SELECT FACTORY LINE SYSTEM --</option>
                         @foreach($lines as $item)
-                            @if(!$item->stocks) {{-- Tampilkan line yang belum terikat data stok sama sekali --}}
+                            @if(!$item->stocks)
                                 <option value="{{ $item->line_id }}">{{ $item->no_line ?? $item->name_machine }}</option>
                             @endif
                         @endforeach
@@ -206,7 +207,7 @@
                 <div id="container_add_nozzle" class="col-span-2 flex flex-col gap-4">
                     <div>
                         <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Target Registered Line</label>
-                        <select name="line_id" id="action_line_id" class="w-full rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold uppercase">
+                        <select name="line_id" id="action_line_id" class="w-full rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold uppercase" required>
                             <option value="" disabled selected>-- CHOOSE ACTIVE LINE --</option>
                             @foreach($lines as $item)
                                 <option value="{{ $item->line_id }}">{{ $item->no_line ?? $item->name_machine }}</option>
@@ -216,12 +217,17 @@
 
                     <div>
                         <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Select Nozzle Item (From Engineering)</label>
-                        <select name="stock_eng_id" id="action_log_id" onchange="autoFillNozzleSpecs(this)" class="w-full rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono text-xs font-bold">
+                        <select name="stock_eng_id" id="action_log_id" onchange="autoFillNozzleSpecs(this)" class="w-full rounded-lg border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono text-xs font-bold" required>
                             <option value="" disabled selected>-- SELECT NOZZLE FROM ENGINEERING --</option>
                             @isset($stockEngs)
                                 @foreach($stockEngs as $eng)
-                                    <option value="{{ $eng->id }}" data-part="{{ $eng->part_no }}" data-sap="{{ $eng->sap_code }}">
-                                        Nozzle: {{ $eng->no_nozzle }}
+                                    @php 
+                                        $name     = $eng->sparepart->name ?? 'N/A';
+                                        $partNo   = $eng->sparepart->part_number ?? ($eng->sparepart->part_no ?? ($eng->part_no ?? ($eng->part_number ?? 'N/A')));
+                                        $sapCode  = $eng->sparepart->sap_code ?? ($eng->sap_code ?? 'N/A');
+                                    @endphp
+                                    <option value="{{ $eng->id }}" data-part="{{ $partNo }}" data-sap="{{ $sapCode }}">
+                                        Nozzle: {{ $name }} | Stock Eng: {{ $eng->qty ?? 0 }}
                                     </option>
                                 @endforeach
                             @endisset
@@ -243,11 +249,11 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Quantity Allocation</label>
-                            <input type="number" name="qty" id="action_qty" min="1" placeholder="e.g. 10" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold">
+                            <input type="number" name="qty" id="action_qty" min="0" value="0" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
                         </div>
                         <div>
                             <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Minimum Stock Alert</label>
-                            <input type="number" name="min_stock" id="action_min_stock" min="1" placeholder="e.g. 2" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold">
+                            <input type="number" name="min_stock" id="action_min_stock" min="0" value="0" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
                         </div>
                     </div>
                 </div>
@@ -291,11 +297,11 @@
                 </div>
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Qty</label>
-                    <input type="number" name="qty" id="qty" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <input type="number" name="qty" id="qty" min="0" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Min Stock</label>
-                    <input type="number" name="min_stock" id="min_stock" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <input type="number" name="min_stock" id="min_stock" min="0" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
@@ -309,17 +315,19 @@
 <script>
     function autoFillNozzleSpecs(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
-        document.getElementById('action_display_part_no').value = selectedOption.getAttribute('data-part') || 'N/A';
-        document.getElementById('action_display_sap_code').value = selectedOption.getAttribute('data-sap') || 'N/A';
+        document.getElementById('action_display_part_no').value = selectedOption.getAttribute('data-part') || '-';
+        document.getElementById('action_display_sap_code').value = selectedOption.getAttribute('data-sap') || '-';
     }
 
     function filterLine(lineName) {
         let btns = document.querySelectorAll(".tab-btn");
         btns.forEach(btn => {
-            btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
-            btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400');
+            btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm', 'active');
+            btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-200');
         });
-        event.currentTarget.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+        
+        event.currentTarget.classList.remove('bg-slate-100', 'text-slate-500');
+        event.currentTarget.classList.add('bg-indigo-600', 'text-white', 'shadow-sm', 'active');
         
         document.querySelectorAll(".row-prod").forEach(row => {
             row.style.display = (lineName === 'all' || row.getAttribute('data-line') === lineName) ? "" : "none";
@@ -350,6 +358,7 @@
             document.getElementById('container_add_line').classList.add('hidden');
             document.getElementById('container_add_nozzle').classList.remove('hidden');
             document.getElementById('register_line_id').removeAttribute('required');
+            document.getElementById('action_line_id').value = "";
         }
     }
 
@@ -357,6 +366,11 @@
         document.getElementById('modalAction').classList.add('hidden');
         document.getElementById('actionForm').reset();
     }
+
+    document.getElementById('actionForm').addEventListener('reset', function() {
+        document.getElementById('action_display_part_no').value = '';
+        document.getElementById('action_display_sap_code').value = '';
+    });
 
     function openModal(mode, data = null, lineName = '') {
         const modal = document.getElementById('modalProd');
@@ -379,13 +393,14 @@
         button.addEventListener('click', function(e) {
             let form = this.closest('.form-delete');
             Swal.fire({
-                title: 'Hapus Pemantauan Lini?',
-                text: "Lini ini akan dikosongkan dari dashboard utama!",
+                title: 'Hapus Alokasi Nozzle?',
+                text: "Data nozzle pada lini ini akan dihapus permanen dari sistem!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#e11d48',
                 confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
+                customClass: { container: '!z-[10000]' }
             }).then((result) => { if (result.isConfirmed) form.submit(); });
         });
     });
@@ -399,17 +414,14 @@
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4f46e5',
-            confirmButtonText: 'Ya, Kirim!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
+            confirmButtonText: 'Ya, Kirim!',
+            customClass: { container: '!z-[10000]' }
+        }).then((result) => { if (result.isConfirmed) form.submit(); });
     });
 
-    @if(session('success')) Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false }); @endif
-    @if($errors->any()) Swal.fire({ icon: 'error', title: 'Oops...', text: "{{ $errors->first() }}" }); @endif
-    @if(session('error')) Swal.fire({ icon: 'error', title: 'Error', text: "{{ session('error') }}" }); @endif
+    @if(session('success')) Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false, customClass: { container: '!z-[10000]' } }); @endif
+    @if($errors->any()) Swal.fire({ icon: 'error', title: 'Oops...', text: "{{ $errors->first() }}", customClass: { container: '!z-[10000]' } }); @endif
+    @if(session('error')) Swal.fire({ icon: 'error', title: 'Error', text: "{{ session('error') }}", customClass: { container: '!z-[10000]' } }); @endif
 </script>
 
 <style>

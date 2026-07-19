@@ -1,72 +1,84 @@
- /* Import Font Nunito langsung dari Google Fonts */
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+/* Import Font Nunito langsung dari Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
 
-  /* Paksa semua elemen di dalam komponen ini untuk memakai Nunito */
-  .sidebar-responsive, 
-  .sidebar-responsive * {
-    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
-  }
+/* Paksa semua elemen di dalam komponen ini untuk memakai Nunito */
+.sidebar-responsive, 
+.sidebar-responsive * {
+  font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
+}
 
-  /* Menjamin ukuran icon tetap konsisten di semua layar */
-  .siix-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-  }
-  
-  /* Animasi Scroll Smooth dan Custom Scrollbar */
-  .custom-scroll-container {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
+/* Menjamin ukuran icon tetap konsisten di semua layar */
+.siix-icon {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
+}
 
-  /* Membuat scrollbar lebih cantik (Modern Look) */
-  .custom-scroll-container::-webkit-scrollbar {
-    width: 5px;
-  }
-  .custom-scroll-container::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scroll-container::-webkit-scrollbar-thumb {
-    background: #e2e8f0; /* slate-200 */
-    border-radius: 10px;
-  }
-  .dark .custom-scroll-container::-webkit-scrollbar-thumb {
-    background: #334155; /* slate-700 */
-  }
+/* Animasi Scroll Smooth dan Custom Scrollbar */
+.custom-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
 
-  /* Responsivitas dasar */
-  @media (max-width: 1024px) {
-    .sidebar-responsive {
-      transform: translateX(-100%);
-      position: fixed !important;
-      z-index: 99999;
-      width: 290px !important;
-    }
-    .sidebar-show-mobile {
-      transform: translateX(0);
-    }
-  }
+.custom-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll-container::-webkit-scrollbar-thumb {
+  background: #e2e8f0; /* slate-200 */
+  border-radius: 10px;
+}
+.dark .custom-scroll-container::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+}
 
-  /* Style untuk floating menu saat sidebar mini */
-  .sidebar-mini-floating {
-    position: absolute !important;
-    left: 80px;
-    width: 190px;
-    background: white;
-    box-shadow: 6px 4px 15px rgba(0,0,0,0.08);
-    border: 1px solid #f1f5f9;
-    border-radius: 8px;
-    padding: 8px !important;
-    margin-left: 0 !important;
-    z-index: 9999;
+/* Responsivitas dasar */
+@media (max-width: 1024px) {
+  .sidebar-responsive {
+    transform: translateX(-100%);
+    position: fixed !important;
+    z-index: 99999;
+    width: 290px !important;
   }
-  .dark .sidebar-mini-floating {
-    background: #1e293b;
-    border-color: #334155;
-    box-shadow: 6px 4px 15px rgba(0,0,0,0.4);
+  .sidebar-show-mobile {
+    transform: translateX(0);
   }
+}
 
-  .cursor-not-allowed-mini {
-    cursor: default !important;
-  }
+/* Style untuk floating menu saat sidebar mini */
+.sidebar-mini-floating {
+  position: absolute !important;
+  left: 80px;
+  width: 210px;
+  background: white;
+  box-shadow: 6px 4px 15px rgba(0,0,0,0.08);
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 8px !important;
+  margin-left: 0 !important;
+  z-index: 9999;
+}
+.dark .sidebar-mini-floating {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 6px 4px 15px rgba(0,0,0,0.4);
+}
+
+/* WADAH LOGO DIPERBESAR DAN TURUN KE BAWAH */
+.logo-wrapper {
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 53px; /* TINGGI DIPERBESAR (sebelumnya 40px) */
+  margin-top: 5px; /* DORONG KE BAWAH SEDIKIT */
+  margin-bottom: 5px;
+}
+.logo-expanded {
+  width: 160px; /* LEBAR DIPERBESAR (sebelumnya 120px) */
+}
+.logo-collapsed {
+  width: 50px; /* LEBAR MINI DIPERBESAR SEDIKIT */
+}

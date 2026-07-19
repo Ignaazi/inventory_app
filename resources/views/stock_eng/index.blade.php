@@ -10,7 +10,7 @@
 <div class="font-nunito mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
 
     @php
-    // Patokan data dari database
+    // Patokan data dari database untuk sistem alert status banner
     $outOfStock = $stocks->where('qty', '<=', 0)->count();
     $lowStock = $stocks->filter(function($item) {
         return $item->qty > 0 && $item->qty <= $item->min_stock;
@@ -19,34 +19,35 @@
     // Menentukan Tema Warna Berdasarkan Status Terparah
     if ($outOfStock > 0) {
         $theme = [
-            'bg' => 'bg-red-50', 
-            'border' => 'border-red-200', 
+            'bg' => 'bg-red-50 dark:bg-red-950/20', 
+            'border' => 'border-red-200 dark:border-red-900/50', 
             'dot' => 'bg-red-600', 
-            'text' => 'text-red-800',
+            'text' => 'text-red-800 dark:text-red-300',
             'status' => 'LOST',
             'msg' => $outOfStock . ' item out of stock — immediate reorder recommended'
         ];
     } elseif ($lowStock > 0) {
         $theme = [
-            'bg' => 'bg-[#FFFBEB]', 
-            'border' => 'border-amber-200', 
+            'bg' => 'bg-[#FFFBEB] dark:bg-amber-950/10', 
+            'border' => 'border-amber-200 dark:border-amber-900/30', 
             'dot' => 'bg-[#F59E0B]', 
-            'text' => 'text-[#92400E]',
+            'text' => 'text-[#92400E] dark:text-amber-300',
             'status' => 'WARNING',
             'msg' => $lowStock . ' low stock — prepare for reorder'
         ];
     } else {
         $theme = [
-            'bg' => 'bg-emerald-50', 
-            'border' => 'border-emerald-200', 
+            'bg' => 'bg-emerald-50 dark:bg-emerald-950/10', 
+            'border' => 'border-emerald-200 dark:border-emerald-900/30', 
             'dot' => 'bg-emerald-500', 
-            'text' => 'text-emerald-800',
+            'text' => 'text-emerald-800 dark:text-emerald-300',
             'status' => 'SAFE',
             'msg' => 'All systems stable — stock levels are safe'
         ];
     }
     @endphp
 
+    {{-- Banner Status Real-time --}}
     <div class="mb-6 flex items-center gap-3 rounded-2xl border {{ $theme['border'] }} {{ $theme['bg'] }} px-5 py-3 shadow-sm transition-all">
         <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $theme['dot'] }} animate-pulse"></span>
         <p class="text-sm font-semibold {{ $theme['text'] }}">
@@ -55,6 +56,7 @@
         </p>
     </div>
 
+    {{-- Header & Action Buttons --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Nozzle Inventory</h2>
@@ -92,28 +94,31 @@
         </div>
     </div>
 
+    {{-- Main Container Card --}}
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-boxdark overflow-hidden">
         
+        {{-- Search & Tab Navigation Section --}}
         <div class="p-5 border-b border-slate-100 dark:border-slate-700">
             <div class="relative mb-6 w-full max-w-md">
                 <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
+                <input type="text" id="searchInput" onkeyup="applyFilterAndSearch()" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
             </div>
 
             <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-slate-100 dark:border-slate-700 pb-1" id="rackTabs">
-                <button onclick="filterRak('all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm whitespace-nowrap">
+                <button onclick="filterRak(this, 'all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm whitespace-nowrap">
                     All Storage
                 </button>
                 @foreach($raks as $rak)
-                    <button onclick="filterRak('{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 whitespace-nowrap">
+                    <button onclick="filterRak(this, '{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 whitespace-nowrap">
                         {{ $rak->nama_rak }}
                     </button>
                 @endforeach
             </div>
         </div>
 
+        {{-- Table Content --}}
         <div class="max-w-full overflow-x-auto scrollbar-hide">
             <table class="w-full text-left border-collapse" id="nozzleTable">
                 <thead>
@@ -150,14 +155,19 @@
                                 <div class="h-2.5 w-2.5 rounded-full {{ $statusColor }}"></div>
                             </div>
                         </td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-800 dark:text-white">{{ $item->no_nozzle ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-slate-600 dark:text-slate-400">{{ $item->part_no ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-indigo-600 dark:text-indigo-400">{{ $item->sap_code ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center"><span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-extrabold text-[10px] uppercase">{{ $item->category ?? '-' }}</span></td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800 dark:text-white">{{ $item->sparepart->name ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-slate-600 dark:text-slate-400">{{ $item->sparepart->part_number ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-indigo-600 dark:text-indigo-400">{{ $item->sparepart->sap_code ?? '-' }}</td>
+                        
+                        {{-- Menampilkan category dari database dengan fallback jika data lama kosong --}}
+                        <td class="px-4 py-4 text-center">
+                            <span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-extrabold text-[10px] uppercase">
+                                {{ $item->category ?? ($item->sparepart->category ?? '-') }}
+                            </span>
+                        </td>
                         <td class="px-4 py-4 text-center font-extrabold text-slate-900 dark:text-white">{{ $item->qty }}</td>
                         <td class="px-4 py-4 text-center font-extrabold text-slate-500 dark:text-slate-400">{{ $item->min_stock }}</td>
                         
-                        {{-- 🌟 UPDATE: Format penulisan disamakan persis dengan list sparepart --}}
                         <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
                             {{ $item->created_at->format('d/m/y') }}
                             <br><span class="text-[9px] text-slate-400 font-medium">{{ $item->created_at->format('H:i') }} WIB</span>
@@ -169,7 +179,9 @@
                         
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button onclick="openModal('edit', {{ json_encode($item) }})" 
+                                <button type="button" 
+                                    data-item="{{ json_encode($item) }}"
+                                    onclick="openModal('edit', this)" 
                                     class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -195,6 +207,7 @@
             </table>
         </div>
 
+        {{-- Pagination footer --}}
         <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
             <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                 Showing {{ $stocks->firstItem() }} to {{ $stocks->lastItem() }} of {{ $stocks->total() }} Entries
@@ -206,7 +219,7 @@
     </div>
 </div>
 
-{{-- MODAL NOZZLE --}}
+{{-- MODAL NOZZLE (WITH AUTOFILL VIA PART NUMBER DROPDOWN) --}}
 <div id="modalNozzle" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
     <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
@@ -227,28 +240,39 @@
                     </select>
                 </div>
                 
-                <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">No Nozzle (Master)</label>
-                    <select name="no_nozzle" id="no_nozzle" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-semibold" required>
-                        <option value="">-- Pilih Nozzle Terdaftar --</option>
+                {{-- DROP-DOWN UTAMA: Pilihan Part Number --}}
+                <div class="col-span-2 md:col-span-1">
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Part No (Pilih Disini)</label>
+                    <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono font-bold" required>
+                        <option value="">-- Pilih Part Number --</option>
                         @foreach($ListSparepartEng as $sp)
-                            <option value="{{ $sp->name }}">{{ $sp->name }}</option>
+                            <option value="{{ $sp->id }}" 
+                                    data-name="{{ $sp->name ?? '' }}" 
+                                    data-sap="{{ $sp->sap_code ?? '' }}"
+                                    data-category="{{ $sp->category ?? '' }}">
+                                {{ $sp->part_number ?? 'No Part Num' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
 
-                <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Part No</label>
-                    <input type="text" name="part_no" id="part_no" placeholder="Input manual..." class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono font-bold">
+                {{-- INPUT TEXT FIELD: Otomatis terisi & Readonly --}}
+                <div class="col-span-2 md:col-span-1">
+                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">No Nozzle</label>
+                    <input type="text" id="no_nozzle" class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
-                <div>
+
+                <div class="col-span-2 md:col-span-1">
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Sap Code</label>
-                    <input type="text" name="sap_code" id="sap_code" placeholder="Input manual..." class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono font-bold">
+                    <input type="text" id="sap_code" class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-mono font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
-                <div>
+
+                <div class="col-span-2 md:col-span-1">
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Category</label>
-                    <input type="text" name="category" id="category" placeholder="Input manual..." class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-semibold">
+                    {{-- 🌟 FIX: Pastikan atribut name="category" terpasang agar ikut terkirim ke backend Laravel saat disave --}}
+                    <input type="text" name="category" id="category" placeholder="Terisi Otomatis..." class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-bold" readonly>
                 </div>
+
                 <div>
                     <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Qty</label>
                     <input type="number" name="qty" id="qty" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
@@ -318,46 +342,80 @@
 </div>
 
 <script>
-    function filterRak(rakName) {
+    // State global melacak filter penyimpanan yang aktif
+    let currentRackFilter = 'all';
+
+    function filterRak(element, rakName) {
+        currentRackFilter = rakName;
+        
         let btns = document.querySelectorAll(".tab-btn");
         btns.forEach(btn => {
             btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
             btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-100', 'dark:border-slate-700');
         });
 
-        const activeBtn = event.currentTarget;
-        activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
-        activeBtn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-100', 'dark:border-slate-700');
+        element.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+        element.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-100', 'dark:border-slate-700');
 
+        applyFilterAndSearch();
+    }
+
+    // Fungsi gabungan sinkronisasi Search Bar dan Tab Filter Rak
+    function applyFilterAndSearch() {
+        let searchInput = document.getElementById("searchInput").value.toUpperCase();
+        
         document.querySelectorAll(".row-nozzle").forEach(row => {
-            row.style.display = (rakName === 'all' || row.getAttribute('data-rak') === rakName) ? "" : "none";
+            let rowRak = row.getAttribute('data-rak');
+            let textMatches = row.innerText.toUpperCase().includes(searchInput);
+            let rackMatches = (currentRackFilter === 'all' || rowRak === currentRackFilter);
+            
+            if (textMatches && rackMatches) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
         });
     }
 
-    function searchTable() {
-        let input = document.getElementById("searchInput").value.toUpperCase();
-        document.querySelectorAll(".row-nozzle").forEach(row => {
-            row.style.display = row.innerText.toUpperCase().includes(input) ? "" : "none";
-        });
+    // LOGIKA AUTOFILL INSTAN: Mengisi data berdasarkan pilihan Part Number
+    function autoFillByPart(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        
+        const nozzleName = selectedOption.getAttribute('data-name') || '';
+        const sapCode = selectedOption.getAttribute('data-sap') || '';
+        const category = selectedOption.getAttribute('data-category') || '';
+        
+        document.getElementById('no_nozzle').value = nozzleName;
+        document.getElementById('sap_code').value = sapCode;
+        document.getElementById('category').value = category;
     }
 
-    function openModal(mode, data = null) {
+    // Penanganan Modal Nozzle dengan proteksi JSON.parse
+    function openModal(mode, element = null) {
         const modal = document.getElementById('modalNozzle');
         const form = document.getElementById('nozzleForm');
         const methodField = document.getElementById('methodField');
         
         modal.classList.remove('hidden');
         
-        if (mode === 'edit') {
+        if (mode === 'edit' && element) {
+            const data = JSON.parse(element.getAttribute('data-item'));
+            
             document.getElementById('modalTitle').innerText = 'Edit Nozzle Data';
             form.action = "/stock-engineering/" + data.id;
             methodField.innerHTML = '<input type="hidden" name="_method" value="PUT">';
             
             document.getElementById('rak_id').value = data.rak_id;
-            document.getElementById('no_nozzle').value = data.no_nozzle;
-            document.getElementById('part_no').value = data.part_no || '';
-            document.getElementById('sap_code').value = data.sap_code || '';
-            document.getElementById('category').value = data.category || '';
+            document.getElementById('sparepart_id').value = data.sparepart_id;
+            
+            // Trigger pengisian kolom teks otomatis saat mode edit dibuka
+            const selectEl = document.getElementById('sparepart_id');
+            if (selectEl) autoFillByPart(selectEl);
+
+            if(data.category) {
+                document.getElementById('category').value = data.category;
+            }
+
             document.getElementById('qty').value = data.qty;
             document.getElementById('min_stock').value = data.min_stock;
         } else {
@@ -365,10 +423,15 @@
             form.action = "{{ route('stock.eng.store') }}";
             form.reset();
             methodField.innerHTML = '';
+            
+            // Bersihkan teks field otomatisasi
+            document.getElementById('no_nozzle').value = '';
+            document.getElementById('sap_code').value = '';
+            document.getElementById('category').value = '';
         }
     }
 
-    // 1. Konfirmasi Delete Nozzle
+    // Konfirmasi Hapus Nozzle
     document.querySelectorAll('.btn-delete').forEach(button => {
         button.addEventListener('click', function(e) {
             let form = this.closest('.form-delete');
@@ -381,7 +444,10 @@
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                customClass: { popup: 'font-nunito' }
+                customClass: { 
+                    container: 'z-[10000]', // 🌟 Mengangkat popup di atas modal z-[9999]
+                    popup: 'font-nunito' 
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -390,20 +456,23 @@
         });
     });
 
-    // Konfirmasi Delete Rak Tunggal via SweetAlert2
+    // Konfirmasi Hapus Rak Tunggal
     document.querySelectorAll('.btn-delete-rak').forEach(button => {
         button.addEventListener('click', function(e) {
             let form = this.closest('.form-delete-rak');
             Swal.fire({
                 title: 'Hapus Rak ini?',
-                text: "Nozzle di dalam rak ini mungkin akan kehilangan relasi tempat!",
+                text: "Nozzle di dalam rak ini mungkin akan kehilangan relasi penempatan!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                customClass: { popup: 'font-nunito' }
+                customClass: { 
+                    container: 'z-[10000]', // 🌟 Mengangkat popup di atas modal z-[9999]
+                    popup: 'font-nunito' 
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -412,7 +481,7 @@
         });
     });
 
-    // 2. Konfirmasi Update (Saat klik tombol "Save Data" di Modal)
+    // FORM SUBMIT HANDLING: Menambahkan lapisan penanganan tumpukan z-index & cegah freeze
     document.getElementById('nozzleForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -422,28 +491,40 @@
 
         Swal.fire({
             title: isEdit ? 'Yakin simpan perubahan?' : 'Yakin tambah data?',
-            text: "Pastikan semua data sudah benar",
+            text: "Pastikan semua data sudah diisi dengan benar",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4f46e5',
             cancelButtonColor: '#64748b',
             confirmButtonText: 'Ya, Proses!',
             cancelButtonText: 'Cek Lagi',
-            customClass: { popup: 'font-nunito' }
+            customClass: { 
+                container: 'z-[10000]', // 🌟 FIX: Memaksa SweetAlert berada paling depan di atas lapisan Tailwind modal modalNozzle (z-[9999])
+                popup: 'font-nunito' 
+            }
         }).then((result) => {
             if (result.isConfirmed) {
+                // Sembunyikan modal Nozzle terlebih dahulu agar tumpukan abu-abu Tailwind hilang dari background
+                closeModal();
+
+                // Tampilkan loading screen yang bersih
                 Swal.fire({
                     title: 'Sedang memproses...',
                     allowOutsideClick: false,
                     didOpen: () => { Swal.showLoading() },
-                    customClass: { popup: 'font-nunito' }
+                    customClass: { 
+                        container: 'z-[10000]',
+                        popup: 'font-nunito' 
+                    }
                 });
+
+                // Jalankan instruksi submit form HTML biasa ke Controller backend
                 form.submit();
             }
         });
     });
 
-    // Popup jika Sukses
+    // Notifikasi Response Server via Session (Dipanggil saat halaman selesai reload)
     @if(session('success'))
         Swal.fire({
             icon: 'success',
@@ -455,17 +536,15 @@
         });
     @endif
 
-    // Popup jika ada Error Validasi
     @if($errors->any())
         Swal.fire({
             icon: 'error',
-            title: 'Oops...',
+            title: 'Validasi Gagal',
             text: "{{ $errors->first() }}",
             customClass: { popup: 'font-nunito' }
         });
     @endif
 
-    // Popup jika ada Error dari Exception
     @if(session('error'))
         Swal.fire({
             icon: 'error',
@@ -475,23 +554,11 @@
         });
     @endif
 
+    // Fungsi Utility Pembukaan & Penutupan Modal Utama
     function closeModal() { document.getElementById('modalNozzle').classList.add('hidden'); }
     function openRackModal() { document.getElementById('modalRack').classList.remove('hidden'); }
     function closeRackModal() { document.getElementById('modalRack').classList.add('hidden'); }
     function openDeleteRackModal() { document.getElementById('modalDeleteRack').classList.remove('hidden'); }
     function closeDeleteRackModal() { document.getElementById('modalDeleteRack').classList.add('hidden'); }
 </script>
-
-<style>
-    .font-nunito { font-family: 'Nunito', sans-serif !important; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .flex.items-center.gap-2 svg { width: 20px; height: 20px; }
-    .swal2-container { z-index: 10000 !important; }
-    
-    /* Perfect Center Table Adjustment & Gap Simetris */
-    #nozzleTable th, #nozzleTable td {
-        vertical-align: middle !important;
-        text-align: center !important;
-    }
-</style>
 @endsection

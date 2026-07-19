@@ -8,7 +8,6 @@
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
   }
 
-  /* Custom Clean Hover & Shadow matching image_d4fed2.png */
   .photo-grad-btn {
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
@@ -87,18 +86,6 @@
             Scan In
           </button>
         </div>
-
-        <button
-          class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700/50 transition-colors"
-        >
-          <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.29004 5.90393H17.7067" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M17.7075 14.0961H2.29085" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331/12.0826 3.33331Z" stroke-width="1.8" />
-            <path d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z" stroke-width="1.8" />
-          </svg>
-          Filter
-        </button>
       </div>
     </div>
 
@@ -111,13 +98,12 @@
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">No Nozzle</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Part No</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">SAP Code</th>
-            <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white">Category</th>
+            <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">RAK</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Qty IN</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Status</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Remark</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white">Comment</th>
             <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Created At</th>
-            <th class="py-2.5 px-3 text-[10px] font-black text-slate-950 uppercase tracking-wider dark:text-white text-center">Updated At</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -127,23 +113,28 @@
               {{ $history->firstItem() + $key }}
             </td>
             <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white whitespace-nowrap">
-              {{ $log->nik }}
+              {{ $log->nik ?? '-' }}
             </td>
+            <!-- Mengambil nama dari relasi sparepart -->
             <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
-              {{ $log->stockEng->no_nozzle ?? '-' }}
+              {{ $log->stockEng->sparepart->name ?? '-' }}
             </td>
+            <!-- Mengambil part number dari relasi sparepart -->
             <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
-              {{ $log->stockEng->part_no ?? '-' }}
+              {{ $log->stockEng->sparepart->part_number ?? '-' }}
             </td>
+            <!-- Mengambil sap code dari relasi sparepart -->
             <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
-              {{ $log->stockEng->sap_code ?? '-' }}
+              {{ $log->stockEng->sparepart->sap_code ?? '-' }}
             </td>
-            <td class="py-2 px-3 text-[11px] font-semibold text-slate-600 dark:text-gray-300 whitespace-nowrap">
-              {{ $log->stockEng->category ?? '-' }}
+            <!-- Mengambil nama rak dari relasi raks -->
+            <td class="py-2 px-3 text-[11px] font-bold text-slate-950 dark:text-white text-center font-mono tracking-tight whitespace-nowrap">
+              {{ $log->stockEng->rak->nama_rak ?? '-' }}
             </td>
             <td class="py-2 px-3 text-center">
               <span class="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                +{{ $log->qty_added }}
+                <!-- Mendukung fleksibilitas penamaan kolom qty_in atau qty_added -->
+                +{{ $log->qty_in ?? ($log->qty_added ?? 0) }}
               </span>
             </td>
             <td class="py-2 px-3 text-center">
@@ -169,7 +160,7 @@
                 {{ $remarkText ? $log->remark : '-' }} 
               </span>
             </td>
-            <td class="py-2 px-3 text-[11px] font-semibold text-slate-600 dark:text-gray-300 max-w-[130px] truncate" title="{{ $log->comment }}">
+            <td class="py-2 px-3 text-[11px] font-semibold text-slate-600 dark:text-gray-300 max-w-[150px] truncate" title="{{ $log->comment }}">
               {{ $log->comment ?? '-' }}
             </td>
             <td class="py-1.5 px-3 text-center whitespace-nowrap">
@@ -180,18 +171,10 @@
                 {{ $log->created_at ? $log->created_at->format('H:i') : '' }}
               </div>
             </td>
-            <td class="py-1.5 px-3 text-center whitespace-nowrap">
-              <div class="text-[11px] font-bold text-slate-900 dark:text-white tracking-tight">
-                {{ $log->updated_at ? $log->updated_at->format('d/m/y') : '-' }}
-              </div>
-              <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-none mt-0.5">
-                {{ $log->updated_at ? $log->updated_at->format('H:i') : '' }}
-              </div>
-            </td>
           </tr>
           @empty
           <tr>
-            <td colspan="13" class="text-center py-6 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <td colspan="11" class="text-center py-6 text-xs font-bold text-slate-400 uppercase tracking-wider">
               No recent stock in logs found.
             </td>
           </tr>

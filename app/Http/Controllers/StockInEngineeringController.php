@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StockEng;
-use App\Models\StockInEng;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use App\Models\StockInEng; // Pastikan model ini mengarah ke table: inProd_logs & primaryKey: inproduction_id
+use App\Models\StockEng;
+use App\Models\Engineering\EngMaterialReceiving; 
 
 class StockInEngineeringController extends Controller
 {
+    /**
+     * Tampilan Utama / History Stock In
+     */
     public function index()
     {
-        // Ambil data log, urutkan dari yang terbaru (latest)
-        $history = StockInEng::with('stockEng')
-                    ->latest()
-                    ->paginate(25);
-
+        // Load history dari inProd_logs lengkap beserta relasi stock_prod_id ke stockEng, dan nested relasi sparepart-nya
+        $history = StockInEng::with(['stockEng.sparepart', 'stockEng.rak', 'engMaterialReceiving'])->latest()->paginate(10);
         return view('stock_eng.transaction.in', compact('history'));
     }
 
@@ -24,67 +27,81 @@ class StockInEngineeringController extends Controller
      */
     public function manual()
     {
-        // Ambil data nozzle untuk dropdown di form manual
-        $stocks = StockEng::orderBy('no_nozzle', 'asc')->get();
+        $stocks = StockEng::with(['sparepart', 'rak'])->get();
 
-        // Ambil data history supaya tabel di bawah form manual tidak error
-        $history = StockInEng::with('stockEng')
-                    ->latest()
-                    ->paginate(10); 
+        // Ambil daftar nama RAK unik untuk filter dropdown bertingkat
+        $listRak = $stocks->map(function ($item) {
+            return $item->rak->nama_rak ?? null;
+        })->filter()->unique()->sort()->values();
 
-        return view('stock_eng.transaction.in_manual', compact('stocks', 'history'));
+        // 🌟 PERBAIKAN: Gunakan kolom 'request_no' sesuai yang ada di tabel inProd_logs kamu!
+        $usedPrIds = StockInEng::whereNotNull('request_no')->pluck('request_no')->toArray();
+        $costingReceivings = EngMaterialReceiving::whereNotIn('id', $usedPrIds)->latest()->get();
+
+        return view('stock_eng.transaction.in_manual', compact('stocks', 'listRak', 'costingReceivings'));
     }
 
     /**
-     * Tampilan untuk Scan Barcode
+     * Proses Simpan Data (Aman & Sinkron dengan Tabel inProd_logs)
      */
-    public function scan()
-    {
-        $stocks = StockEng::orderBy('no_nozzle', 'asc')->get();
-
-        $history = StockInEng::with('stockEng')
-                    ->latest()
-                    ->paginate(10);
-
-        return view('stock_eng.transaction.in_scan', compact('stocks', 'history'));
-    }
-
     public function store(Request $request)
     {
-        // 1. Validasi input
         $request->validate([
-            'stock_eng_id' => 'required|exists:stock_engs,id',
-            'qty_in' => 'required|integer|min:1',
-            'remark' => 'nullable|string',
-            'comment' => 'nullable|string'
+            'stock_eng_id'              => 'required|exists:stock_engs,id',
+            'qty_in'                    => 'required|integer|min:1',
+            'eng_material_receiving_id' => 'nullable|exists:eng_material_receivings,id', 
+            'remark'                    => 'nullable|string',
         ]);
 
-        // 2. Update Stok Utama
-        $stock = StockEng::findOrFail($request->stock_eng_id);
-        $stock->increment('qty', $request->qty_in);
+        DB::beginTransaction();
+        try {
+            // Ambil data stock utama beserta master sparepart dan raks
+            $stock = StockEng::with(['sparepart', 'rak'])->findOrFail($request->stock_eng_id);
+            
+            $namaNozzle = $stock->sparepart->name ?? 'N/A';
+            $sapCode    = $stock->sparepart->sap_code ?? '-';
+            $partNumber = $stock->sparepart->part_number ?? '-';
+            $lokasiRak  = $stock->rak->nama_rak ?? 'N/A';
 
-        // 3. LOGIC FIX: Ambil teks catatan user secara aman
-        // Jika user mengetik catatan di inputan bernama 'remark' atau 'comment', kita satukan ke variabel $userComment
-        $userComment = $request->comment ?: $request->remark;
+            // 🌟 PERBAIKAN: Cek double PR menggunakan kolom 'request_no'
+            if ($request->eng_material_receiving_id) {
+                $isPrUsed = StockInEng::where('request_no', $request->eng_material_receiving_id)->exists();
+                if ($isPrUsed) {
+                    return redirect()->back()->withInput()->with('error', 'Gagal: Dokumen PR/Receiving ini sudah terpakai!');
+                }
+            }
 
-        // 4. LOGIC FIX: Paksa penentuan Remark murni berdasarkan route atau source secara presisi
-        if ($request->source === 'scan' || $request->routeIs('eng.in.scan*')) {
-            $finalRemark = 'Scan IN';
-        } else {
-            // Default jika dari form manual atau source = manual
-            $finalRemark = 'Manual IN';
+            // Generate nomor transaksi dinamis untuk kolom `transaction_out_id`
+            $latestTx = StockInEng::orderBy('inproduction_id', 'desc')->first();
+            $nextTxId = !$latestTx ? 'ENGIN001' : 'ENGIN' . str_pad(((int) filter_var($latestTx->transaction_out_id, FILTER_SANITIZE_NUMBER_INT)) + 1, 3, '0', STR_PAD_LEFT);
+
+            // 🌟 Petakan data persis seperti struktur tabel `inProd_logs` di migration kamu
+            $logData = [
+                'nik'                => \Illuminate\Support\Facades\Auth::user()->nik ?? 'SYSTEM',
+                'line_id'            => $stock->line_id ?? 1,             // Diambil dari stock_eng atau default 1
+                'no_nozzle'          => $namaNozzle,                      // Menjawab "Unknown column 'no_nozzle'"
+                'transaction_out_id' => $nextTxId,                        // ID Transaksi unik
+                'request_no'         => $request->eng_material_receiving_id ?? null, // Mengisi kolom request_no di DB kamu
+                'barcode_id'         => $stock->barcode_id ?? 1,          // ID Barcode dari relasi stock utama
+                'stock_prod_id'      => $stock->id,                       // ID Stock utama (FK ke tabel stock_engs / stock_prods)
+                'qty_in'             => $request->qty_in,                 // Sesuai field migration
+                'status'             => 'SUCCESS',
+                'remark'             => $request->remark ?? 'MANUAL IN',
+                'comment'            => "RAK: {$lokasiRak} | SAP: {$sapCode} | PN: {$partNumber}"
+            ];
+
+            // Masukkan data transaksi ke tabel inProd_logs
+            StockInEng::create($logData);
+
+            // Update/tambahkan stok fisik utama di tabel stock_engs
+            $stock->increment('qty', $request->qty_in);
+
+            DB::commit();
+            return redirect()->route('eng.in')->with('success', "Stok sukses ditambahkan ke RAK [{$lokasiRak}] untuk sparepart [{$namaNozzle}]!");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses stock in: ' . $e->getMessage());
         }
-
-        // 5. Catat transaksi ke tabel Log (StockInEng)
-        StockInEng::create([
-            'stock_eng_id' => $stock->id,
-            'nik' => Auth::user()->nim, 
-            'qty_added' => $request->qty_in,
-            'status' => 'Success',
-            'remark' => $finalRemark,     // Murni berisi 'Manual IN' atau 'Scan IN'
-            'comment' => $userComment,    // Berisi teks ketikan catatan dari user
-        ]);
-
-        return redirect()->route('eng.in')->with('success', 'Stock In Berhasil dicatat!');
-    }   
+    }
 }

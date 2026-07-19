@@ -16,6 +16,7 @@ class DbBarcode extends Model
         'barcode_type',
         'barcode_size',
         'final_content',
+        'creator_nik',
         'current_lifecycle'
     ];
 }

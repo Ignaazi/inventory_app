@@ -18,7 +18,6 @@ class MaterialReceivedController extends Controller
      */
     public function index()
     {
-        // Menggunakan $signatures sesuai dengan struktur @forelse di file Blade list
         $signatures = EngMaterialReceiving::orderBy('created_at', 'desc')->paginate(10);
         return view('cost_section.material_received_list', compact('signatures'));
     }
@@ -28,7 +27,14 @@ class MaterialReceivedController extends Controller
      */
     public function create()
     {
+        // 🌟 FIX: Ambil semua pr_code yang SUDAH PERNAH digunakan (kecuali yang di-reject)
+        $usedPRCodes = EngMaterialReceiving::where('status', '!=', 'rejected')
+            ->pluck('pr_code')
+            ->toArray();
+
+        // 🌟 FIX: Tampilkan PR approved/done yang BELUM PERNAH dipakai sama sekali
         $availablePRs = PurchaseRequestEng::whereIn('status', ['approved', 'done'])
+            ->whereNotIn('pr_code', $usedPRCodes)
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -40,7 +46,6 @@ class MaterialReceivedController extends Controller
      */
     public function show($id)
     {
-        // 🌟 FIX: Diubah dari $sig menjadi $signature agar sinkron dengan file preview lu!
         $signature = EngMaterialReceiving::findOrFail($id);
         return view('cost_section.material_received_preview', compact('signature'));
     }
@@ -58,6 +63,17 @@ class MaterialReceivedController extends Controller
             'stamp_data'     => 'nullable|string',
             'costing_notes'  => 'nullable|string'
         ]);
+
+        // 🌟 FIX VALIDASI LOCK: Cek double input di database untuk pr_code aktif
+        $isAlreadyUsed = EngMaterialReceiving::where('pr_code', $request->pr_code)
+            ->where('status', '!=', 'rejected')
+            ->exists();
+
+        if ($isAlreadyUsed) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal! Kode Purchase Request (PR) ini sudah pernah diproses sebelumnya.');
+        }
 
         // A. Simpan TTD Costing
         $signaturePath = null;

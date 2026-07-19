@@ -16,6 +16,11 @@ return new class extends Migration
 
         Schema::create('spareparts', function (Blueprint $table) {
             $table->id();
+            
+            // 🌟 Kolom baru tanpa 'after' (Otomatis berada di bawah id dan di atas name)
+            $table->string('sap_code')->nullable();
+            $table->string('part_number')->nullable();
+
             $table->string('name');
             $table->string('category');
             $table->string('image')->nullable();
@@ -31,7 +36,6 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * 💡 FIX UTAMA: Menambahkan kembali fungsi down yang hilang agar sistem refresh berjalan lancar!
      */
     public function down(): void
     {

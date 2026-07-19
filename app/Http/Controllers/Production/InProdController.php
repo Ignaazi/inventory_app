@@ -6,200 +6,171 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Production\inProd;
 
 class InProdController extends Controller
 {
     /**
-     * Menampilkan Halaman Utama History Stock IN Production
+     * Tampilan Utama Halaman Monitoring / Log Transaksi Masuk
      */
     public function stockIn()
     {
-        // Menggunakan ->paginate(10) agar variabel $history, ->currentPage(), dan ->links() di View terbaca sempurna
-        $history = DB::table('inProd_logs')
-            ->leftJoin('list_line_productions', 'inProd_logs.line_id', '=', 'list_line_productions.id')
-            ->select(
-                'inProd_logs.*', 
-                'list_line_productions.no_line',             // Mengambil kode line (misal: SMT01)
-                'list_line_productions.name_machine'          // Mengambil nama mesin
-            )
-            ->orderBy('inProd_logs.created_at', 'desc')
-            ->paginate(10); 
-
+        $history = inProd::with(['line', 'barcode'])->latest()->paginate(10);
         return view('stock_prod.transactionProd.inProd', compact('history'));
     }
 
     /**
-     * Menampilkan View Form Pembuatan Manual IN Production
+     * Halaman Form Input Manual (Dropdown Mode)
      */
     public function manualIn()
     {
-        // 1. Ambil list 'transaction_out_id' yang SUDAH PERNAH digunakan di lantai produksi
-        $usedTrxIds = DB::table('inProd_logs')
-            ->whereNotNull('transaction_out_id')
-            ->pluck('transaction_out_id')
-            ->toArray();
-
-        // 2. Ambil data pengeluaran engineering (SUCCESS) yang BELUM PERNAH diklaim oleh produksi sama sekali (Sekali Pakai)
-        $engineeringOuts = DB::table('stock_out_logs')
-            ->where('status', 'SUCCESS')
-            ->whereNotIn('transaction_out_id', $usedTrxIds) // 🔥 KUNCI UTAMA: Menyaring ID yang sudah terpakai
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // 3. Ambil daftar line produksi untuk dropdown target alokasi
+        // 1. Ambil data list line produksi untuk drop down line
         $lines = DB::table('list_line_productions')->orderBy('no_line', 'asc')->get();
 
-        return view('stock_prod.transactionProd.manual_inProd', compact('engineeringOuts', 'lines'));
+        // 2. Ambil data barcode yang belum di-scan masuk ke lini produksi ('USED_IN')
+        $barcodes = DB::table('db_barcodes')
+            ->where('current_lifecycle', '!=', 'USED_IN')
+            ->orderBy('barcode_id', 'asc')
+            ->get();
+
+        return view('stock_prod.transactionProd.manual_inProd', compact('lines', 'barcodes'));
     }
 
     /**
-     * API Pendukung AJAX (Fetch) untuk menarik detail aspek data Engineering secara live
-     */
-    public function getEngineeringDetail($id)
-    {
-        try {
-            $engData = DB::table('stock_out_logs')
-                ->where('transaction_out_id', $id)
-                ->first();
-
-            if (!$engData) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Detail data transaksi out tidak ditemukan!'
-                ], 404);
-            }
-
-            return response()->json([
-                'success'              => true,
-                'barcode_id'           => $engData->barcode_id,
-                'no_nozzle'            => $engData->no_nozzle,
-                'request_sparepart_id' => $engData->request_sparepart_id ?? 'N/A',
-                'qty_out'              => $engData->qty_out
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Server Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Memproses Penyimpanan Form Manual IN (Proteksi Double input & Sinkronisasi Data)
+     * Eksekusi Simpan Form Manual via Dropdown dengan Fitur Pengecekan Ketat (DIE-TRACER)
      */
     public function storeManualIn(Request $request)
     {
-        // Validasi input kiriman form
-        $request->validate([
-            'transaction_out_id' => 'required|string',
-            'line_id'            => 'required|string', 
-            'barcode_id'         => 'required',
-            'no_nozzle'          => 'required|string',
-            'qty_in'             => 'required|numeric|min:1',
-        ]);
+        $scannedInput = trim($request->input('barcode_scan'));
+        $targetLineIdString = $request->input('line_id');
+
+        if (!$scannedInput || !$targetLineIdString) {
+            return redirect()->back()->withInput()->with('error', 'DIE-TRACER: Gagal! Nilai Barcode Scan atau Target Line kosong saat dikirim.');
+        }
 
         DB::beginTransaction();
         try {
-            // 🔥 BACKEND PROTECTION: Cek apakah transaction_out_id ini mendadak sudah di-insert orang lain
-            $isAlreadyInvoiced = DB::table('inProd_logs')
-                ->where('transaction_out_id', $request->transaction_out_id)
-                ->exists();
-
-            if ($isAlreadyInvoiced) {
-                return redirect()->back()->with('error', 'Transaksi Gagal! ID Pengeluaran Engineering ini sudah pernah diproses sebelumnya.')->withInput();
-            }
-
-            // 1. Konversi Kode String Line (ex: 'SIIXSMTLINE001') ke ID Int Murni untuk tabel inProd_logs
-            $lineProduction = DB::table('list_line_productions')
-                ->where('line_id', $request->line_id)
+            // 1. Validasi Keberadaan Barcode di DB Master Barcode
+            $barcodeDb = DB::table('db_barcodes')
+                ->where('final_content', $scannedInput)
+                ->orWhere('barcode_id', $scannedInput)
                 ->first();
 
-            if (!$lineProduction) {
-                return redirect()->back()->with('error', 'Target Line Production tidak terdaftar di sistem!')->withInput();
+            if (!$barcodeDb) {
+                return redirect()->back()->withInput()->with('error', 'DIE-TRACER 1: Barcode [' . $scannedInput . '] tidak terdaftar di sistem tabel db_barcodes.');
             }
 
-            $lineIdNumeric = $lineProduction->id; 
-
-            // 2. Validasi data pembanding ke log asli gudang engineering
-            $engData = DB::table('stock_out_logs')->where('transaction_out_id', $request->transaction_out_id)->first();
-            if (!$engData) {
-                return redirect()->back()->with('error', 'Transaksi pengeluaran tidak valid atau tidak ditemukan!')->withInput();
+            // 2. Validasi Silang: Apakah Barcode sudah di-OUT oleh Engineering gudang?
+            $outLog = DB::table('stock_out_logs')->where('barcode_id', $barcodeDb->id)->first();
+            if (!$outLog) {
+                // Percobaan cadangan: Mencocokkan via string barcode_id
+                $outLog = DB::table('stock_out_logs')->where('barcode_id', $barcodeDb->barcode_id)->first();
+                
+                if (!$outLog) {
+                    return redirect()->back()->withInput()->with('error', 'DIE-TRACER 2: Barcode ID [' . $barcodeDb->barcode_id . '] (Internal ID: ' . $barcodeDb->id . ') terdaftar di master barcode, tapi data transaksi OUT di gudang engineering (stock_out_logs) belum pernah dibuat.');
+                }
             }
 
-            $noNozzle  = $request->no_nozzle;
-            $barcodeId = $request->barcode_id;
-            $requestNo = $request->request_no ?? $engData->request_sparepart_id;
+            // 3. Proteksi Duplikasi Transaksi Produksi
+            $isAlreadyIn = DB::table('inProd_logs')->where('barcode_id', $barcodeDb->id)->exists();
+            if ($isAlreadyIn) {
+                return redirect()->back()->withInput()->with('error', 'DIE-TRACER 3: Barcode ini ditolak karena sudah tercatat masuk di log produksi (inProd_logs) sebelumnya.');
+            }
 
-            // 3. Sinkronisasi Live Stock Produksi di tabel stock_prods
-            $matchedStockProd = DB::table('stock_prods')
-                ->where('line_id', $request->line_id) 
-                ->where('no_nozzle', $noNozzle)
+            // 4. Validasi Keberadaan Master Lini Produksi
+            $masterLine = DB::table('list_line_productions')
+                ->where('line_id', $targetLineIdString)
+                ->orWhere('id', $targetLineIdString)
+                ->first();
+                
+            if (!$masterLine) {
+                return redirect()->back()->withInput()->with('error', 'DIE-TRACER 4: Identitas Lini [' . $targetLineIdString . '] tidak ditemukan di tabel list_line_productions.');
+            }
+
+            // 5. Pencarian Stok Produksi untuk update/insert Qty
+            $stockProd = DB::table('stock_prods')
+                ->where('stock_eng_id', $barcodeDb->stock_eng_id)
+                ->where(function($query) use ($masterLine, $targetLineIdString) {
+                    $query->where('line_id', $targetLineIdString)
+                          ->orWhere('line_id', $masterLine->line_id)
+                          ->orWhere('line_id', $masterLine->id);
+                })
                 ->first();
 
-            if (!$matchedStockProd) {
-                // Buat baris baru di stock_prods jika kombinasi line & nozzle belum pernah ada
-                $masterEng = DB::table('stock_engs')->where('no_nozzle', $noNozzle)->first();
+            // Mengambil spesifikasi sparepart dari database Engineering
+            $engItem = DB::table('stock_engs')
+                ->leftJoin('spareparts', 'stock_engs.sparepart_id', '=', 'spareparts.id')
+                ->where('stock_engs.id', $barcodeDb->stock_eng_id)
+                ->select('spareparts.part_number', 'spareparts.sap_code', 'spareparts.category')
+                ->first();
 
-                $stockProdId = DB::table('stock_prods')->insertGetId([
-                    'line_id'    => $request->line_id, 
-                    'no_nozzle'  => $noNozzle,
-                    'part_no'    => $masterEng->part_no ?? 'N/A',
-                    'sap_code'   => $masterEng->sap_code ?? 'N/A',
-                    'category'   => $masterEng->category ?? 'N/A',
-                    'qty'        => 0, 
-                    'min_stock'  => 5,
-                    'created_at' => now(),
+            // Konversi Qty masuk, default ke angka 1 jika field kosong
+            $qtyMasuk = isset($outLog->qty_out) ? intval($outLog->qty_out) : 1;
+
+            if ($stockProd) {
+                // Skenario A: Tambah Stok yang sudah eksis di lini tersebut
+                $stockProdId = $stockProd->id;
+                DB::table('stock_prods')->where('id', $stockProdId)->update([
+                    'qty'        => $stockProd->qty + $qtyMasuk,
                     'updated_at' => now()
                 ]);
             } else {
-                $stockProdId = $matchedStockProd->id;
+                // Skenario B: Insert data stok baru untuk lini tersebut
+                $stockProdId = DB::table('stock_prods')->insertGetId([
+                    'line_id'      => $masterLine->line_id ?? $targetLineIdString,
+                    'stock_eng_id' => $barcodeDb->stock_eng_id,
+                    'no_nozzle'    => $outLog->no_nozzle ?? 'NZ-NEW',
+                    'part_no'      => $engItem->part_number ?? '-',
+                    'sap_code'     => $engItem->sap_code ?? '-',
+                    'category'     => $engItem->category ?? 'NOZZLE',
+                    'qty'          => $qtyMasuk,
+                    'min_stock'    => 0,
+                    'created_at'   => now(),
+                    'updated_at'   => now()
+                ]);
             }
 
-            // 4. INSERT LOG BARU: Catat ke tabel inProd_logs
+            // 6. Catat Log Transaksi Masuk Produksi ke tabel inProd_logs
             DB::table('inProd_logs')->insert([
-                'nik'                => Auth::user()->nik ?? Auth::user()->id ?? '123456',
-                'line_id'            => $lineIdNumeric, // Menyimpan Angka murni (ex: 1, 2, 3) aman dari crash SQL
-                'no_nozzle'          => $noNozzle,
-                'transaction_out_id' => $request->transaction_out_id,
-                'request_no'         => $requestNo,
-                'barcode_id'         => $barcodeId,
+                'nik'                => Auth::user()->nik ?? '9999',
+                'line_id'            => $masterLine->id,
+                'no_nozzle'          => $outLog->no_nozzle ?? '-',
+                'transaction_out_id' => $outLog->transaction_out_id ?? 'TRX-MANUAL',
+                'request_no'         => $outLog->request_sparepart_id ?? '-', 
+                'barcode_id'         => $barcodeDb->id,
                 'stock_prod_id'      => $stockProdId,
-                'qty_in'             => $request->qty_in,
+                'qty_in'             => $qtyMasuk,
                 'status'             => 'success',
-                'remark'             => 'Manual In',
-                'comment'            => $request->comment ?? 'Diterima via form manual otomatis',
+                'remark'             => 'MANUAL IN VIA DROPDOWN SELECT',
+                'comment'            => 'Menerima pasokan stok manual dari engineering',
                 'created_at'         => now(),
                 'updated_at'         => now()
             ]);
 
-            // 5. INCREMENT STOK: Tambah kuantitas unit pada live stock produksi
-            DB::table('stock_prods')
-                ->where('id', $stockProdId)
-                ->increment('qty', $request->qty_in);
+            // 7. Update status siklus barcode agar tidak bisa disalahgunakan lagi
+            DB::table('db_barcodes')->where('id', $barcodeDb->id)->update([
+                'current_lifecycle' => 'USED_IN',
+                'updated_at'        => now()
+            ]);
 
             DB::commit();
-            return redirect()->route('prod.transaction.in')->with('success', 'Transaksi Manual In Berhasil Diproses! Stok lantai produksi telah ditambahkan dan ID transaksi ini telah dikunci.');
+
+            return redirect()->route('prod.transaction.in')->with('success', 'Berhasil! Item sukses didaftarkan ke Lini ' . ($masterLine->no_line ?? $targetLineIdString) . '. Stok bertambah +' . $qtyMasuk . ' Pcs.');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('error', 'Gagal memproses transaksi: ' . $e->getMessage())->withInput();
+            return redirect()->back()->withInput()->with('error', 'DIE-EXCEPTION: Terjadi eror kegagalan database sistem: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Menampilkan Halaman History Stock OUT Production (Optional)
-     */
-    public function stockOut()
-    {
-        return view('stock_prod.transactionProd.outProd');
-    }
-
-    /**
-     * Fitur Simpan General Log (Optional)
-     */
     public function store(Request $request)
     {
-        return redirect()->route('prod.transaction.in');
+        return $this->storeManualIn($request);
+    }
+
+    public function getEngineeringDetail($id)
+    {
+        $detail = DB::table('stock_engs')->where('id', $id)->first();
+        return response()->json($detail);
     }
 }
