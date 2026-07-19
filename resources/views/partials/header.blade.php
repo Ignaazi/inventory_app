@@ -210,7 +210,7 @@
           <div class="max-h-64 overflow-y-auto">
              <div class="p-4 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 <p class="text-xs font-bold text-gray-800 dark:text-white">Engineering Stock Alert</p>
-                <p class="text-[10px] text-gray-500 mt-0.5">Stock below threshold (10 pcs remaining).</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Stock below threshold</p>
              </div>
           </div>
         </div>

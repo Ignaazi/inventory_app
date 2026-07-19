@@ -35,126 +35,150 @@
         </div>
     </div>
 
-    {{-- Container Master Table --}}
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-boxdark overflow-hidden">
+    {{-- PEMBUNGKUS UTAMA: Datatable 3 Style --}}
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
         
-        {{-- Search Input Section --}}
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
-            <div class="relative w-full max-w-md">
-                <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <form action="{{ url()->current() }}" method="GET">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
-                </form>
+        {{-- HEADER KONTROL (SHOW ENTRIES, LIVE SEARCH & EXPORT CSV) --}}
+        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                <span>Show</span>
+                <select class="rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm outline-none dark:border-gray-700 dark:bg-boxdark text-slate-700 dark:text-white font-bold">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                <span>entries</span>
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                {{-- LIVE SEARCH INPUT --}}
+                <div class="relative w-full sm:w-64">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <input type="text" id="tableSearch" placeholder="Search..." class="w-full rounded-lg border border-gray-200 bg-transparent py-1.5 pl-9 pr-4 text-sm outline-none focus:border-primary dark:border-gray-700 dark:bg-boxdark dark:text-white font-medium">
+                </div>
+
+                {{-- TOMBOL EXPORT CSV --}}
+                <button type="button" onclick="exportTableToCSV('users-data.csv')" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-gray-700 dark:bg-boxdark dark:text-white dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer">
+                    <span>Export CSV</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </button>
             </div>
         </div>
 
-        {{-- Table Main Body --}}
-        <div class="max-w-full overflow-x-auto scrollbar-hide">
-            <table class="w-full text-left border-collapse" id="userTable">
+        {{-- AREA TABEL UTAMA DENGAN JARA KELOM & BARIS DEKAT (COMPACT) --}}
+        <div class="max-w-full overflow-x-auto">
+            <table class="w-full table-auto text-center border-collapse border-b border-gray-200 dark:border-gray-800" id="userTable">
                 <thead>
-                    <tr class="text-[10px] font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-                        <th class="px-4 py-4 text-center w-16">NO</th>
-                        <th class="px-4 py-4 text-center w-24">Photo</th>
-                        <th class="px-6 py-4 text-center min-w-[220px]">Full Name</th>
-                        <th class="px-4 py-4 text-center w-40">NIK KARYAWAN</th>
-                        <th class="px-4 py-4 text-center w-44">System Role</th>
-                        <th class="px-6 py-4 text-center w-44">Action</th>
+                    <tr class="border-t border-b border-gray-200 dark:border-gray-800 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
+                        {{-- Checkbox Header --}}
+                        <th class="px-3 py-3 w-12 text-center">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </th>
+                        <th class="px-3 py-3 w-14 border-l border-gray-200 dark:border-gray-800">NO</th>
+                        <th class="px-3 py-3 w-20 border-l border-gray-200 dark:border-gray-800">Photo</th>
+                        <th class="px-5 py-3 min-w-[200px] border-l border-gray-200 dark:border-gray-800 text-left">Full Name</th>
+                        <th class="px-3 py-3 w-36 border-l border-gray-200 dark:border-gray-800">NIK KARYAWAN</th>
+                        <th class="px-3 py-3 w-40 border-l border-gray-200 dark:border-gray-800">System Role</th>
+                        <th class="px-5 py-3 w-40 border-l border-gray-200 dark:border-gray-800">Action</th>
                     </tr>
                 </thead>
-                <tbody class="text-xs font-semibold text-slate-900 dark:text-white divide-y divide-slate-50 dark:divide-slate-700">
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800 text-xs font-bold text-black dark:text-black">
                     @forelse($users as $index => $user)
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
-                        {{-- No Center --}}
-                        <td class="px-4 py-5 text-center text-slate-500 dark:text-slate-400 font-bold">
+                    <tr class="table-row-item hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors duration-150">
+                        {{-- Kotak Klik Checkbox per Baris --}}
+                        <td class="px-3 py-2.5 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </td>
+
+                        {{-- No --}}
+                        <td class="px-3 py-2.5 text-slate-400 font-medium border-l border-gray-200 dark:border-gray-800">
                             {{ method_exists($users, 'firstItem') ? ($users->firstItem() + $index) : ($index + 1) }}
                         </td>
                         
-                        {{-- Photo Center --}}
-                        <td class="px-4 py-3 text-center">
+                        {{-- Photo --}}
+                        <td class="px-3 py-2 border-l border-gray-200 dark:border-gray-800">
                             <div class="flex justify-center items-center">
-                                <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
                                     <img src="{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random' }}" class="w-full h-full object-cover">
                                 </div>
                             </div>
                         </td>
 
-                        {{-- Name Center --}}
-                        <td class="px-6 py-5 text-center font-bold text-slate-800 dark:text-white" title="{{ $user->name }}">
+                        {{-- Name --}}
+                        <td class="px-5 py-2.5 font-extrabold text-left border-l border-gray-200 dark:border-gray-800 search-name" title="{{ $user->name }}">
                             {{ $user->name }}
                         </td>
 
-                        {{-- NIM Center --}}
-                        <td class="px-4 py-5 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400 tracking-wide text-sm">
+                        {{-- NIK --}}
+                        <td class="px-3 py-2.5 font-mono font-bold tracking-wide text-sm border-l border-gray-200 dark:border-gray-800 search-nim">
                             {{ $user->nim }}
                         </td>
 
-                        {{-- Role Center --}}
-                        <td class="px-4 py-5 text-center">
+                        {{-- Role (Status Box Ukuran Diperbesar) --}}
+                        <td class="px-3 py-2.5 border-l border-gray-200 dark:border-gray-800 search-role">
                             <div class="flex justify-center items-center">
                                 @if($user->role === 'admin')
-                                    <span class="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 px-3 py-1 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+                                    <span class="bg-red-50 text-red-600 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/40 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider">
                                         ADMIN
                                     </span>
                                 @elseif($user->role === 'engineering')
-                                    <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+                                    <span class="bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/40 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider">
                                         ENGINEERING
                                     </span>
                                 @elseif($user->role === 'production')
-                                    <span class="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 px-3 py-1 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+                                    <span class="bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider">
                                         PRODUCTION
                                     </span>
                                 @elseif($user->role === 'costing')
-                                    <span class="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-3 py-1 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+                                    <span class="bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/40 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider">
                                         COSTING
                                     </span>
                                 @else
-                                    <span class="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
-                                        {{ $user->role }}
+                                    <span class="bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider">
+                                        {{ strtoupper($user->role) }}
                                     </span>
                                 @endif
                             </div>
                         </td>
                         
-                        {{-- Action Center --}}
-                        <td class="px-6 py-5 text-center">
+                        {{-- Action --}}
+                        <td class="px-5 py-2.5 border-l border-gray-200 dark:border-gray-800">
                             <div class="flex items-center justify-center gap-1.5">
-                                {{-- ACTION 1: PREVIEW (BLUE) --}}
                                 <button onclick="previewUser('{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random' }}', '{{ $user->name }}', '{{ strtoupper($user->role) }}', '{{ $user->nim }}')" 
                                     type="button"
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white transition-all hover:bg-blue-600 active:scale-90 shadow-sm" 
+                                    class="flex h-7 w-7 items-center justify-center rounded bg-blue-500 text-white transition-all hover:bg-blue-600 active:scale-90 shadow-sm" 
                                     title="Preview Account">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.3">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.3">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                 </button>
             
-                                {{-- ACTION 2: EDIT (YELLOW) --}}
                                 <button onclick="openEditModal({{ $user }})" 
                                     type="button"
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
+                                    class="flex h-7 w-7 items-center justify-center rounded bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
                                     title="Edit User">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                         <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </button>
                         
-                                {{-- ACTION 3: DELETE / ACTIVE BADGE REPLACEMENT --}}
                                 @if(auth()->id() !== $user->id)
                                 <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline form-delete">
                                     @csrf @method('DELETE')
-                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete" title="Delete User">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <button type="button" class="flex h-7 w-7 items-center justify-center rounded bg-red-500 text-white btn-delete" title="Delete User">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </button>
                                 </form>
                                 @else
-                                {{-- UPDATE: Button Kotak Indikator Logo Active Ijo Terang --}}
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 h-8 border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900 rounded-lg shadow-sm text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] tracking-wider uppercase select-none">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 h-7 border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900 rounded shadow-sm text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] tracking-wide uppercase select-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                     Active
                                 </div>
                                 @endif
@@ -162,15 +186,15 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="py-12 text-center text-slate-400 italic font-medium">No account entries found.</td></tr>
+                    <tr><td colspan="7" class="py-12 text-center text-slate-400 italic font-medium">No account entries found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination Block Footer --}}
-        <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
-            <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        {{-- FOOTER PAGINATION --}}
+        <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-transparent px-5 py-4">
+            <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
                 @if(method_exists($users, 'firstItem'))
                     Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ $users->total() }} Entries
                 @else
@@ -279,13 +303,64 @@
 </div>
 
 <script>
+    // FUNGSI LIVE SEARCH TANPA RELOAD
+    document.getElementById('tableSearch').addEventListener('keyup', function() {
+        let value = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.table-row-item');
+        
+        rows.forEach(function(row) {
+            let name = row.querySelector('.search-name').textContent.toLowerCase();
+            let nim = row.querySelector('.search-nim').textContent.toLowerCase();
+            let role = row.querySelector('.search-role').textContent.toLowerCase();
+            
+            if (name.includes(value) || nim.includes(value) || role.includes(value)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // FUNGSI CHECKBOX SELECT ALL
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        let checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // FUNGSI EXPORT DATA KE CSV
+    function exportTableToCSV(filename) {
+        let csv = [];
+        let rows = document.querySelectorAll("#userTable tr");
+        
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            
+            // Mulai dari indeks 1 untuk skip kolom checkbox paling kiri
+            for (let j = 1; j < cols.length; j++) {
+                // Bersihkan teks dari whitespace berlebih
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s+)/gm, " ");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
+        }
+
+        // Download link
+        let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    }
+
     // Preview Account SwAl Intercept Style
     function previewUser(imageUrl, name, role, nim) {
         Swal.fire({
             title: name,
-            html: `<div class="text-center mt-3 space-y-1 text-sm font-nunito font-semibold">
-                    <p class="text-slate-500">NIM/Username: <span class="font-mono font-bold text-slate-800">${nim}</span></p>
-                    <p class="text-slate-500">Access Group: <span class="font-bold text-indigo-600">${role}</span></p>
+            html: `<div class="text-center mt-3 space-y-1 text-sm font-nunito font-semibold text-black">
+                    <p class="text-slate-600">NIK/Username: <span class="font-mono font-bold text-black">${nim}</span></p>
+                    <p class="text-slate-600">Access Group: <span class="font-bold text-indigo-600">${role}</span></p>
                    </div>`,
             imageUrl: imageUrl,
             imageWidth: 150,
@@ -296,7 +371,7 @@
             confirmButtonColor: '#3b82f6',
             confirmButtonText: 'Close Preview',
             customClass: {
-                popup: 'font-nunito',
+                popup: 'font-nunito text-black',
                 image: 'rounded-full border-2 border-indigo-500 object-cover shadow-sm'
             }
         });
@@ -344,7 +419,7 @@
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                customClass: { popup: 'font-nunito' }
+                customClass: { popup: 'font-nunito text-black' }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -361,7 +436,7 @@
             text: "{{ session('success') }}",
             timer: 3000,
             showConfirmButton: false,
-            customClass: { popup: 'font-nunito' }
+            customClass: { popup: 'font-nunito text-black' }
         });
     @endif
 
@@ -370,23 +445,28 @@
             icon: 'error',
             title: 'Oops...',
             text: "{{ $errors->first() }}",
-            customClass: { popup: 'font-nunito' }
+            customClass: { popup: 'font-nunito text-black' }
         });
     @endif
 </script>
 
 <style>
     .font-nunito { font-family: 'Nunito', sans-serif !important; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
     .swal2-container { z-index: 10000 !important; }
     
-    /* Perfect Center Table Adjustment */
+    /* Paksa semua teks di tabel menjadi warna hitam pekat Nunito */
     #userTable th, #userTable td {
+        color: #000000 !important;
         vertical-align: middle !important;
-        text-align: center !important;
     }
-    #userTable th:nth-child(3), #userTable td:nth-child(3) {
-        text-align: center !important; /* Memaksa kolom nama ikut center sempurna */
+    #userTable th {
+        text-align: center !important;
+    }a
+    #userTable td:nth-child(4) {
+        text-align: left !important; /* Nama tetap kiri agar rapi */
+    }
+    #userTable td:not(:nth-child(4)) {
+        text-align: center !important; /* Sisanya center */
     }
 </style>
 @endsection
