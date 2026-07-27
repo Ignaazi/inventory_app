@@ -4,41 +4,42 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Engineering\EngMaterialReceiving;
 
 class StockInEng extends Model
 {
     use HasFactory;
 
-    // 1. Tentukan primary key sesuai migration kamu
-    protected $primaryKey = 'inproduction_id';
+    // Arahkan ke nama tabel dari migration terbaru kamu
+    protected $table = 'stock_in_logs';
 
-    // 2. 🌟 PAKSA MODEL UNTUK MENGGUNAKAN TABEL YANG BENAR
-    protected $table = 'inProd_logs';
+    // Primary key menggunakan standar bawaan blueprint Laravel
+    protected $primaryKey = 'id';
 
-    // 3. Daftarkan semua kolom agar diizinkan Mass Assignment oleh Laravel
+    // Seluruh kolom diizinkan untuk diisi secara Mass Assignment
     protected $fillable = [
+        'stock_eng_id',
+        'eng_material_receiving_id',
         'nik',
-        'line_id',
-        'no_nozzle',
-        'transaction_out_id',
-        'request_no',
-        'barcode_id',
-        'stock_prod_id',
-        'qty_in',
+        'qty_added',
         'status',
         'remark',
         'comment'
     ];
 
-    // Relasi ke Stock utama (sesuaikan nama class model kamu jika berbeda)
+    /**
+     * Relasi ke data Master Stok Gudang Utama (stock_engs)
+     */
     public function stockEng()
     {
-        return $this->belongsTo(StockEng::class, 'stock_prod_id', 'id');
+        return $this->belongsTo(StockEng::class, 'stock_eng_id');
     }
 
-    // Relasi ke PR Costing / Receiving jika dibutuhkan
+    /**
+     * Relasi ke data Dokumen Costing / PR (eng_material_receivings)
+     */
     public function engMaterialReceiving()
     {
-        return $this->belongsTo(\App\Models\Engineering\EngMaterialReceiving::class, 'eng_material_receiving_id', 'id');
+        return $this->belongsTo(EngMaterialReceiving::class, 'eng_material_receiving_id');
     }
 }

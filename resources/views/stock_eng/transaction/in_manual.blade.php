@@ -11,7 +11,7 @@
             </div>
             
             <a href="{{ route('eng.in') }}" 
-               class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all">
+               class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 uppercase tracking-wider no-underline">
                 <i class="fas fa-arrow-left text-xs"></i> Kembali
             </a>
         </div>
@@ -33,13 +33,13 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 
-                <!-- DROPDOWN PR (Simetris & Seimbang) -->
+                <!-- DROPDOWN PR COSTING -->
                 <div class="flex flex-col gap-2 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
                     <label class="text-xs font-black text-slate-900 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fas fa-file-invoice text-indigo-500"></i> Continue From Costing Material Received? <span class="text-[10px] font-normal text-gray-400">(1x Pakai)</span>
                     </label>
                     <div class="relative mt-1">
-                        <select name="eng_material_receiving_id" id="select-costing-pr" class="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none">
+                        <select name="eng_material_receiving_id" id="select-costing-pr" class="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none text-black dark:text-white">
                             <option value="">-- Murni Manual / Pilih PR Dokumen Jika Ada --</option>
                             @foreach($costingReceivings as $pr)
                                 <option value="{{ $pr->id }}" data-qty="{{ $pr->qty_received }}" data-note="{{ $pr->costing_notes }}">
@@ -50,11 +50,11 @@
                     </div>
                 </div>
 
-                <!-- 🌟 DROPDOWN BERTINGKAT 1: USER HANYA BOLEH MILIH RAK -->
+                <!-- SELECT RAK -->
                 <div class="flex flex-col gap-2">
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300">1. Pilih Lokasi RAK</label>
                     <div class="relative">
-                        <select id="select-rak" required class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none">
+                        <select id="select-rak" required class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none text-black dark:text-white">
                             <option value="">-- Pilih RAK --</option>
                             @foreach($listRak as $rak)
                                 <option value="{{ $rak }}">RAK: {{ $rak }}</option>
@@ -63,11 +63,11 @@
                     </div>
                 </div>
 
-                <!-- 🌟 DROPDOWN BERTINGKAT 2: NOZZLE IKUT DAN TERFILTER SESUAI RAKNYA -->
+                <!-- SELECT NOZZLE / SPAREPART -->
                 <div class="flex flex-col gap-2">
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300">2. Pilih Nozzle / Sparepart</label>
                     <div class="relative">
-                        <select name="stock_eng_id" id="select-nozzle" required disabled class="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none cursor-not-allowed">
+                        <select name="stock_eng_id" id="select-nozzle" required disabled class="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium appearance-none cursor-not-allowed text-black dark:text-white">
                             <option value="">-- Pilih RAK Dahulu --</option>
                         </select>
                     </div>
@@ -84,21 +84,23 @@
                     <input type="text" id="auto_part_number" readonly placeholder="Auto-fill" class="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 cursor-not-allowed">
                 </div>
 
+                <!-- INPUT QUANTITY -->
                 <div class="flex flex-col gap-2">
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Amount Of Incoming Stock</label>
-                    <input type="number" name="qty_in" id="qty_in" required min="1" placeholder="Enter The Quantity" class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium">
+                    <input type="number" name="qty_in" id="qty_in" required min="1" placeholder="Enter The Quantity" class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium text-black dark:text-white">
                 </div>
 
+                <!-- REMARK -->
                 <div class="flex flex-col gap-2 md:col-span-2">
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Remark</label>
-                    <textarea name="remark" id="remark" rows="3" placeholder="Receipt Info (optional)" class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium resize-none"></textarea>
+                    <textarea name="remark" id="remark" rows="3" placeholder="Receipt Info (optional)" class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium resize-none text-black dark:text-white"></textarea>
                 </div>
 
             </div>
 
             <div class="mt-8 pt-5 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                <button type="submit" class="w-full md:w-auto bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md uppercase tracking-wider">
-                    Submit
+                <button type="submit" class="w-full md:w-auto bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md hover:opacity-90 transition-all active:scale-95 uppercase tracking-wider cursor-pointer">
+                    Submit Data
                 </button>
             </div>
         </form>
@@ -111,7 +113,7 @@
         <div class="stock-item" 
              data-id="{{ $item->id }}" 
              data-rak="{{ $item->rak->nama_rak ?? '' }}" 
-             data-nozzle="{{ $item->sparepart->name ?? 'N/A' }}" 
+             data-nozzle="{{ $item->sparepart->category ?? 'SPAREPART' }} - {{ $item->sparepart->sparepart_id ?? 'N/A' }}" 
              data-sap="{{ $item->sparepart->sap_code ?? '-' }}" 
              data-pn="{{ $item->sparepart->part_number ?? '-' }}"
              data-qty="{{ $item->qty ?? 0 }}">
@@ -129,7 +131,7 @@
         const remarkField = document.getElementById('remark');
         const costingSelect = document.getElementById('select-costing-pr');
 
-        // Load data stock
+        // Load data stock dari DOM jembatan
         const stockData = Array.from(document.querySelectorAll('.stock-item')).map(el => ({
             id: el.getAttribute('data-id'),
             rak: el.getAttribute('data-rak'),
@@ -155,7 +157,7 @@
             filtered.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.id;
-                opt.textContent = `${item.nozzle} (Stok: ${item.qty})`;
+                opt.textContent = `${item.nozzle} (Stok Saat Ini: ${item.qty})`;
                 selectNozzle.appendChild(opt);
             });
 
@@ -174,7 +176,7 @@
             }
         });
 
-        // 3. Autofill dari PR Costing
+        // 3. Autofill dari PR Costing saat dokumen dipilih
         costingSelect.addEventListener('change', function () {
             const opt = this.options[this.selectedIndex];
             if (opt && opt.value !== "") {
@@ -182,7 +184,8 @@
                 const note = opt.getAttribute('data-note');
                 remarkField.value = note ? "Continued from Costing PR note: " + note : "Continued from Costing PR transaction.";
             } else {
-                qtyInField.value = ""; remarkField.value = "";
+                qtyInField.value = ""; 
+                remarkField.value = "";
             }
         });
     });
