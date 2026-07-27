@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // 👈 1. INI TAMBAHAN UTAMA (Import Sanctum)
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable; // 👈 2. INI TAMBAHAN UTAMA (Gunakan HasApiTokens di sini)
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -20,10 +19,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'nim', 
+        'nik',
         'password',
         'role', 
-        'profile_photo_path', // ganti image jadi ini
+        'profile_photo_path',
+        'signature_path',
     ];
 
     /**
@@ -44,7 +44,6 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            // email_verified_at dihapus karena kita tidak menggunakan email lagi
             'password' => 'hashed',
         ];
     }

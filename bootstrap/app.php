@@ -28,9 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(__DIR__.'/../routes/engineering/eng_list_material_received.php');
 
-            // 5. Route Master Data Line Production (Sesuai Struktur Folder Baru)
+            // 5. Route Master Data Line Production (Disamakan jadi huruf kecil 'production')
             Route::middleware('web')
-                ->group(__DIR__.'/../routes/Production/list_line_production.php');
+                ->group(__DIR__.'/../routes/production/list_line_production.php');
 
             // 6. Route Core Stock Management Production 
             Route::middleware('web')

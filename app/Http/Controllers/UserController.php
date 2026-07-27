@@ -17,45 +17,74 @@ class UserController extends Controller
         return view('users.index', compact('users'));
     }
 
+    /**
+     * 🛠️ METHOD BARU: Menampilkan halaman add_users terpisah
+     */
+    public function create()
+    {
+        // Mengarah ke file resources/views/users/add_users.blade.php
+        return view('users.add_users');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'nim'      => 'required|string|unique:users,nim', 
-            'password' => 'required|min:6',
-            'role'     => 'required|in:admin,engineering,production,costing',
-            'image'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
+            'name'      => 'required|string|max:255',
+            'nik'       => 'required|string|unique:users,nik',
+            'password'  => 'required|min:6',
+            'role'      => 'required|in:admin,engineering,production,costing',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
+            'signature' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $path = null;
+        // Proses upload Foto Profil
+        $profilePath = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('profile-users', 'public');
+            $profilePath = $request->file('image')->store('profile-users', 'public');
+        }
+
+        // Proses upload Foto Tanda Tangan
+        $signaturePath = null;
+        if ($request->hasFile('signature')) {
+            $signaturePath = $request->file('signature')->store('signatures', 'public');
         }
 
         User::create([
             'name'               => $request->name,
-            'nim'                => $request->nim,
+            'nik'                => $request->nik,
             'password'           => Hash::make($request->password),
             'role'               => $request->role,
-            'profile_photo_path' => $path, // Sesuaikan dengan nama kolom DB lo
+            'profile_photo_path' => $profilePath,
+            'signature_path'     => $signaturePath,
         ]);
 
-        return back()->with('success', 'User berhasil ditambahkan!');
+        // 🛠️ Diubah dari back() ke redirect route index agar langsung kembali ke tabel utama
+        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan!');
+    }
+
+    /**
+     * 🛠️ METHOD EDIT: Menampilkan halaman edit terpisah
+     */
+    public function edit($id)
+    {
+        $user = User::findOrFail($id);
+        return view('users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'nim'      => ['required', 'string', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|min:6',
-            'role'     => 'required|in:admin,engineering,production,costing',
-            'image'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'name'      => 'required|string|max:255',
+            'nik'       => ['required', 'string', Rule::unique('users')->ignore($user->id)],
+            'password'  => 'nullable|min:6',
+            'role'      => 'required|in:admin,engineering,production,costing',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'signature' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
         ]);
 
         $data = [
             'name' => $request->name,
-            'nim'  => $request->nim,
+            'nik'  => $request->nik, 
             'role' => $request->role,
         ];
 
@@ -64,18 +93,22 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            // Hapus foto lama jika ada
             if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
-            
-            // Simpan foto baru ke kolom profile_photo_path
             $data['profile_photo_path'] = $request->file('image')->store('profile-users', 'public');
+        }
+        
+        if ($request->hasFile('signature')) {
+            if ($user->signature_path && Storage::disk('public')->exists($user->signature_path)) {
+                Storage::disk('public')->delete($user->signature_path);
+            }
+            $data['signature_path'] = $request->file('signature')->store('signatures', 'public');
         }
 
         $user->update($data);
 
-        return back()->with('success', 'User berhasil diperbarui!');
+        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui!');
     }
 
     public function destroy(User $user)
@@ -83,9 +116,11 @@ class UserController extends Controller
         if (Auth::id() === $user->id) {
             return back()->with('error', 'Anda tidak bisa menghapus akun sendiri!');
         }
-
         if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
             Storage::disk('public')->delete($user->profile_photo_path);
+        }
+        if ($user->signature_path && Storage::disk('public')->exists($user->signature_path)) {
+            Storage::disk('public')->delete($user->signature_path);
         }
 
         $user->delete();

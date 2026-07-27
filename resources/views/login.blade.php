@@ -126,9 +126,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                         </div>
-                        <input type="text" name="nim" id="loginNim" required value="{{ old('nim') }}"
+                        {{-- 👈 Mengubah name, id, value old, dan placeholder agar merujuk ke 'nik' --}}
+                        <input type="text" name="nik" id="loginNik" required value="{{ old('nik') }}"
                             class="w-full p-3.5 bg-[#EBF2FA] text-slate-900 text-sm font-bold outline-none placeholder-slate-400 rounded-r-xl shadow-inner disabled:opacity-40" 
-                            placeholder="123456" {{ session('error_type') === 'lockout' ? 'disabled' : '' }}>
+                            placeholder="Input NIK Anda" {{ session('error_type') === 'lockout' ? 'disabled' : '' }}>
                     </div>
                 </div>
 

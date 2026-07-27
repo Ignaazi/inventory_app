@@ -12,40 +12,43 @@ class AuthController extends Controller
     public function loginMobile(Request $request)
     {
         $request->validate([
-            'nim'      => 'required',
+            'nik'      => 'required',
             'password' => 'required',
         ]);
+
         $user = DB::table('users')
-                    ->where('nim', $request->nim)
+                    ->where('nik', $request->nik)
                     ->first();
+
         if ($user && $user->is_active == 1) {
-        if (Hash::check($request->password, $user->password)) {
+            if (Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Selamat datang kembali, ' . $user->name . '!',
                     'user' => [
                         'id'   => $user->id,
                         'name' => $user->name,
-                        'nim'  => $user->nim,
+                        'nik'  => $user->nik,
                         'role' => $user->role,
                     ]
                 ], 200);
-
             }
         }
+
         return response()->json([
             'status' => 'failed',
-            'message' => 'NIM atau Password salah, Bro!'
+            'message' => 'NIK atau Password salah, Bro!'
         ], 401);
     }
+
     public function getAllUsers()
     {
         try {
-
             $users = DB::table('users')
-                        ->select('id', 'name', 'nim', 'role')
+                        ->select('id', 'name', 'nik', 'role')
                         ->orderBy('name', 'asc')
                         ->get();
+
             return response()->json($users, 200);
 
         } catch (\Exception $e) {
