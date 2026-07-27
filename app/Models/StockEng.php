@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockEng extends Model
 {
     use HasFactory;
+
     protected $table = 'stock_engs';
+
     protected $fillable = [
         'rak_id',
         'sparepart_id', 
@@ -19,11 +22,15 @@ class StockEng extends Model
     /**
      * Relasi balik ke tabel Master Sparepart (ListSparepartEng)
      */
-    public function sparepart()
+    public function sparepart(): BelongsTo
     {
-        return $this->belongsTo(ListSparepartEng::class, 'sparepart_id');
+        return $this->belongsTo(ListSparepartEng::class, 'sparepart_id', 'id');
     }
-    public function rak()
+
+    /**
+     * Relasi ke master data Rak
+     */
+    public function rak(): BelongsTo
     {
         return $this->belongsTo(Rak::class, 'rak_id');
     }

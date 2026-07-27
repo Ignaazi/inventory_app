@@ -54,13 +54,16 @@ Route::middleware('auth')->group(function () {
     // --- GRUP ENGINEERING ---
     Route::middleware('role:admin,engineering')->group(function () {
         Route::get('/eng/overview', [EngineeringOverviewController::class, 'index'])->name('engineering.overview');
-        Route::get('/eng/list-sparepart', [ListSparepartEngController::class, 'index'])->name('eng.list');
         
         Route::prefix('eng')->group(function () {
             Route::get('/list-sparepart/export', [StockEngineeringController::class, 'export'])->name('list-sparepart.export');
             Route::get('/out/manual', [StockOutEngineeringController::class, 'manual'])->name('eng.out.manual');
             Route::get('/out/scan', [StockOutEngineeringController::class, 'scan'])->name('eng.out.scan');
             Route::post('/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
+            
+            // UPDATE: Cukup gunakan Resource Route ini saja.
+            // Secara otomatis menyediakan rute URL /eng/list-sparepart dan /eng/list-sparepart/create 
+            // dengan name route: list-sparepart.index & list-sparepart.create
             Route::resource('list-sparepart', ListSparepartEngController::class);
         });
 
@@ -139,7 +142,7 @@ Route::middleware('auth')->group(function () {
 
             // --- MODUL STOCK OUT ---
             Route::get('/out', [OutProdController::class, 'stockOut'])->name('out');
-            Route::get('/out/manual', [OutProdController::class, 'manualOut'])->name('out.manual');
+            Route::get('/out/manual', [OutOutProdController::class ?? OutProdController::class, 'manualOut'])->name('out.manual');
             Route::post('/out/manual/store', [OutProdController::class, 'storeManualOut'])->name('out.manual.store');
             Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); 
         });

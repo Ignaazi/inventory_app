@@ -7,7 +7,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div class="font-nunito mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-slate-50/30 dark:bg-slate-900/50 min-h-screen">
+<style>
+    /* Custom Styling SweetAlert2 agar harmonis dengan tema aplikasi */
+    .swal2-popup {
+        border-radius: 1rem !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    .dark .swal2-popup {
+        background-color: #0f172a !important; /* slate-900 */
+        border: 1px solid #1e293b !important; /* slate-850 */
+    }
+    .dark .swal2-title, .dark .swal2-html-container {
+        color: #f8fafc !important; /* slate-50 */
+    }
+</style>
+
+<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300 text-black">
 
     @php
     // Patokan data dari database untuk sistem alert status banner
@@ -48,101 +63,106 @@
     @endphp
 
     {{-- Banner Status Real-time --}}
-    <div class="mb-6 flex items-center gap-3 rounded-2xl border {{ $theme['border'] }} {{ $theme['bg'] }} px-5 py-3 shadow-sm transition-all">
-        <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $theme['dot'] }} animate-pulse"></span>
-        <p class="text-sm font-semibold {{ $theme['text'] }}">
-            <span class="uppercase font-extrabold mr-1">{{ $theme['status'] }}:</span> 
+    <div class="mb-4 flex items-center gap-2 rounded-xl border {{ $theme['border'] }} {{ $theme['bg'] }} px-3 py-2.5 md:px-4 md:py-3 shadow-sm transition-all">
+        <span class="h-2 w-2 shrink-0 rounded-full {{ $theme['dot'] }} animate-pulse"></span>
+        <p class="text-[12px] md:text-[14px] font-bold {{ $theme['text'] }} font-nunito leading-tight">
+            <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">{{ $theme['status'] }}:</span> 
             {{ $theme['msg'] }}
         </p>
     </div>
 
     {{-- Header & Action Buttons --}}
-    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
-            <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Nozzle Inventory</h2>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Inventory Monitoring System</p>
+            <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight">Nozzle Inventory</h2>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Inventory Monitoring System</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('stock.eng.export') }}" class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all active:scale-95 tracking-wide">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {{-- Button CSV Export - HIJAU GRADIENT --}}
+            <a href="{{ route('stock.eng.export') }}" class="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide text-center uppercase no-underline">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                 </svg>
-                CSV EXPORT
+                Export CSV
             </a>
             
-            <button onclick="openRackModal()" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 transition-all active:scale-95 tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            {{-- Button Add Rak - ORANGE GRADIENT --}}
+            <button onclick="openRackModal()" class="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
-                ADD RAK
-            </button>
-
-            <button onclick="openDeleteRackModal()" class="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-all active:scale-95 tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                DELETE RAK
+                Add Rak
             </button>
             
-            <button onclick="openModal('add')" class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all active:scale-95 tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            {{-- Button Add Nozzle - BIRU GRADIENT --}}
+            <button onclick="openModal('add')" class="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                 </svg>
-                ADD NOZZLE
+                Add Nozzle
             </button>
         </div>
     </div>
 
-    {{-- Main Container Card --}}
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-boxdark overflow-hidden">
+    {{-- PEMBUNGKUS UTAMA TABEL (Sesuai Master Data) --}}
+    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
         
-        {{-- Search & Tab Navigation Section --}}
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700">
-            <div class="relative mb-6 w-full max-w-md">
-                <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <input type="text" id="searchInput" onkeyup="applyFilterAndSearch()" placeholder="Search data..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 font-medium">
+        {{-- HEADER KONTROL & FILTER TAB --}}
+        <div class="px-4 border-b border-slate-100 dark:border-slate-800 font-nunito">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                {{-- LIVE SEARCH INPUT --}}
+                <div class="relative w-full sm:w-60">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <input type="text" id="searchInput" onkeyup="applyFilterAndSearch()" placeholder="Search data..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-black dark:text-white font-bold font-nunito">
+                </div>
             </div>
 
-            <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-slate-100 dark:border-slate-700 pb-1" id="rackTabs">
-                <button onclick="filterRak(this, 'all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm whitespace-nowrap">
+            {{-- TAB RAK NAVIGASI DENGAN ABU-ABU LEBIH JELAS/KONTRAS --}}
+            <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1" id="rackTabs">
+                <button onclick="filterRak(this, 'all')" class="tab-btn active px-4 py-2 rounded-t-lg text-xs font-black transition-all bg-blue-600 text-white shadow-sm whitespace-nowrap uppercase tracking-wider">
                     All Storage
                 </button>
                 @foreach($raks as $rak)
-                    <button onclick="filterRak(this, '{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 whitespace-nowrap">
+                    <button onclick="filterRak(this, '{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-black text-slate-600 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 border-t border-x border-slate-300 dark:border-slate-700 whitespace-nowrap uppercase tracking-wider transition-all">
                         {{ $rak->nama_rak }}
                     </button>
                 @endforeach
             </div>
         </div>
 
-        {{-- Table Content --}}
-        <div class="max-w-full overflow-x-auto scrollbar-hide">
-            <table class="w-full text-left border-collapse" id="nozzleTable">
+        {{-- AREA SCROLL HORIZONTAL & DESAIN MATRIKS TABEL SAMAKAN TEMA --}}
+        <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1200px]" id="nozzleTable">
                 <thead>
-                    <tr class="text-[10px] font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-                        <th class="px-4 py-4 text-center w-12">NO</th>
-                        <th class="px-4 py-4 text-center">No Rak</th>
-                        <th class="px-4 py-4 text-center">Status</th>
-                        <th class="px-4 py-4 text-center">No Nozzle</th>
-                        <th class="px-4 py-4 text-center">Part No</th>
-                        <th class="px-4 py-4 text-center">Sap Code</th>
-                        <th class="px-4 py-4 text-center">Category</th>
-                        <th class="px-4 py-4 text-center w-16">Qty</th>
-                        <th class="px-4 py-4 text-center w-24">Min Stock</th>
-                        <th class="px-4 py-4 text-center w-28">Create At</th>
-                        <th class="px-4 py-4 text-center w-28">Update At</th>
-                        <th class="px-6 py-4 text-center w-28">Action</th>
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
+                        <th class="px-2 py-3.5 w-[60px] text-center">NO</th>
+                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">No Rak</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">Status</th>
+                        <th class="px-4 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[200px]">No Nozzle (ID)</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Part No</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Sap Code</th>
+                        <th class="px-2 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Category</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">Qty</th>
+                        <th class="px-2 py-3.5 w-[95px] border-l border-blue-500 dark:border-blue-900/50">Min Stock</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Create At</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Update At</th>
+                        <th class="px-4 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Action</th>
                     </tr>
                 </thead>
-                <tbody class="text-xs font-semibold text-slate-900 dark:text-white divide-y divide-slate-50 dark:divide-slate-700">
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent">
                     @forelse($stocks as $index => $item)
-                    <tr class="row-nozzle hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all" data-rak="{{ $item->rak->nama_rak ?? '' }}">
-                        <td class="px-4 py-4 text-center text-slate-500 font-bold">{{ $stocks->firstItem() + $index }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{{ $item->rak->nama_rak ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center">
+                    <tr class="row-nozzle hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent" data-rak="{{ $item->rak->nama_rak ?? '' }}">
+                        <td class="px-2 py-3.5 text-center text-slate-500">
+                            {{ $stocks->firstItem() + $index }}
+                        </td>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap">
+                            {{ $item->rak->nama_rak ?? '-' }}
+                        </td>
+                        
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             @php
                                 $statusColor = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'; 
                                 if($item->qty <= 0) {
@@ -155,44 +175,49 @@
                                 <div class="h-2.5 w-2.5 rounded-full {{ $statusColor }}"></div>
                             </div>
                         </td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-800 dark:text-white">{{ $item->sparepart->name ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-slate-600 dark:text-slate-400">{{ $item->sparepart->part_number ?? '-' }}</td>
-                        <td class="px-4 py-4 text-center font-bold font-mono tracking-wide text-indigo-600 dark:text-indigo-400">{{ $item->sparepart->sap_code ?? '-' }}</td>
                         
-                        {{-- Menampilkan category dari database dengan fallback jika data lama kosong --}}
-                        <td class="px-4 py-4 text-center">
-                            <span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-extrabold text-[10px] uppercase">
-                                {{ $item->category ?? ($item->sparepart->category ?? '-') }}
-                            </span>
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal">
+                            {{ $item->sparepart->sparepart_id ?? '-' }}
                         </td>
-                        <td class="px-4 py-4 text-center font-extrabold text-slate-900 dark:text-white">{{ $item->qty }}</td>
-                        <td class="px-4 py-4 text-center font-extrabold text-slate-500 dark:text-slate-400">{{ $item->min_stock }}</td>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono tracking-wide whitespace-nowrap">
+                            {{ $item->sparepart->part_number ?? '-' }}
+                        </td>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-blue-600 dark:text-blue-400 font-extrabold whitespace-nowrap">
+                            {{ $item->sparepart->sap_code ?? '-' }}
+                        </td>
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
+                            <div class="flex justify-center items-center">
+                                <span class="bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
+                                    {{ $item->category ?? ($item->sparepart->category ?? '-') }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold text-[14px] whitespace-nowrap">{{ $item->qty }}</td>
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-slate-500 whitespace-nowrap">{{ $item->min_stock }}</td>
                         
-                        <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
-                            {{ $item->created_at->format('d/m/y') }}
-                            <br><span class="text-[9px] text-slate-400 font-medium">{{ $item->created_at->format('H:i') }} WIB</span>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
+                            {{ $item->created_at ? $item->created_at->format('d/m/Y H:i') : '-' }}
                         </td>
-                        <td class="px-4 py-4 whitespace-nowrap font-bold text-[11px] text-slate-600 dark:text-slate-300 leading-normal text-center">
-                            {{ $item->updated_at->format('d/m/y') }}
-                            <br><span class="text-[9px] text-slate-400 font-medium">{{ $item->updated_at->format('H:i') }} WIB</span>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
+                            {{ $item->updated_at ? $item->updated_at->format('d/m/Y H:i') : '-' }}
                         </td>
                         
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
+                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800">
+                            <div class="flex items-center justify-center gap-1.5 w-full">
                                 <button type="button" 
                                     data-item="{{ json_encode($item) }}"
                                     onclick="openModal('edit', this)" 
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400 text-white transition-all hover:bg-yellow-500 active:scale-90 shadow-sm" 
+                                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-yellow-400 text-white hover:bg-yellow-500 active:scale-90 shadow-sm transition-all" 
                                     title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                         <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </button>
                         
-                                <form action="{{ route('stock.eng.destroy', $item->id) }}" method="POST" class="inline form-delete">
+                                <form action="{{ route('stock.eng.destroy', $item->id) }}" method="POST" class="inline form-delete shrink-0">
                                     @csrf @method('DELETE')
-                                    <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white btn-delete" title="Delete">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <button type="button" class="flex h-7 w-7 items-center justify-center rounded bg-red-500 text-white btn-delete hover:bg-red-600 active:scale-90 transition-all" title="Delete">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </button>
@@ -201,38 +226,39 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="12" class="py-12 text-center text-slate-400 italic font-semibold">Data not found.</td></tr>
+                    <tr><td colspan="12" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination footer --}}
-        <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
-            <p class="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        {{-- FOOTER PAGINATION RESPONSIF --}}
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
+            <p class="text-[11px] font-black text-black dark:text-slate-400 tracking-wide uppercase text-center sm:text-left">
                 Showing {{ $stocks->firstItem() }} to {{ $stocks->lastItem() }} of {{ $stocks->total() }} Entries
             </p>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-center gap-1.5 text-xs text-black dark:text-white w-full sm:w-auto">
                 {{ $stocks->links() }}
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL NOZZLE (WITH AUTOFILL VIA PART NUMBER DROPDOWN) --}}
+{{-- MODAL NOZZLE (EDIT & ADD MODE) --}}
 <div id="modalNozzle" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 id="modalTitle" class="text-lg font-bold text-slate-800 dark:text-white">Add Nozzle</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 text-black transform scale-100 transition-all">
+        {{-- HEADER MODAL: UBAH JADI BIRU (bg-blue-600) DAN TEKS PUTIH --}}
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-blue-600 text-white">
+            <h3 id="modalTitle" class="text-lg font-extrabold tracking-tight text-white">Add Nozzle</h3>
+            <button onclick="closeModal()" class="text-white/80 hover:text-white transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
-        <form id="nozzleForm" method="POST" class="p-6">
+        <form id="nozzleForm" method="POST" class="p-6 space-y-4">
             @csrf
             <div id="methodField"></div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Pilih Rak</label>
-                    <select name="rak_id" id="rak_id" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-semibold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Pilih Rak</label>
+                    <select name="rak_id" id="rak_id" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-semibold" required>
                         <option value="">-- Pilih Rak --</option>
                         @foreach($raks as $rak)
                             <option value="{{ $rak->id }}">{{ $rak->nama_rak }}</option>
@@ -240,14 +266,13 @@
                     </select>
                 </div>
                 
-                {{-- DROP-DOWN UTAMA: Pilihan Part Number --}}
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Part No (Pilih Disini)</label>
-                    <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-mono font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Part No (Pilih Disini)</label>
+                    <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-mono font-bold" required>
                         <option value="">-- Pilih Part Number --</option>
                         @foreach($ListSparepartEng as $sp)
-                            <option value="{{ $sp->id }}" 
-                                    data-name="{{ $sp->name ?? '' }}" 
+                            <option value="{{ $sp->sparepart_id }}" 
+                                    data-name="{{ $sp->sparepart_id ?? '' }}" 
                                     data-sap="{{ $sp->sap_code ?? '' }}"
                                     data-category="{{ $sp->category ?? '' }}">
                                 {{ $sp->part_number ?? 'No Part Num' }}
@@ -256,93 +281,93 @@
                     </select>
                 </div>
 
-                {{-- INPUT TEXT FIELD: Otomatis terisi & Readonly --}}
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">No Nozzle</label>
-                    <input type="text" id="no_nozzle" class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-bold" placeholder="Terisi Otomatis..." readonly>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">No Nozzle</label>
+                    <input type="text" id="no_nozzle" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Sap Code</label>
-                    <input type="text" id="sap_code" class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-mono font-bold" placeholder="Terisi Otomatis..." readonly>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Sap Code</label>
+                    <input type="text" id="sap_code" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-mono font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Category</label>
-                    {{-- 🌟 FIX: Pastikan atribut name="category" terpasang agar ikut terkirim ke backend Laravel saat disave --}}
-                    <input type="text" name="category" id="category" placeholder="Terisi Otomatis..." class="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none dark:text-white font-bold" readonly>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Category</label>
+                    <input type="text" name="category" id="category" placeholder="Terisi Otomatis..." class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-bold" readonly>
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Qty</label>
-                    <input type="number" name="qty" id="qty" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Qty</label>
+                    <input type="number" name="qty" id="qty" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Min Stock</label>
-                    <input type="number" name="min_stock" id="min_stock" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Min Stock</label>
+                    <input type="number" name="min_stock" id="min_stock" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
                 </div>
             </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all tracking-wide">Save Data</button>
+            <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancel</button>
+                {{-- Button Submit Data - BIRU GRADIENT --}}
+                <button type="submit" class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg hover:opacity-90 transition-all active:scale-95 tracking-wide">Save Data</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- MODAL RACK ADD --}}
+{{-- MODAL RACK MANAGE (ADD & DELETE SATU INTEGRASI) --}}
 <div id="modalRack" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Add New Rack</h3>
-            <button onclick="closeRackModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-black transform scale-100 transition-all">
+        {{-- HEADER MODAL RACK: UBAH JADI BIRU (bg-blue-600) DAN TEKS PUTIH --}}
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-blue-600 text-white">
+            <h3 class="text-lg font-bold tracking-tight text-white">Rack Management</h3>
+            <button onclick="closeRackModal()" class="text-white/80 hover:text-white transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
-        <form action="{{ route('rak.store') }}" method="POST" class="p-6">
+        
+        {{-- BAGIAN 1: FORM TAMBAH RAK --}}
+        <form action="{{ route('rak.store') }}" method="POST" class="p-6 border-b border-slate-100 dark:border-slate-800">
             @csrf
-            <div class="mb-4">
-                <label class="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wide">Nama Rak</label>
-                <input type="text" name="nama_rak" placeholder="Contoh: RAK-A1" class="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-600 p-2.5 text-sm outline-none focus:border-indigo-500 dark:text-white font-bold" required>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="closeRackModal()" class="px-4 py-2 text-sm font-bold text-slate-500">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all tracking-wide">Add Rack</button>
+            <div class="mb-2">
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Nama Rak Baru</label>
+                <div class="flex gap-2">
+                    <input type="text" name="nama_rak" placeholder="Contoh: RAK-A1" class="flex-1 rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
+                    {{-- Button Add Rak Inside Form - ORANGE GRADIENT --}}
+                    <button type="submit" class="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all tracking-wide whitespace-nowrap uppercase">
+                        + Add
+                    </button>
+                </div>
             </div>
         </form>
-    </div>
-</div>
 
-{{-- MODAL DELETE RACK --}}
-<div id="modalDeleteRack" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
-    <div class="bg-white dark:bg-boxdark rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Delete Existing Rack</h3>
-            <button onclick="closeDeleteRackModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/></svg></button>
+        {{-- BAGIAN 2: LIST DAN HAPUS RAK --}}
+        <div class="p-6">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block uppercase tracking-wide">Existing Racks (Delete List)</label>
+            <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1 scrollbar-thin">
+                @forelse($raks as $rak)
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-sm font-bold text-black dark:text-white uppercase">{{ $rak->nama_rak }}</span>
+                        <form action="{{ route('rak.destroy', $rak->id) }}" method="POST" class="form-delete-rak">
+                            @csrf @method('DELETE')
+                            <button type="button" class="flex h-7 w-7 items-center justify-center rounded bg-red-500 text-white btn-delete-rak hover:bg-red-600 transition-all active:scale-90 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                @empty
+                    <p class="text-xs text-slate-400 italic text-center py-4">No rack available.</p>
+                @endforelse
+            </div>
         </div>
-        <div class="p-6 max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-            @forelse($raks as $rak)
-                <div class="flex items-center justify-between py-3">
-                    <span class="text-sm font-bold text-slate-800 dark:text-white">{{ $rak->nama_rak }}</span>
-                    <form action="{{ route('rak.destroy', $rak->id) }}" method="POST" class="form-delete-rak">
-                        @csrf @method('DELETE')
-                        <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500 text-white btn-delete-rak hover:bg-red-600 transition-all active:scale-90 shadow-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            @empty
-                <p class="text-sm text-slate-400 italic text-center py-4">No rack available.</p>
-            @endforelse
-        </div>
-        <div class="bg-slate-50 dark:bg-slate-800 px-6 py-3 flex justify-end">
-            <button type="button" onclick="closeDeleteRackModal()" class="px-4 py-2 text-xs font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 rounded-lg">Close</button>
+
+        <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 flex justify-end border-t border-slate-100 dark:border-slate-800">
+            <button type="button" onclick="closeRackModal()" class="px-4 py-2 text-xs font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 rounded-lg">Close</button>
         </div>
     </div>
 </div>
 
 <script>
-    // State global melacak filter penyimpanan yang aktif
+    // Global State Filter Penataan Rak
     let currentRackFilter = 'all';
 
     function filterRak(element, rakName) {
@@ -350,17 +375,19 @@
         
         let btns = document.querySelectorAll(".tab-btn");
         btns.forEach(btn => {
-            btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
-            btn.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-100', 'dark:border-slate-700');
+            // Reset ke tampilan abu-abu kontras default saat tidak aktif
+            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+            btn.classList.add('bg-slate-200/80', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300', 'border-slate-300', 'dark:border-slate-700');
         });
 
-        element.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
-        element.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'border-slate-100', 'dark:border-slate-700');
+        // Set tombol aktif menjadi Biru Terang
+        element.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        element.classList.remove('bg-slate-200/80', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300', 'border-slate-300', 'dark:border-slate-700');
 
         applyFilterAndSearch();
     }
 
-    // Fungsi gabungan sinkronisasi Search Bar dan Tab Filter Rak
+    // Kombinasi Search Bar Filter & Rak Active Tabs
     function applyFilterAndSearch() {
         let searchInput = document.getElementById("searchInput").value.toUpperCase();
         
@@ -377,7 +404,7 @@
         });
     }
 
-    // LOGIKA AUTOFILL INSTAN: Mengisi data berdasarkan pilihan Part Number
+    // Autofill Data Nozzle Berdasarkan Dropdown Part Number
     function autoFillByPart(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
         
@@ -390,7 +417,7 @@
         document.getElementById('category').value = category;
     }
 
-    // Penanganan Modal Nozzle dengan proteksi JSON.parse
+    // Pengelolaan Pembukaan Modal Nozzle Edit & Add Mode
     function openModal(mode, element = null) {
         const modal = document.getElementById('modalNozzle');
         const form = document.getElementById('nozzleForm');
@@ -408,7 +435,6 @@
             document.getElementById('rak_id').value = data.rak_id;
             document.getElementById('sparepart_id').value = data.sparepart_id;
             
-            // Trigger pengisian kolom teks otomatis saat mode edit dibuka
             const selectEl = document.getElementById('sparepart_id');
             if (selectEl) autoFillByPart(selectEl);
 
@@ -416,6 +442,7 @@
                 document.getElementById('category').value = data.category;
             }
 
+            // Set value input qty dan min_stock secara akurat dari data baris table
             document.getElementById('qty').value = data.qty;
             document.getElementById('min_stock').value = data.min_stock;
         } else {
@@ -424,30 +451,25 @@
             form.reset();
             methodField.innerHTML = '';
             
-            // Bersihkan teks field otomatisasi
             document.getElementById('no_nozzle').value = '';
             document.getElementById('sap_code').value = '';
             document.getElementById('category').value = '';
         }
     }
 
-    // Konfirmasi Hapus Nozzle
+    // Konfirmasi Kontekstual Hapus Nozzle Baris Tabel
     document.querySelectorAll('.btn-delete').forEach(button => {
         button.addEventListener('click', function(e) {
             let form = this.closest('.form-delete');
             Swal.fire({
-                title: 'Yakin mau hapus?',
-                text: "Data yang dihapus tidak bisa dikembalikan!",
+                title: 'Are you sure?',
+                text: "You won't be able to revert this nozzle entry!",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#e11d48',
+                confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                customClass: { 
-                    container: 'z-[10000]', // 🌟 Mengangkat popup di atas modal z-[9999]
-                    popup: 'font-nunito' 
-                }
+                confirmButtonText: 'Yes, delete it!',
+                customClass: { popup: 'font-nunito bg-white dark:bg-slate-900 max-w-[90%] sm:max-w-md' }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -456,7 +478,7 @@
         });
     });
 
-    // Konfirmasi Hapus Rak Tunggal
+    // Konfirmasi Hapus Rak Tunggal Inside Management List
     document.querySelectorAll('.btn-delete-rak').forEach(button => {
         button.addEventListener('click', function(e) {
             let form = this.closest('.form-delete-rak');
@@ -469,10 +491,7 @@
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                customClass: { 
-                    container: 'z-[10000]', // 🌟 Mengangkat popup di atas modal z-[9999]
-                    popup: 'font-nunito' 
-                }
+                customClass: { popup: 'font-nunito bg-white dark:bg-slate-900 max-w-[90%] sm:max-w-md' }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -481,7 +500,7 @@
         });
     });
 
-    // FORM SUBMIT HANDLING: Menambahkan lapisan penanganan tumpukan z-index & cegah freeze
+    // Intersepsi Submit Form Nozzle Utama Dengan SweetAlert Confirmation
     document.getElementById('nozzleForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -491,40 +510,21 @@
 
         Swal.fire({
             title: isEdit ? 'Yakin simpan perubahan?' : 'Yakin tambah data?',
-            text: "Pastikan semua data sudah diisi dengan benar",
+            text: "Pastikan data volume stok penempatan sudah tepat",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
+            confirmButtonColor: isEdit ? '#f59e0b' : '#2563eb',
             cancelButtonColor: '#64748b',
             confirmButtonText: 'Ya, Proses!',
-            cancelButtonText: 'Cek Lagi',
-            customClass: { 
-                container: 'z-[10000]', // 🌟 FIX: Memaksa SweetAlert berada paling depan di atas lapisan Tailwind modal modalNozzle (z-[9999])
-                popup: 'font-nunito' 
-            }
+            customClass: { popup: 'font-nunito bg-white dark:bg-slate-900 max-w-[90%] sm:max-w-md' }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Sembunyikan modal Nozzle terlebih dahulu agar tumpukan abu-abu Tailwind hilang dari background
-                closeModal();
-
-                // Tampilkan loading screen yang bersih
-                Swal.fire({
-                    title: 'Sedang memproses...',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading() },
-                    customClass: { 
-                        container: 'z-[10000]',
-                        popup: 'font-nunito' 
-                    }
-                });
-
-                // Jalankan instruksi submit form HTML biasa ke Controller backend
                 form.submit();
             }
         });
     });
 
-    // Notifikasi Response Server via Session (Dipanggil saat halaman selesai reload)
+    // Flash Messaging Dialogues
     @if(session('success'))
         Swal.fire({
             icon: 'success',
@@ -535,30 +535,26 @@
             customClass: { popup: 'font-nunito' }
         });
     @endif
-
-    @if($errors->any())
-        Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            text: "{{ $errors->first() }}",
-            customClass: { popup: 'font-nunito' }
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Terjadi Kesalahan',
-            text: "{{ session('error') }}",
-            customClass: { popup: 'font-nunito' }
-        });
-    @endif
-
-    // Fungsi Utility Pembukaan & Penutupan Modal Utama
+    
+    // Modal Utility triggers
     function closeModal() { document.getElementById('modalNozzle').classList.add('hidden'); }
     function openRackModal() { document.getElementById('modalRack').classList.remove('hidden'); }
     function closeRackModal() { document.getElementById('modalRack').classList.add('hidden'); }
-    function openDeleteRackModal() { document.getElementById('modalDeleteRack').classList.remove('hidden'); }
-    function closeDeleteRackModal() { document.getElementById('modalDeleteRack').classList.add('hidden'); }
 </script>
+
+<style>
+    /* Sinkronisasi font dan layout pembatas core */
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container { font-family: 'Nunito', sans-serif !important; }
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
+    
+    /* Memaksa isi data tabel berwarna hitam pekat dan sejajar vertikal di tengah */
+    #nozzleTable td, #nozzleTable td span, #nozzleTable td font {
+        color: #000000 !important;
+        vertical-align: middle !important;
+    }
+    #nozzleTable th { vertical-align: middle !important; }
+</style>
 @endsection

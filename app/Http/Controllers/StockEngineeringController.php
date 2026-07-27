@@ -13,9 +13,12 @@ class StockEngineeringController extends Controller
     public function index()
     {
         $raks = Rak::all();
-        // Memuat relasi 'rak' dan 'sparepart' agar data nama, sap, dan part number bisa dipanggil di view
+        // Memuat relasi 'rak' dan 'sparepart' agar data nama/id, sap, dan part number bisa dipanggil di view
         $stocks = StockEng::with(['rak', 'sparepart'])->orderBy('created_at', 'desc')->paginate(25);
-        $ListSparepartEng = ListSparepartEng::orderBy('name', 'asc')->get(); 
+        
+        // Perbaikan: Diurutkan berdasarkan 'sparepart_id' karena kolom 'name' sudah tidak ada
+        $ListSparepartEng = ListSparepartEng::orderBy('sparepart_id', 'asc')->get(); 
+        
         return view('stock_eng.index', compact('stocks', 'raks', 'ListSparepartEng'));
     }
 
@@ -27,13 +30,15 @@ class StockEngineeringController extends Controller
 
     public function inScan()
     {
-        $stocks = StockEng::with('sparepart')->all(); 
+        // Perbaikan: Menggunakan ->get() menggantikan ->all() yang salah sintaksis
+        $stocks = StockEng::with('sparepart')->get(); 
         return view('stock_eng.transaction.in_scan', compact('stocks'));
     }
 
     public function inManual()
     {
-        $stocks = StockEng::with('sparepart')->all(); 
+        // Perbaikan: Menggunakan ->get() menggantikan ->all() yang salah sintaksis
+        $stocks = StockEng::with('sparepart')->get(); 
         return view('stock_eng.transaction.in_manual', compact('stocks'));
     }
 
@@ -53,8 +58,8 @@ class StockEngineeringController extends Controller
 
             session()->flash('last_in_' . $stock->id, $request->qty_in);
 
-            // Mengambil nama dari relasi master sparepart
-            $namaNozzle = $stock->sparepart->name ?? 'Nozzle';
+            // Perbaikan: Memanggil ->sparepart_id sebagai pengganti ->name
+            $namaNozzle = $stock->sparepart->sparepart_id ?? 'Nozzle';
             return redirect()->route('eng.in')->with('success', "Stok {$namaNozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
 
         } catch (\Exception $e) {
@@ -68,13 +73,13 @@ class StockEngineeringController extends Controller
         try {
             $request->validate([
                 'rak_id'       => 'required|exists:raks,id',
-                'sparepart_id' => 'required|exists:spareparts,id', // 🌟 Wajib pilih dari list master sparepart
+                // Perbaikan: Validasi merujuk ke primary key target yang benar (spareparts,sparepart_id)
+                'sparepart_id' => 'required|exists:spareparts,sparepart_id', 
                 'qty'          => 'required|numeric',
                 'min_stock'    => 'required|numeric',
             ]);
         
-            // 🌟 VALIDASI DUPLIKASI RAK
-            // Mengecek apakah sparepart ini sudah terdaftar di rak yang dipilih
+            // VALIDASI DUPLIKASI RAK
             $isDuplicate = StockEng::where('rak_id', $request->rak_id)
                 ->where('sparepart_id', $request->sparepart_id)
                 ->exists();
@@ -87,7 +92,7 @@ class StockEngineeringController extends Controller
 
             $stock = new StockEng();
             $stock->rak_id = $request->rak_id;
-            $stock->sparepart_id = $request->sparepart_id; // 🌟 Menyimpan id relasi master
+            $stock->sparepart_id = $request->sparepart_id; 
             $stock->qty = $request->qty;
             $stock->min_stock = $request->min_stock;
             $stock->save();
@@ -137,7 +142,7 @@ class StockEngineeringController extends Controller
         try {
             $stock = StockEng::findOrFail($id);
             
-            // 🌟 VALIDASI DUPLIKASI SAAT UPDATE RAK
+            // VALIDASI DUPLIKASI SAAT UPDATE RAK
             if ($request->has('rak_id') || $request->has('sparepart_id')) {
                 $rakId = $request->input('rak_id', $stock->rak_id);
                 $sparepartId = $request->input('sparepart_id', $stock->sparepart_id);
@@ -163,13 +168,12 @@ class StockEngineeringController extends Controller
     {
         $stock = StockEng::findOrFail($id);
         $stock->delete();
-        return redirect()->back()->with('success', 'Data Berhasil Dapus');
+        return redirect()->back()->with('success', 'Data Berhasil Dihapus');
     }
 
     public function export()
     {
         $fileName = 'inventory_nozzle_' . date('Ymd_His') . '.csv';
-        // Eager load data sparepart untuk di-export
         $tasks = StockEng::with(['rak', 'sparepart'])->get();
 
         $headers = array(
@@ -180,7 +184,7 @@ class StockEngineeringController extends Controller
             "Expires"             => "0"
         );
 
-        $columns = array('No Rak', 'No Nozzle', 'Part No', 'Sap Code', 'Category', 'Qty', 'Min Stock');
+        $columns = array('No Rak', 'Sparepart ID', 'Part No', 'Sap Code', 'Category', 'Qty', 'Min Stock');
 
         $callback = function() use($tasks, $columns) {
             $file = fopen('php://output', 'w');
@@ -189,10 +193,11 @@ class StockEngineeringController extends Controller
             foreach ($tasks as $task) {
                 fputcsv($file, array(
                     $task->rak->nama_rak ?? '-',
-                    $task->sparepart->name ?? '-',         // Diambil otomatis dari master tabel spareparts
-                    $task->sparepart->part_number ?? '-',  // Diambil otomatis dari master tabel spareparts
-                    $task->sparepart->sap_code ?? '-',     // Diambil otomatis dari master tabel spareparts
-                    $task->sparepart->category ?? '-',     // Diambil otomatis dari master tabel spareparts
+                    // Perbaikan: Diubah dari ->name menjadi ->sparepart_id agar sesuai database master
+                    $task->sparepart->sparepart_id ?? '-',         
+                    $task->sparepart->part_number ?? '-',  
+                    $task->sparepart->sap_code ?? '-',     
+                    $task->sparepart->category ?? '-',     
                     $task->qty,
                     $task->min_stock
                 ));

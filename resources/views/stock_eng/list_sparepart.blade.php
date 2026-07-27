@@ -102,7 +102,6 @@
                         <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 dark:border-blue-900/50">NO</th>
                         <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">SAP Code</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Part Number</th>
-                        {{-- FIX GAP: Mengubah w-[320px] menjadi w-[200px] & text-center agar pas presisi --}}
                         <th class="px-4 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[200px]">Sparepart ID</th>
                         <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">Image</th>
                         <th class="px-2 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Category</th>
@@ -133,15 +132,15 @@
                             {{ $item->part_number ?? '-' }}
                         </td>
 
-                        {{-- FIX GAP: diselaraskan text-center, dibungkus wrap otomatis jika panjang --}}
-                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal" title="{{ $item->name }}">
-                            {{ $item->name }}
+                        {{-- Diubah menjadi $item->sparepart_id --}}
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal" title="{{ $item->sparepart_id }}">
+                            {{ $item->sparepart_id }}
                         </td>
 
                         <td class="px-2 py-2 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex justify-center items-center">
                                 <div class="w-14 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm cursor-zoom-in" 
-                                     onclick="previewImage('{{ $item->image ? asset('storage/' . $item->image) : '' }}', '{{ $item->name }}')">
+                                     onclick="previewImage('{{ $item->image ? asset('storage/' . $item->image) : '' }}', '{{ $item->sparepart_id }}')">
                                     @if($item->image)
                                         <img src="{{ asset('storage/' . $item->image) }}" class="w-full h-full object-cover">
                                     @else
@@ -171,12 +170,11 @@
                         
                         <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex items-center justify-center gap-1.5 w-full">
-                                <button onclick="previewImage('{{ $item->image ? asset('storage/' . $item->image) : '' }}', '{{ $item->name }}')" 
+                                <button onclick="previewImage('{{ $item->image ? asset('storage/' . $item->image) : '' }}', '{{ $item->sparepart_id }}')" 
                                     type="button" class="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-blue-500 text-white hover:bg-blue-600 active:scale-90 shadow-sm transition-all">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                 </button>
             
-                                {{-- Tombol Edit mengarah ke halaman edit tersendiri/modal sesuai alur --}}
                                 <button onclick="openModal('edit', {{ json_encode($item) }})" 
                                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-yellow-400 text-white hover:bg-yellow-500 active:scale-90 shadow-sm transition-all">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -237,9 +235,10 @@
             </div>
 
             <div class="grid grid-cols-3 gap-4">
+                {{-- Diubah input name dan id dari 'name' menjadi 'sparepart_id' --}}
                 <div class="col-span-3">
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Sparepart ID / Name</label>
-                    <input type="text" name="name" id="name" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-semibold" required>
+                    <input type="text" name="sparepart_id" id="sparepart_id" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-semibold" required>
                 </div>
                 <div class="col-span-3">
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Category</label>
@@ -317,7 +316,8 @@
             
             document.getElementById('sap_code').value = data.sap_code ?? '';
             document.getElementById('part_number').value = data.part_number ?? '';
-            document.getElementById('name').value = data.name;
+            // Diubah dari data.name ke data.sparepart_id
+            document.getElementById('sparepart_id').value = data.sparepart_id;
             document.getElementById('category').value = data.category;
             document.getElementById('length').value = data.length;
             document.getElementById('width').value = data.width;

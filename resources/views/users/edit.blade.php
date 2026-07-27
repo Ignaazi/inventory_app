@@ -11,8 +11,9 @@
                 <p class="text-[11px] md:text-xs text-gray-500 mt-0.5">Update user profile information, credentials, and digital signatures.</p>
             </div>
             
+            {{-- Tombol Kembali - BIRU GRADIENT --}}
             <a href="{{ route('users.index') }}" 
-               class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90">
+               class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase no-underline">
                 <i class="fas fa-arrow-left text-[10px]"></i> Kembali
             </a>
         </div>
@@ -79,7 +80,6 @@
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300 flex items-center gap-1.5">
                         <i class="fas fa-user-circle text-blue-500"></i> Profile Photo
                     </label>
-                    <!-- flex-col di mobile, sm:flex-row di desktop -->
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
                         <!-- Preview Box Image -->
                         <div class="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 flex-shrink-0 flex items-center justify-center shadow-sm">
@@ -88,7 +88,7 @@
                                  alt="Profile Preview" class="w-full h-full object-cover">
                         </div>
                         
-                        <!-- Input File Custom Outline Pas & Rapi -->
+                        <!-- Input File Custom Outline -->
                         <div class="w-full flex-1 flex flex-col gap-1.5">
                             <input type="file" name="image" id="profile-input" accept="image/*" 
                                    class="block w-full text-[11px] text-slate-500 bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer focus:outline-none
@@ -111,7 +111,6 @@
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300 flex items-center gap-1.5">
                         <i class="fas fa-signature text-amber-500"></i> Digital Signature
                     </label>
-                    <!-- flex-col di mobile, sm:flex-row di desktop -->
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
                         <!-- Preview Box Signature -->
                         <div class="w-24 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 flex-shrink-0 flex items-center justify-center p-1.5 shadow-sm">
@@ -124,7 +123,7 @@
                             </div>
                         </div>
                         
-                        <!-- Input File Custom Outline Pas & Rapi -->
+                        <!-- Input File Custom Outline -->
                         <div class="w-full flex-1 flex flex-col gap-1.5">
                             <input type="file" name="signature" id="signature-input" accept="image/*" 
                                    class="block w-full text-[11px] text-slate-500 bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer focus:outline-none
@@ -144,9 +143,10 @@
 
             </div>
 
-            <!-- BUTTON ACTIONS (Pas, Rapi, & Responsive) -->
+            <!-- BUTTON ACTIONS -->
             <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                <button type="submit" class="w-full md:w-auto md:px-8 py-2.5 bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 text-white rounded-lg text-xs font-bold shadow-md uppercase tracking-wider transition-all hover:opacity-95 active:scale-95">
+                {{-- Tombol Save Changes - BIRU GRADIENT --}}
+                <button type="submit" class="w-full md:w-auto md:px-8 py-2.5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-white rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase">
                     Save Changes
                 </button>
             </div>

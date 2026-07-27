@@ -11,8 +11,9 @@
                 <p class="text-[11px] md:text-xs text-gray-500 mt-0.5">Create a new user profile, access credentials, and attach digital signatures.</p>
             </div>
             
+            {{-- Tombol Kembali - BIRU GRADIENT --}}
             <a href="{{ route('users.index') }}" 
-               class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90">
+               class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase no-underline">
                 <i class="fas fa-arrow-left text-[10px]"></i> Kembali
             </a>
         </div>
@@ -137,7 +138,8 @@
 
             <!-- BUTTON ACTIONS -->
             <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                <button type="submit" class="w-full md:w-auto md:px-8 py-2.5 bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 text-white rounded-lg text-xs font-bold shadow-md uppercase tracking-wider transition-all hover:opacity-95 active:scale-95">
+                {{-- Tombol Save Account - BIRU GRADIENT --}}
+                <button type="submit" class="w-full md:w-auto md:px-8 py-2.5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-white rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all active:scale-95 tracking-wide uppercase">
                     Save Account
                 </button>
             </div>
