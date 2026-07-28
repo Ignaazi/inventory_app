@@ -89,7 +89,7 @@
 
         {{-- Scrollable Table --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1300px]" id="historyTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1250px]" id="historyTable">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
@@ -101,7 +101,7 @@
                         <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">Qty IN</th>
                         <th class="px-2 py-3.5 w-[105px] border-l border-blue-500 dark:border-blue-900/50">Status</th>
                         <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Remark</th>
-                        <th class="px-4 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-left w-[180px]">Comment</th>
+                        <th class="px-3 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[130px]">Process Type</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
                     </tr>
@@ -141,7 +141,7 @@
                         
                         <!-- QTY IN -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            <span class="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                                 +{{ ($log->qty_added > 0) ? $log->qty_added : 1 }}
                             </span>
                         </td>
@@ -149,10 +149,10 @@
                         <!-- STATUS -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex justify-center items-center">
-                                <span class="status-cell inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-black tracking-tight uppercase
-                                    @if(strtolower($log->status) == 'success') bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400
-                                    @elseif(strtolower($log->status) == 'pending') bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400
-                                    @else bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 @endif">
+                                <span class="status-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                                    @if(strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800
+                                    @elseif(strtolower($log->status) == 'pending') bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-800
+                                    @else bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-800 @endif">
                                     {{ $log->status ?? 'SUCCESS' }}
                                 </span>
                             </div>
@@ -167,18 +167,28 @@
                                 $isScan = str_contains($remarkLower, 'scan');
                             @endphp
                             <div class="flex justify-center items-center">
-                                <span class="remark-cell inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[9px] font-black tracking-tight uppercase
-                                    @if($isManual) bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
-                                    @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
-                                    @else bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
+                                <span class="remark-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                                    @if($isManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
+                                    @elseif($isScan) bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
+                                    @else bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
                                     {{ $remarkText ? $log->remark : 'MANUAL IN' }} 
                                 </span>
                             </div>
                         </td>
                         
-                        <!-- COMMENT -->
-                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-semibold text-slate-600 dark:text-slate-300 max-w-[180px] truncate" title="{{ $log->comment }}">
-                            {{ $log->comment ?? '-' }}
+                        <!-- PROCESS TYPE -->
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center w-[130px]">
+                            @php
+                                $procType = $log->process_type ?? 'Manual';
+                                $isProcManual = strtolower($procType) === 'manual';
+                            @endphp
+                            <div class="flex justify-center items-center">
+                                <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border truncate max-w-full
+                                    @if($isProcManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
+                                    @else bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 @endif" title="{{ $procType }}">
+                                    {{ $procType }}
+                                </span>
+                            </div>
                         </td>
                         
                         <!-- CREATED AT -->

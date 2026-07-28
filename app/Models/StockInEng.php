@@ -24,7 +24,7 @@ class StockInEng extends Model
         'qty_added',
         'status',
         'remark',
-        'comment'
+        'process_type'
     ];
 
     /**

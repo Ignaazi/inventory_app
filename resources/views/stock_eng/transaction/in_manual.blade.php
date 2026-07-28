@@ -29,7 +29,8 @@
 
         <form action="{{ route('eng.in.store') }}" method="POST">
             @csrf
-            <input type="hidden" name="source" value="manual">
+            <!-- FIXED: source diganti menjadi process_type bernilai Manual -->
+            <input type="hidden" name="process_type" value="Manual">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 

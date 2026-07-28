@@ -20,14 +20,14 @@ class StockInEngineeringController extends Controller
         $query = StockInEng::with(['stockEng.sparepart', 'stockEng.rak', 'engMaterialReceiving'])
             ->orderBy('id', 'desc');
 
-        // Handler Live Search
+        // Handler Live Search (Mengubah filter comment ke process_type)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('nik', 'like', "%{$search}%")
                   ->orWhere('status', 'like', "%{$search}%")
                   ->orWhere('remark', 'like', "%{$search}%")
-                  ->orWhere('comment', 'like', "%{$search}%")
+                  ->orWhere('process_type', 'like', "%{$search}%") // FIXED: Mengganti comment ke process_type
                   ->orWhereHas('stockEng.sparepart', function($sq) use ($search) {
                       $sq->where('sparepart_id', 'like', "%{$search}%")
                         ->orWhere('category', 'like', "%{$search}%")
@@ -35,21 +35,20 @@ class StockInEngineeringController extends Controller
                         ->orWhere('sap_code', 'like', "%{$search}%");
                   })
                   ->orWhereHas('stockEng.rak', function($rq) use ($search) {
-                      // FIXED: Sudah ditambahkan tanda $ pada variabel $rq
                       $rq->where('nama_rak', 'like', "%{$search}%");
                   });
             });
         }
 
-        // Handler Filter Kategori Log
+        // Handler Filter Kategori Log (Menggunakan kolom process_type secara presisi)
         if ($request->has('filter') && !empty($request->filter)) {
             $filter = strtolower($request->filter);
             if (in_array($filter, ['success', 'pending'])) {
                 $query->where('status', $filter);
             } elseif ($filter === 'manual in') {
-                $query->where('remark', 'like', '%manual%');
+                $query->where('process_type', 'Manual'); // FIXED: Langsung cek ke kolom process_type
             } elseif ($filter === 'scan in') {
-                $query->where('remark', 'like', '%scan%');
+                $query->where('process_type', 'Scan');   // FIXED: Langsung cek ke kolom process_type
             }
         }
 
@@ -94,23 +93,20 @@ class StockInEngineeringController extends Controller
      */
     public function store(Request $request)
     {
+        // Validasi input: process_type wajib dikirim dan isinya harus Manual atau Scan
         $request->validate([
             'stock_eng_id'              => 'required|exists:stock_engs,id',
             'qty_in'                    => 'required|integer|min:1',
             'eng_material_receiving_id' => 'nullable|exists:eng_material_receivings,id', 
             'remark'                    => 'nullable|string',
+            'process_type'              => 'required|in:Manual,Scan', // Wajib diisi (Manual / Scan)
         ]);
 
         DB::beginTransaction();
         try {
             $stock = StockEng::with(['sparepart', 'rak'])->findOrFail($request->stock_eng_id);
-            
-            // FIXED: Disesuaikan murni menampilkan sparepart_id agar seirama dengan halaman index
-            $sparepartId   = $stock->sparepart->sparepart_id ?? 'N/A';
-            
-            $sapCode       = $stock->sparepart->sap_code ?? '-';
-            $partNumber    = $stock->sparepart->part_number ?? '-';
-            $lokasiRak     = $stock->rak->nama_rak ?? 'N/A';
+            $sparepartId = $stock->sparepart->sparepart_id ?? 'N/A';
+            $lokasiRak   = $stock->rak->nama_rak ?? 'N/A';
 
             // Kunci proteksi ganda agar dokumen PR/Receiving tidak disubmit berulang kali
             if ($request->eng_material_receiving_id) {
@@ -120,22 +116,22 @@ class StockInEngineeringController extends Controller
                 }
             }
 
-            // Simpan log transaksi baru ke tabel stock_in_logs
+            // Simpan log transaksi dengan kolom process_type (Menghapus total comment jadul)
             StockInEng::create([
                 'stock_eng_id'              => $stock->id,
                 'eng_material_receiving_id' => $request->eng_material_receiving_id ?? null,
                 'nik'                       => Auth::user()->nik ?? 'SYSTEM',
                 'qty_added'                 => $request->qty_in, 
                 'status'                    => 'Success',
-                'remark'                    => $request->remark ?? 'MANUAL IN',
-                'comment'                   => "RAK: {$lokasiRak} | SAP: {$sapCode} | PN: {$partNumber}"
+                'remark'                    => $request->remark ?? ($request->process_type . ' IN'),
+                'process_type'              => $request->process_type // FIXED: Menyimpan 'Manual' atau 'Scan'
             ]);
 
             // Tambahkan kuantitas stok fisik pada master gudang (tabel stock_engs)
             $stock->increment('qty', $request->qty_in);
 
             DB::commit();
-            return redirect()->route('eng.in')->with('success', "Stok berhasil ditambahkan ke RAK [{$lokasiRak}] untuk sparepart ID {$sparepartId}!");
+            return redirect()->route('eng.in')->with('success', "Stok berhasil ditambahkan via {$request->process_type} ke RAK [{$lokasiRak}] untuk sparepart ID {$sparepartId}!");
 
         } catch (\Exception $e) {
             DB::rollBack();

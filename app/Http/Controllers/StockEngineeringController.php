@@ -30,14 +30,12 @@ class StockEngineeringController extends Controller
 
     public function inScan()
     {
-        // Perbaikan: Menggunakan ->get() menggantikan ->all() yang salah sintaksis
         $stocks = StockEng::with('sparepart')->get(); 
         return view('stock_eng.transaction.in_scan', compact('stocks'));
     }
 
     public function inManual()
     {
-        // Perbaikan: Menggunakan ->get() menggantikan ->all() yang salah sintaksis
         $stocks = StockEng::with('sparepart')->get(); 
         return view('stock_eng.transaction.in_manual', compact('stocks'));
     }
@@ -58,7 +56,6 @@ class StockEngineeringController extends Controller
 
             session()->flash('last_in_' . $stock->id, $request->qty_in);
 
-            // Perbaikan: Memanggil ->sparepart_id sebagai pengganti ->name
             $namaNozzle = $stock->sparepart->sparepart_id ?? 'Nozzle';
             return redirect()->route('eng.in')->with('success', "Stok {$namaNozzle} berhasil ditambah! ({$oldQty} -> {$stock->qty})");
 
@@ -71,12 +68,15 @@ class StockEngineeringController extends Controller
     public function store(Request $request)
     {
         try {
+            // FIXED: Mengambil nama tabel dinamis langsung dari model ListSparepartEng 
+            // agar validasi 'exists' mendeteksi primary key 'id' dengan tepat
+            $tableSparepart = (new ListSparepartEng)->getTable();
+
             $request->validate([
                 'rak_id'       => 'required|exists:raks,id',
-                // Perbaikan: Validasi merujuk ke primary key target yang benar (spareparts,sparepart_id)
-                'sparepart_id' => 'required|exists:spareparts,sparepart_id', 
-                'qty'          => 'required|numeric',
-                'min_stock'    => 'required|numeric',
+                'sparepart_id' => 'required|exists:' . $tableSparepart . ',id', 
+                'qty'          => 'required|numeric|min:0',
+                'min_stock'    => 'required|numeric|min:0',
             ]);
         
             // VALIDASI DUPLIKASI RAK
@@ -114,7 +114,7 @@ class StockEngineeringController extends Controller
         ]);
 
         Rak::create([
-            'nama_rak' => $request->nama_rak,
+            'nama_rak' => strtoupper($request->nama_rak),
             'lokasi'   => $request->lokasi ?? '-' 
         ]);
 
@@ -125,10 +125,19 @@ class StockEngineeringController extends Controller
     {
         try {
             $rak = Rak::findOrFail($id);
-            $checkUsage = StockEng::where('rak_id', $id)->exists();
-            if ($checkUsage) {
-                return redirect()->back()->with('error', 'Rak gagal dihapus karena masih ada nozzle di dalamnya!');
+            
+            // FIXED: Hitung jumlah fisik unit nyata (sum qty). 
+            // Jika ada baris threshold tapi qty fisik = 0, dia akan menghasilkan angka 0 (lolos pengecekan)
+            $totalActualStock = StockEng::where('rak_id', $id)->sum('qty');
+            
+            if ($totalActualStock > 0) {
+                return redirect()->back()->with('error', 'Rak gagal dihapus karena masih ada unit actual stock di dalamnya!');
             }
+
+            // Hapus paksa baris data kosong (yang tersisa threshold doang) agar data relasi bersih di DB
+            StockEng::where('rak_id', $id)->delete();
+
+            // Hapus data induk rak
             $rak->delete();
             return redirect()->back()->with('success', 'Rak Berhasil Dihapus!');
         } catch (\Exception $e) {
@@ -140,26 +149,44 @@ class StockEngineeringController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            // FIXED: Mengambil nama tabel dinamis langsung dari model ListSparepartEng 
+            // untuk memvalidasi primary key 'id' saat edit data
+            $tableSparepart = (new ListSparepartEng)->getTable();
+
+            $request->validate([
+                'rak_id'       => 'required|exists:raks,id',
+                'sparepart_id' => 'required|exists:' . $tableSparepart . ',id', 
+                'qty'          => 'required|numeric|min:0',
+                'min_stock'    => 'required|numeric|min:0',
+            ]);
+
             $stock = StockEng::findOrFail($id);
             
-            // VALIDASI DUPLIKASI SAAT UPDATE RAK
-            if ($request->has('rak_id') || $request->has('sparepart_id')) {
-                $rakId = $request->input('rak_id', $stock->rak_id);
-                $sparepartId = $request->input('sparepart_id', $stock->sparepart_id);
+            $rakId = $request->rak_id;
+            $sparepartId = $request->sparepart_id;
 
-                $isDuplicate = StockEng::where('id', '!=', $id)
-                    ->where('rak_id', $rakId)
-                    ->where('sparepart_id', $sparepartId)
-                    ->exists();
+            // VALIDASI DUPLIKASI SAAT UPDATE RAK & SPAREPART
+            $isDuplicate = StockEng::where('id', '!=', $id)
+                ->where('rak_id', $rakId)
+                ->where('sparepart_id', $sparepartId)
+                ->exists();
 
-                if ($isDuplicate) {
-                    return redirect()->back()->with('error', 'Gagal Update! Kombinasi Nozzle dan Rak tersebut sudah ada.');
-                }
+            if ($isDuplicate) {
+                return redirect()->back()->with('error', 'Gagal Update! Kombinasi Nozzle dan Rak tersebut sudah digunakan di baris data lain.');
             }
 
-            $stock->update($request->all());
-            return redirect()->back()->with('success', 'Data Berhasil Diupdate');
+            // Eksekusi perubahan data langsung ke database
+            $stock->rak_id       = $rakId;
+            $stock->sparepart_id = $sparepartId;
+            $stock->qty          = $request->qty;
+            $stock->min_stock    = $request->min_stock;
+            $stock->save();
+
+            return redirect()->back()->with('success', 'Data Stok Gudang Berhasil Diubah!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
+            Log::error("Gagal update stock: " . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
     }
@@ -193,7 +220,6 @@ class StockEngineeringController extends Controller
             foreach ($tasks as $task) {
                 fputcsv($file, array(
                     $task->rak->nama_rak ?? '-',
-                    // Perbaikan: Diubah dari ->name menjadi ->sparepart_id agar sesuai database master
                     $task->sparepart->sparepart_id ?? '-',         
                     $task->sparepart->part_number ?? '-',  
                     $task->sparepart->sap_code ?? '-',     
