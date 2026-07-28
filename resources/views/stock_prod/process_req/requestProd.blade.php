@@ -43,7 +43,7 @@
             <input type="hidden" name="signature_data" x-bind:value="signatureImg">
             <input type="hidden" name="stamp_data" x-bind:value="stampImg">
 
-            <!-- Hidden Foreign Key ID fields untuk migration baru -->
+            <!-- Hidden Foreign Key ID fields -->
             <input type="hidden" name="list_line_production_id" value="{{ $activeLine->id ?? '' }}">
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -63,13 +63,13 @@
                         <input type="text" name="line_machine" x-model="line_machine" readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-bold text-gray-500 cursor-not-allowed outline-none">
                     </div>
 
-                    <!-- 3. Dropdown Sparepart (Pilih ID, isi data nama otomatis) -->
+                    <!-- 3. Dropdown Sparepart ID Murni -->
                     <div class="flex flex-col gap-2">
                         <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Pilih Sparepart ID</label>
                         <select name="sparepart_id" x-model="selected_sparepart_id" @change="updateSparepartDetails()" required class="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium text-black dark:text-white outline-none transition focus:border-blue-500">
                             <option value="">-- Pilih Sparepart ID --</option>
                             @foreach($spareparts as $part)
-                                <option value="{{ $part->id }}">ID: {{ $part->sparepart_id }} | {{ $part->part_number }}</option>
+                                <option value="{{ $part->id }}">ID: {{ $part->sparepart_id }}</option>
                             @endforeach
                         </select>
                         <input type="hidden" name="sparepart_name" x-model="sparepart_name">
@@ -81,13 +81,19 @@
                         <input type="text" name="sap_code" x-model="sap_code" readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-bold text-gray-500 cursor-not-allowed outline-none">
                     </div>
 
-                    <!-- 5. Quantity Requested (Manual) -->
+                    <!-- 5. Part Number Baru (Otomatis & Readonly) - Diletakkan di bawah SAP Code -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Part Number (Auto)</label>
+                        <input type="text" x-model="part_number" readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-bold text-gray-500 cursor-not-allowed outline-none">
+                    </div>
+
+                    <!-- 6. Quantity Requested (Manual) -->
                     <div class="flex flex-col gap-2">
                         <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Quantity Requested</label>
                         <input type="number" name="qty_req" x-model="qty_req" min="1" required class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-bold text-black dark:text-white outline-none transition focus:border-blue-500">
                     </div>
 
-                    <!-- 6. Remark / Keterangan (Manual) -->
+                    <!-- 7. Remark / Keterangan (Manual) -->
                     <div class="flex flex-col gap-2 sm:col-span-2">
                         <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Remark / Keterangan</label>
                         <textarea name="remark" x-model="remark" rows="2" placeholder="Reason for change..." required class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium resize-none text-black dark:text-white outline-none transition focus:border-blue-500"></textarea>
@@ -189,6 +195,10 @@
                             <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="sparepart_name || '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
+                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">PART NUMBER</td>
+                            <td class="py-2.5 px-4 font-bold text-black uppercase" x-text="part_number || '-'">-</td>
+                        </tr>
+                        <tr class="border-b border-black">
                             <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black text-slate-800">SAP CODE</td>
                             <td class="py-2.5 px-4 font-mono font-bold text-black tracking-wider" x-text="sap_code || '-'">-</td>
                         </tr>
@@ -272,20 +282,26 @@
         const requestSignature = "{{ optional($requestData ?? null)->production_signature ?? '' }}";
         const activeSignaturePath = requestSignature || userSignature;
 
-        // Parsing data Master Sparepart dari controller ke dalam array JavaScript
+        // Parsing data Master Sparepart ke JSON Array
         const sparepartsList = {!! json_encode($spareparts ?? []) !!};
+        
+        // Ambil data awal dari old input atau database untuk proses edit draft
+        const initialPartId = '{{ old('sparepart_id', optional($requestData ?? null)->sparepart_id ?? '') }}';
+        let initialPartNumber = '';
+        if (initialPartId) {
+            const matched = sparepartsList.find(item => item.id == initialPartId);
+            if (matched) initialPartNumber = matched.part_number;
+        }
     
         return {
-            // Otomatis isi data profile user login[cite: 2]
             requestor: '{{ old('requestor', optional($requestData ?? null)->requestor ?? (auth()->check() ? auth()->user()->name : '')) }}',
-            
-            // Otomatis gabungkan string Line dari data controller[cite: 4]
             line_machine: '{{ old('line_machine', optional($requestData ?? null)->line_machine ?? ($activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "")) }}',
             
-            // State untuk manajemen data spareparts otomatis[cite: 5, 6]
-            selected_sparepart_id: '{{ old('sparepart_id', optional($requestData ?? null)->sparepart_id ?? '') }}',
+            // State data spareparts
+            selected_sparepart_id: initialPartId,
             sparepart_name: '{{ old('sparepart_name', optional($requestData ?? null)->sparepart_name ?? '') }}',
             sap_code: '{{ old('sap_code', optional($requestData ?? null)->sap_code ?? '') }}',
+            part_number: initialPartNumber, // Field baru untuk menampung data part number terpilih
             
             remark: '{{ old('remark', optional($requestData ?? null)->remark ?? '') }}',
             qty_req: {{ old('qty_req', optional($requestData ?? null)->qty_req ?? 1) }},
@@ -305,15 +321,17 @@
                 
             actionType: 'submit',
 
-            // Trigger pembaruan field text saat opsi select id berubah[cite: 5]
+            // Update details otomatis saat select option berubah
             updateSparepartDetails() {
                 const part = sparepartsList.find(item => item.id == this.selected_sparepart_id);
                 if (part) {
                     this.sparepart_name = part.category + ' (' + part.part_number + ')';
                     this.sap_code = part.sap_code ? part.sap_code : '-';
+                    this.part_number = part.part_number ? part.part_number : '-'; // Update Part Number Otomatis
                 } else {
                     this.sparepart_name = '';
                     this.sap_code = '';
+                    this.part_number = '';
                 }
             },
     
@@ -334,6 +352,7 @@
                 this.selected_sparepart_id = '';
                 this.sparepart_name = '';
                 this.sap_code = '';
+                this.part_number = '';
                 this.remark = '';
                 this.qty_req = 1;
             },
