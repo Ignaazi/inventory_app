@@ -5,6 +5,8 @@ namespace App\Models\Production;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Engineering\HistoryApproval;
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class RequestProd extends Model
 {
@@ -15,6 +17,8 @@ class RequestProd extends Model
 
     // 🎯 DAFTAR KOLOM YANG BOLEH DIISI (Mass Assignment)
     protected $fillable = [
+        'list_line_production_id', // Relasi ke ID tabel list_line_productions
+        'sparepart_id',            // Relasi ke ID tabel spareparts
         'request_no',
         'sparepart_name',
         'sap_code',
@@ -41,11 +45,54 @@ class RequestProd extends Model
     ];
 
     /**
+     * RELASI: Menghubungkan otomatis ke data Master Line Production
+     * (Berada di folder yang sama: App\Models\Production)
+     */
+    public function lineProduction()
+    {
+        return $this->belongsTo(ListLineProduction::class, 'list_line_production_id');
+    }
+
+    /**
+     * RELASI: Menghubungkan otomatis ke data Master Sparepart 
+     * (Menggunakan model ListSparepartEng di folder App\Models)
+     */
+    public function sparepart()
+    {
+        return $this->belongsTo(\App\Models\ListSparepartEng::class, 'sparepart_id');
+    }
+
+    /**
      * RELASI: Satu request bisa punya banyak history/audit trail
-     * (Berguna untuk melacak status jika ada perubahan)
      */
     public function history()
     {
         return $this->hasMany(HistoryApproval::class, 'request_no', 'request_no');
+    }
+
+    /**
+     * 💡 FITUR TAMBAHAN: ACCESSORS UNTUK URL TANDA TANGAN OLEH SYSTEM
+     */
+    public function getProductionSignatureUrlAttribute()
+    {
+        if (!$this->production_signature) return null;
+        
+        if (filter_var($this->production_signature, FILTER_VALIDATE_URL)) {
+            return $this->production_signature;
+        }
+        
+        return asset('storage/' . $this->production_signature);
+    }
+
+    public function getStaffSignatureUrlAttribute()
+    {
+        if (!$this->staff_signature) return null;
+        return asset('storage/' . $this->staff_signature);
+    }
+
+    public function getSpvSignatureUrlAttribute()
+    {
+        if (!$this->spv_signature) return null;
+        return asset('storage/' . $this->spv_signature);
     }
 }
