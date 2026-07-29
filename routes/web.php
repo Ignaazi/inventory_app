@@ -53,7 +53,6 @@ Route::middleware('auth')->group(function () {
 
     // --- GRUP ENGINEERING ---
     Route::middleware('role:admin,engineering')->group(function () {
-        Route::get('/eng/overview', [EngineeringOverviewController::class, 'index'])->name('engineering.overview');
         
         Route::prefix('eng')->group(function () {
             Route::get('/list-sparepart/export', [StockEngineeringController::class, 'export'])->name('list-sparepart.export');
@@ -118,31 +117,38 @@ Route::middleware('auth')->group(function () {
         });
     });
     
-    // --- GRUP PRODUCTION ---
+    // --- GRUP PRODUCTION (Ubah bagian ini di web.php lu) ---
     Route::middleware('role:admin,production')->group(function () {
-        Route::get('/prod/request/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
-        Route::get('/prod/request/create', [RequestProdController::class, 'create'])->name('prod.request.create');
-        Route::post('/prod/request/store', [RequestProdController::class, 'store'])->name('prod.request.store');
-        Route::get('/prod/request/draft/{id}', [RequestProdController::class, 'editDraft'])->name('prod.request.editDraft');
-        Route::put('/prod/request/draft/{id}/update', [RequestProdController::class, 'updateDraft'])->name('prod.request.updateDraft');
-        Route::put('/prod/request/update/{id}', [RequestProdController::class, 'update'])->name('prod.request.update');
-        Route::get('/prod/request/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
-        Route::delete('/prod/request/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
-        Route::get('/prod/request/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
+        
+        // Bungkus rute request ke dalam satu grup biar konsisten
+        Route::prefix('prod/request')->group(function () {
+            Route::get('/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
+            Route::get('/create', [RequestProdController::class, 'create'])->name('prod.request.create');
+            Route::post('/store', [RequestProdController::class, 'store'])->name('prod.request.store');
+            Route::get('/draft/{id}', [RequestProdController::class, 'editDraft'])->name('prod.request.editDraft');
+            Route::put('/draft/{id}/update', [RequestProdController::class, 'updateDraft'])->name('prod.request.updateDraft');
+            Route::put('/update/{id}', [RequestProdController::class, 'update'])->name('prod.request.update');
+            Route::get('/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
+            Route::delete('/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
+            Route::get('/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
+        });
+
+        // Duplikat grup di atas khusus pakai kata 'production' buat jaga-jaga kalau sistem lu nge-redirect paksa ke kata lengkap
+        Route::prefix('production/request')->group(function () {
+            Route::post('/store', [RequestProdController::class, 'store']);
+        });
+
         Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
         
         // 🛠️ SEKTOR SINKRONISASI PRODUCTION (IN & OUT MANAGEMENT)
         Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
-            // --- MODUL STOCK IN ---
             Route::get('/in', [InProdController::class, 'stockIn'])->name('in');
             Route::get('/get-eng-detail/{id}', [InProdController::class, 'getEngineeringDetail'])->name('get_eng_detail');
             Route::get('/in/manual', [InProdController::class, 'manualIn'])->name('in.manual');
             Route::post('/in/manual/store', [InProdController::class, 'storeManualIn'])->name('in.store_manual');
-            Route::post('/store', [InProdController::class, 'store'])->name('store'); // Scan/Global Store In
+            Route::post('/store', [InProdController::class, 'store'])->name('store'); 
 
-            // --- MODUL STOCK OUT ---
             Route::get('/out', [OutProdController::class, 'stockOut'])->name('out');
-            Route::get('/out/manual', [OutOutProdController::class ?? OutProdController::class, 'manualOut'])->name('out.manual');
             Route::post('/out/manual/store', [OutProdController::class, 'storeManualOut'])->name('out.manual.store');
             Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); 
         });

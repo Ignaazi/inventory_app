@@ -39,10 +39,15 @@ class RequestProdController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Cari data line otomatis berdasarkan NIK karyawan yang sedang login[cite: 2, 4]
+        // 1. Cari data line otomatis berdasarkan NIK karyawan yang sedang login
         $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
 
-        // 2. Ambil semua list sparepart untuk opsi pilihan item di dropdown form[cite: 5]
+        // JIKA ADMIN: Ambil fallback line pertama agar UI di view blade tidak kosong melompong
+        if (!$activeLine && $user->role === 'admin') {
+            $activeLine = ListLineProduction::first();
+        }
+
+        // 2. Ambil semua list sparepart untuk opsi pilihan item di dropdown form
         $spareparts = ListSparepartEng::all();
 
         return view('stock_prod.process_req.requestProd', compact('activeLine', 'spareparts'));
@@ -53,19 +58,41 @@ class RequestProdController extends Controller
         $actionType = $request->input('action_type', 'submit');
         $user = Auth::user(); 
 
-        // Aturan validasi input teks dasar + validasi foreign key
+        // Validasi dilonggarkan dulu untuk melacak ID asli yang dikirim browser
         $request->validate([
-            'sparepart_id' => 'required|exists:list_sparepart_engs,id',
+            'sparepart_id' => 'required',
             'remark'       => 'required|string|max:255', 
             'qty_req'      => 'required|integer|min:1',
         ]);
 
-        // Mengambil detail sparepart berdasarkan sparepart_id pilihan operator[cite: 5]
-        $sparepartItem = ListSparepartEng::findOrFail($request->sparepart_id);
+        // FIX 404 BYPASS: Mencari sparepart dengan first() agar tidak memicu 404 otomatis dari Laravel jika tidak ketemu
+        $sparepartItem = ListSparepartEng::where('id', $request->sparepart_id)->first();
 
-        // Mengambil line otomatis berdasarkan user nik[cite: 2, 4]
+        // JIKA MASIH BELUM KETEMU, COBA COCOKKAN DENGAN KOLOM 'sparepart_id' (Sesuaikan dengan skema tabel lu)
+        if (!$sparepartItem) {
+            $sparepartItem = ListSparepartEng::where('sparepart_id', $request->sparepart_id)->first();
+        }
+
+        // PANCING ERROR BIAR KELUAR DI LAYAR (BIAR GAK MENTAL 404)
+        if (!$sparepartItem) {
+            return dd([
+                'STATUS' => 'ERROR FATAL',
+                'PESAN' => 'Data Sparepart TIDAK DITEMUKAN di database. Ini alasan kenapa Laravel ngasih eror 404!',
+                'ID_YANG_DIKIRIM_BLADE' => $request->sparepart_id,
+                'SOLUSI' => 'Coba cek tabel master sparepart lu, kolom primary key-nya namanya apa? id atau sparepart_id?'
+            ]);
+        }
+
+        // Mengambil line otomatis berdasarkan user nik
         $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
-        $lineMachineText = $activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "N/A";
+        
+        // PERBAIKAN UNTUK ADMIN: Jika admin menginput, kasih toleransi line cadangan
+        if (!$activeLine && $user->role === 'admin') {
+            $activeLine = ListLineProduction::first();
+        }
+
+        $lineMachineText = $activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "ADMINISTRATOR AREA";
+        $lineId = $activeLine ? $activeLine->id : null;
 
         // Generate Request Number otomatis
         $lastRequest = RequestProd::where('request_no', 'LIKE', 'REQ-PRD-SIIX-%')
@@ -82,14 +109,18 @@ class RequestProdController extends Controller
         $length = $nextNumber > 999 ? strlen((string)$nextNumber) : 3;
         $requestNo = 'REQ-PRD-SIIX-' . str_pad($nextNumber, $length, '0', STR_PAD_LEFT);   
         
+        // Status awal jika langsung diajukan adalah 'Pending' agar masuk ke antrean staff Engineering
         $statusAkhir = ($actionType === 'draft') ? 'Draft' : 'Pending';
 
-        // Logika Otomatisasi Tanda Tangan Database dari table users
+        // Logika Otomatisasi Tanda Tangan Database dari table users untuk Produksi
         $prodSignature = ($statusAkhir === 'Pending') ? $user->signature_path : null;
 
+        // Ambil primary key asli dari record sparepart yang berhasil ditemukan
+        $primarySparepartId = isset($sparepartItem->id) ? $sparepartItem->id : $sparepartItem->sparepart_id;
+
         RequestProd::create([
-            'list_line_production_id' => $activeLine ? $activeLine->id : null,
-            'sparepart_id'            => $request->sparepart_id,
+            'list_line_production_id' => $lineId,
+            'sparepart_id'            => $primarySparepartId,
             'request_no'              => $requestNo,
             'sparepart_name'          => $sparepartItem->category . ' (' . $sparepartItem->part_number . ')',
             'sap_code'                => $sparepartItem->sap_code ?? '-',             
@@ -101,15 +132,18 @@ class RequestProdController extends Controller
             'production_stamp'        => null,     
             'status'                  => $statusAkhir,
             
+            // Mengosongkan data approval Engineering di awal request
             'staff_name'              => null,
             'staff_signature'         => null,
+            'staff_stamp'             => null,
             'spv_name'                => null,
             'spv_signature'           => null,
+            'spv_stamp'               => null,
         ]);
 
         $pesanSukses = ($statusAkhir === 'Draft') 
             ? 'Form Request berhasil disimpan sebagai Draft dengan Nomor Dokumen: ' . $requestNo
-            : 'Form Request Nozzle berhasil diajukan dengan Nomor Dokumen: ' . $requestNo;
+            : 'Form Request Nozzle berhasil diajukan ke Engineering dengan Nomor Dokumen: ' . $requestNo;
 
         return redirect()->route('prod.request.list')->with('success', $pesanSukses);
     }
@@ -124,8 +158,12 @@ class RequestProdController extends Controller
 
         $user = Auth::user();
         
-        // Ambil data pendukung master agar dropdown & info line terisi saat halaman edit dibuka[cite: 4, 5]
         $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
+        
+        if (!$activeLine && $user->role === 'admin') {
+            $activeLine = ListLineProduction::first();
+        }
+
         $spareparts = ListSparepartEng::all();
 
         return view('stock_prod.process_req.requestProd', compact('requestData', 'activeLine', 'spareparts'));
@@ -138,24 +176,36 @@ class RequestProdController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'sparepart_id' => 'required|exists:list_sparepart_engs,id',
+            'sparepart_id' => 'required',
             'remark'       => 'required|string|max:255', 
             'qty_req'      => 'required|integer|min:1',
         ]);
 
-        // Mengambil data item & data line terbaru dari DB
-        $sparepartItem = ListSparepartEng::findOrFail($request->sparepart_id);
+        $sparepartItem = ListSparepartEng::where('id', $request->sparepart_id)->first();
+        if (!$sparepartItem) {
+            $sparepartItem = ListSparepartEng::where('sparepart_id', $request->sparepart_id)->first();
+        }
+
+        if (!$sparepartItem) {
+            return dd("Draft Update Gagal: Data sparepart tidak ditemukan di DB.");
+        }
+
         $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
-        $lineMachineText = $activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "N/A";
+        
+        if (!$activeLine && $user->role === 'admin') {
+            $activeLine = ListLineProduction::first();
+        }
+
+        $lineMachineText = $activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "ADMINISTRATOR AREA";
+        $lineId = $activeLine ? $activeLine->id : null;
 
         $statusAkhir = ($actionType === 'draft') ? 'Draft' : 'Pending';
-        
-        // Mengisi tanda tangan otomatis dari user login saat beralih status ke Pending
         $finalSignature = ($statusAkhir === 'Pending') ? $user->signature_path : $requestProd->production_signature;
+        $primarySparepartId = isset($sparepartItem->id) ? $sparepartItem->id : $sparepartItem->sparepart_id;
 
         $requestProd->update([
-            'list_line_production_id' => $activeLine ? $activeLine->id : null,
-            'sparepart_id'            => $request->sparepart_id,
+            'list_line_production_id' => $lineId,
+            'sparepart_id'            => $primarySparepartId,
             'sparepart_name'          => $sparepartItem->category . ' (' . $sparepartItem->part_number . ')',
             'sap_code'                => $sparepartItem->sap_code ?? '-',             
             'remark'                  => $request->remark, 
@@ -163,17 +213,12 @@ class RequestProdController extends Controller
             'line_machine'            => $lineMachineText,
             'requestor'               => $user->name, 
             'production_signature'    => $finalSignature,
-            'production_stamp'        => null,     
             'status'                  => $statusAkhir,
-            'staff_name'              => null,
-            'staff_signature'         => null,
-            'spv_name'                => null,
-            'spv_signature'           => null,
         ]);
 
         $pesanSukses = ($statusAkhir === 'Draft') 
             ? 'Draft Request No: ' . $requestProd->request_no . ' berhasil diperbarui!'
-            : 'Draft Request No: ' . $requestProd->request_no . ' resmi dikirim ke Engineering!';
+            : 'Draft Request No: ' . $requestProd->request_no . ' resmi diajukan ke Engineering!';
 
         return redirect()->route('prod.request.list')->with('success', $pesanSukses);
     }

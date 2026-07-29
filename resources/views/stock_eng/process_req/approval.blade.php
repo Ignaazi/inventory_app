@@ -2,7 +2,7 @@
 
 @section('content')
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
   .approval-view, .approval-view * {
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
@@ -78,7 +78,7 @@
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">SAP Code</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Qty Req</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Machine / Line</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Requestor</th>
+            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Requestor & TTD</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Status</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Created At</th>
             <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Last Update</th>
@@ -113,16 +113,33 @@
               {{ $req->line_machine }}
             </td>
             
-            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase tracking-wider whitespace-nowrap">
-              {{ $req->requestor }}
+            <!-- FIXED UI: Kolom Requestor terintegrasi otomatis dengan Tanda Tangan Digital dari Production -->
+            <td class="py-3 px-3 text-center whitespace-nowrap">
+              <div class="flex flex-col items-center justify-center gap-1.5">
+                <span class="text-xs font-bold text-slate-950 dark:text-white uppercase tracking-wider block">
+                  {{ $req->requestor }}
+                </span>
+                
+                @if($req->production_signature)
+                  <div class="relative w-20 h-10 bg-white border border-gray-200 dark:border-gray-700 rounded p-0.5 shadow-inner flex items-center justify-center overflow-hidden">
+                    <img src="{{ str_starts_with($req->production_signature, 'http') ? $req->production_signature : asset('storage/' . ltrim($req->production_signature, '/')) }}" 
+                         class="max-h-full max-w-full object-contain block mx-auto my-auto" 
+                         alt="TTD Prod">
+                  </div>
+                @else
+                  <span class="text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded border border-amber-200/40">
+                    No E-Sign
+                  </span>
+                @endif
+              </div>
             </td>
 
             <td class="py-3 px-3 text-center whitespace-nowrap">
               <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if($req->status == 'success' || $req->status == 'approved') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
-                @elseif($req->status == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
+                @if(in_array(strtolower($req->status), ['success', 'approved'])) bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
+                @elseif(strtolower($req->status) == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
                 @else bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40 @endif">
-                {{ $req->status == 'success' || $req->status == 'approved' ? 'Success' : ($req->status == 'rejected' ? 'Rejected' : 'Pending') }}
+                {{ in_array(strtolower($req->status), ['success', 'approved']) ? 'Success' : (strtolower($req->status) == 'rejected' ? 'Rejected' : 'Pending') }}
               </span>
             </td>
 
@@ -146,7 +163,8 @@
             
             <td class="py-3 px-3 whitespace-nowrap">
               <div class="flex items-center justify-center gap-1.5">
-                @if(!in_array($req->status, ['success', 'approved', 'rejected']))
+                @if(!in_array(strtolower($req->status), ['success', 'approved', 'rejected']))
+                    <!-- Aksi Reject Menggunakan Route Prefix 'eng.' -->
                     <form action="{{ route('eng.approval.reject', $req->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENOLAK request ini?');" class="inline-block m-0">
                         @csrf
                         <button type="submit" class="px-2.5 py-1.5 bg-gradient-to-r from-red-500 to-amber-400 hover:from-red-600 hover:to-amber-500 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all active:scale-[0.98]">
@@ -154,6 +172,7 @@
                         </button>
                     </form>
 
+                    <!-- Tombol Approve yang akan Langsung Membuka Halaman Form Detail/Review (approveForm.blade.php) -->
                     <a href="{{ route('eng.approval.review', $req->id) }}" 
                        class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
                         Approve
