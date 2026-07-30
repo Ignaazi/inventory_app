@@ -1,266 +1,312 @@
 @extends('admin')
 
 @section('content')
+{{-- Load Google Fonts Nunito & SweetAlert2 --}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-
-  .approval-view, .approval-view * {
-    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
-  }
-
-  .table-row-item {
-    transition: all 0.2s ease-in-out;
-  }
+    /* Custom Styling SweetAlert2 agar harmonis dengan tema aplikasi */
+    .swal2-popup {
+        border-radius: 1rem !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    .dark .swal2-popup {
+        background-color: #0f172a !important; /* slate-900 */
+        border: 1px solid #1e293b !important; /* slate-850 */
+    }
+    .dark .swal2-title, .dark .swal2-html-container {
+        color: #f8fafc !important; /* slate-50 */
+    }
 </style>
 
-<div class="approval-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
-  
-  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
-        Engineering Approval List
-      </h2>
-      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">Verify and process production line requests </p>
+<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+
+    {{-- Banner Top Alert Status Counter --}}
+    <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
+            <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">SYSTEM RECORD:</span> 
+            Total {{ $requests->total() }} production requests queue logged for engineering review.
+        </p>
     </div>
-  </div>
 
-  @if(session('success'))
-      <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm">
-          {{ session('success') }}
-      </div>
-  @endif
+    {{-- Header Section --}}
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
+        <div>
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Engineering Approval List</h2>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS KARAWANG</p>
+        </div>
+    </div>
 
-  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm sm:px-6">
-    
-    <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
-      
-      <div class="relative w-full lg:w-72">
-        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-        </span>
-        <input type="text" placeholder="Search Request..." class="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-semibold text-xs outline-none transition-all focus:border-indigo-500 text-slate-950 dark:text-white placeholder-slate-400">
-      </div>
+    {{-- PEMBUNGKUS UTAMA TABEL --}}
+    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
+        
+        {{-- HEADER KONTROL RESPONSIF --}}
+        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
+            <!-- Entries Controller -->
+            <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
+                <div class="flex items-center gap-1.5">
+                    <span>Show</span>
+                    <select class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                        <option value="10" class="dark:bg-slate-900">10</option>
+                        <option value="25" class="dark:bg-slate-900">25</option>
+                        <option value="50" class="dark:bg-slate-900">50</option>
+                    </select>
+                    <span>entries</span>
+                </div>
+            </div>
 
-      <div class="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <button type="button" onclick="filterTable('all', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
-            All
-          </button>
-          <button type="button" onclick="filterTable('success', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Approve
-          </button>
-          <button type="button" onclick="filterTable('rejected', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Reject
-          </button>
+            <!-- Search & Export Grid -->
+            <div class="grid grid-cols-12 gap-2 w-full sm:w-auto order-1 sm:order-2">
+                {{-- LIVE SEARCH INPUT --}}
+                <div class="relative col-span-8 sm:w-60 sm:block">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <form action="{{ url()->current() }}" method="GET" class="w-full">
+                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search Request..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
+                    </form>
+                </div>
+
+                {{-- TOMBOL EXPORT CSV --}}
+                <button type="button" onclick="exportTableToCSV('engineering-approvals.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                    <span class="hidden sm:inline">Export CSV</span>
+                    <span class="sm:hidden">CSV</span>
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
-        <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white transition-colors">
-          <svg class="stroke-current" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.29004 5.90393H17.7067" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M17.7075 14.0961H2.29085" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12.0826 3.33331C13.5024 3.33331 14.6534 4.48431 14.6534 5.90414C14.6534 7.32398 13.5024 8.47498 12.0826 8.47498C10.6627 8.47498 9.51172 7.32398 9.51172 5.90415C9.51172 4.48432 10.6627 3.33331 12.0826 3.33331Z" stroke-width="1.5" />
-            <path d="M7.91745 11.525C6.49762 11.525 5.34662 12.676 5.34662 14.0959C5.34661 15.5157 6.49762 16.6667 7.91745 16.6667C9.33728 16.6667 10.4883 15.5157 10.4883 14.0959C10.4883 12.676 9.33728 11.525 7.91745 11.525Z" stroke-width="1.5" />
-          </svg>
-          Filter
-        </button>
-      </div>
+        {{-- AREA SCROLL HORIZONTAL --}}
+        <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1450px]" id="approvalTable">
+                <thead>
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
+                        <th class="px-2 py-3.5 w-[50px] text-center">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
+                        </th>
+                        <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 dark:bg-blue-900/50">NO</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:bg-blue-900/50">Request NO</th>
+                        <th class="px-3 py-3.5 w-[100px] border-l border-blue-500 dark:bg-blue-900/50">NIK</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:bg-blue-900/50">Name</th>
+                        <th class="px-4 py-3.5 border-l border-blue-500 dark:bg-blue-900/50 text-center w-[160px]">Sparepart ID</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:bg-blue-900/50">Qty Req</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:bg-blue-900/50">Line</th>
+                        <th class="px-2 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50">Machine Name</th>
+                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:bg-blue-900/50">Status</th>
+                        <th class="px-4 py-3.5 border-l border-blue-500 dark:bg-blue-900/50 text-center w-[130px]">Remark</th>
+                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Created At</th>
+                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Updated At</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Action Decision</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-slate-950 dark:text-slate-200 font-nunito bg-transparent">
+                    @forelse($requests as $index => $req)
+                    @php
+                        $statusText = 'unknown';
+                        $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                        
+                        if(str_contains(strtolower($req->status), 'draft')) {
+                            $statusText = 'draft';
+                            $badgeClass = 'bg-gray-100 text-gray-950 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+                        } elseif(str_contains(strtolower($req->status), 'pending')) {
+                            $statusText = 'pending';
+                            $badgeClass = 'bg-amber-50 text-amber-950 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+                        } elseif(str_contains(strtolower($req->status), 'staff') || str_contains(strtolower($req->status), 'checked') || str_contains(strtolower($req->status), 'success') || str_contains(strtolower($req->status), 'approved')) {
+                            $statusText = 'approved';
+                            $badgeClass = 'bg-emerald-50 text-emerald-950 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50';
+                        } elseif(str_contains(strtolower($req->status), 'reject')) {
+                            $statusText = 'rejected';
+                            $badgeClass = 'bg-rose-50 text-rose-950 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50';
+                        } elseif(str_contains(strtolower($req->status), 'finished')) {
+                            $statusText = 'finished';
+                            $badgeClass = 'bg-purple-50 text-purple-950 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50';
+                        }
+                    @endphp
+                    <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
+                        <td class="px-2 py-3.5 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-slate-950 dark:text-slate-400">
+                            {{ $requests->firstItem() + $index }}
+                        </td>
+                        
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap text-slate-950 dark:text-slate-100">
+                            {{ $req->request_no }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
+                            {{ optional($req->user)->nik ?? $req->nik ?? '-' }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
+                            {{ optional($req->user)->name ?? $req->requestor ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal text-blue-600 dark:text-blue-400">
+                            @if($req->sparepart)
+                                {{ $req->sparepart->sparepart_id ?? $req->sparepart->id }}
+                            @else
+                                @php
+                                    $fallback = is_numeric($req->sparepart_id) 
+                                        ? \DB::table('spareparts')->where('id', $req->sparepart_id)->first() 
+                                        : null;
+                                @endphp
+                                {{ $fallback ? ($fallback->sparepart_id ?? $req->sparepart_id) : ($req->sparepart_id ?? '-') }}
+                            @endif
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
+                            {{ sprintf("%02d", $req->qty_req) }}
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-nowrap text-slate-950 dark:text-slate-200">
+                            {{ optional($req->lineProduction)->no_line ?? ($req->line_machine ? explode(' - ', $req->line_machine)[0] : '-') }}
+                        </td>
+                        
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-normal break-words leading-normal text-slate-950 dark:text-slate-200">
+                            {{ optional($req->lineProduction)->name_machine ?? ($req->line_machine ? (explode(' - ', $req->line_machine)[1] ?? '-') : '-') }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
+                            <div class="flex justify-center items-center">
+                                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm {{ $badgeClass }}">
+                                    {{ $statusText === 'unknown' ? $req->status : $statusText }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center font-semibold tracking-wide whitespace-normal break-words leading-normal text-slate-950 dark:text-slate-200">
+                            {{ $req->remark ?? '-' }}
+                        </td>
+
+                        {{-- CREATED AT --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-950 dark:text-slate-400 text-center">
+                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ $req->created_at ? $req->created_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ $req->created_at ? $req->created_at->format('H:i') : '-' }} WIB</div>
+                        </td>
+
+                        {{-- UPDATED AT --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-950 dark:text-slate-400 text-center">
+                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ $req->updated_at ? $req->updated_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ $req->updated_at ? $req->updated_at->format('H:i') : '-' }} WIB</div>
+                        </td>
+                        
+                        {{-- DECISION ACTION --}}
+                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
+                            <div class="flex items-center justify-center gap-1.5 w-full">
+                                @if(!in_array(strtolower($req->status), ['success', 'approved', 'rejected']))
+                                    <form action="{{ route('eng.approval.reject', $req->id) }}" method="POST" class="decision-form inline-block m-0">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1.5 bg-gradient-to-r from-red-500 to-amber-500 text-white font-black rounded text-[10px] uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer">
+                                            Reject
+                                        </button>
+                                    </form>
+
+                                    <a href="{{ route('eng.approval.review', $req->id) }}" 
+                                       class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-black rounded text-[10px] uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all text-center inline-block no-underline cursor-pointer">
+                                        Approve
+                                    </a>
+                                @else
+                                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider">Processed</span>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="14" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito dark:bg-slate-900">
+                            No production requests waiting in review queue.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- FOOTER PAGINATION RESPONSIF --}}
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
+            <p class="text-[11px] font-black text-slate-950 dark:text-slate-400 tracking-wide uppercase font-nunito text-center sm:text-left">
+                Showing {{ $requests->firstItem() ?? 0 }} to {{ $requests->lastItem() ?? 0 }} of {{ $requests->total() ?? 0 }} Entries
+            </p>
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito text-slate-950 dark:text-white w-full sm:w-auto custom-pagination">
+                {{ $requests->links() }}
+            </div>
+        </div>
     </div>
-
-    <div class="w-full overflow-x-auto block align-middle">
-      <table class="min-w-full text-left border-collapse mx-auto" id="approval-table">
-        <thead>
-          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">NO</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">REQ No.</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">No Nozzle</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">SAP Code</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Qty Req</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Machine / Line</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Requestor & TTD</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Status</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Created At</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Last Update</th>
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-44 whitespace-nowrap">Action Decision</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 font-medium text-slate-950 dark:text-white">
-          @forelse($requests as $key => $req)
-          <tr class="table-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
-            
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
-              {{ $requests->firstItem() + $key }}
-            </td>
-
-            <td class="py-3 px-3 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase whitespace-nowrap">
-              {{ $req->request_no }}
-            </td>
-            
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white uppercase whitespace-nowrap">
-              {{ $req->sparepart_name }}
-            </td>
-
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white font-mono uppercase whitespace-nowrap">
-              {{ $req->sap_code }}
-            </td>
-            
-            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white whitespace-nowrap">
-              {{ sprintf("%02d", $req->qty_req) }} PCS
-            </td>
-            
-            <td class="py-3 px-3 text-xs font-bold text-center text-slate-950 dark:text-white uppercase whitespace-nowrap">
-              {{ $req->line_machine }}
-            </td>
-            
-            <!-- FIXED UI: Kolom Requestor terintegrasi otomatis dengan Tanda Tangan Digital dari Production -->
-            <td class="py-3 px-3 text-center whitespace-nowrap">
-              <div class="flex flex-col items-center justify-center gap-1.5">
-                <span class="text-xs font-bold text-slate-950 dark:text-white uppercase tracking-wider block">
-                  {{ $req->requestor }}
-                </span>
-                
-                @if($req->production_signature)
-                  <div class="relative w-20 h-10 bg-white border border-gray-200 dark:border-gray-700 rounded p-0.5 shadow-inner flex items-center justify-center overflow-hidden">
-                    <img src="{{ str_starts_with($req->production_signature, 'http') ? $req->production_signature : asset('storage/' . ltrim($req->production_signature, '/')) }}" 
-                         class="max-h-full max-w-full object-contain block mx-auto my-auto" 
-                         alt="TTD Prod">
-                  </div>
-                @else
-                  <span class="text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded border border-amber-200/40">
-                    No E-Sign
-                  </span>
-                @endif
-              </div>
-            </td>
-
-            <td class="py-3 px-3 text-center whitespace-nowrap">
-              <span class="status-cell inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if(in_array(strtolower($req->status), ['success', 'approved'])) bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
-                @elseif(strtolower($req->status) == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
-                @else bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40 @endif">
-                {{ in_array(strtolower($req->status), ['success', 'approved']) ? 'Success' : (strtolower($req->status) == 'rejected' ? 'Rejected' : 'Pending') }}
-              </span>
-            </td>
-
-            <td class="py-3 px-3 text-xs whitespace-nowrap">
-              <div class="font-bold text-slate-800 dark:text-slate-200">
-                {{ \Carbon\Carbon::parse($req->created_at)->format('d/m/y') }}
-              </div>
-              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
-                {{ \Carbon\Carbon::parse($req->created_at)->format('H:i') }} WIB
-              </div>
-            </td>
-
-            <td class="py-3 px-3 text-xs whitespace-nowrap">
-              <div class="font-bold text-slate-800 dark:text-slate-200">
-                {{ \Carbon\Carbon::parse($req->updated_at)->format('d/m/y') }}
-              </div>
-              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
-                {{ \Carbon\Carbon::parse($req->updated_at)->format('H:i') }} WIB
-              </div>
-            </td>
-            
-            <td class="py-3 px-3 whitespace-nowrap">
-              <div class="flex items-center justify-center gap-1.5">
-                @if(!in_array(strtolower($req->status), ['success', 'approved', 'rejected']))
-                    <!-- Aksi Reject Menggunakan Route Prefix 'eng.' -->
-                    <form action="{{ route('eng.approval.reject', $req->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENOLAK request ini?');" class="inline-block m-0">
-                        @csrf
-                        <button type="submit" class="px-2.5 py-1.5 bg-gradient-to-r from-red-500 to-amber-400 hover:from-red-600 hover:to-amber-500 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all active:scale-[0.98]">
-                            Reject
-                        </button>
-                    </form>
-
-                    <!-- Tombol Approve yang akan Langsung Membuka Halaman Form Detail/Review (approveForm.blade.php) -->
-                    <a href="{{ route('eng.approval.review', $req->id) }}" 
-                       class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
-                        Approve
-                    </a>
-                @else
-                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Processed</span>
-                @endif
-              </div>
-            </td>
-          </tr>
-          @empty
-          <tr>
-            <td colspan="11" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
-              No Production Requests Queue Found.
-            </td>
-          </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
-
-    <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-1 border-t border-gray-100 pt-5 dark:border-gray-800">
-      <p class="text-xs font-extrabold text-slate-950 dark:text-white">
-        Showing {{ $requests->firstItem() ?? 0 }} to {{ $requests->lastItem() ?? 0 }} of {{ $requests->total() ?? 0 }} entries
-      </p>
-      <div class="flex items-center">
-        {{ $requests->links() }}
-      </div>
-    </div>
-
-  </div>
 </div>
 
-<style>
-  nav[role="navigation"] svg {
-    width: 16px;
-    height: 16px;
-    display: inline;
-  }
-  nav[role="navigation"] div:first-child {
-    display: none;
-  }
-  .pagination .page-item.active .page-link {
-    background-color: #3C50E0 !important;
-    border-color: #3C50E0 !important;
-    color: white !important;
-    font-weight: bold;
-    font-size: 12px;
-  }
-  .pagination .page-link {
-    color: #0f172a !important; 
-    font-weight: 700;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-</style>
-
 <script>
-  function filterTable(criteria, element) {
-    const buttons = document.querySelectorAll('.filter-btn');
-    buttons.forEach(btn => {
-      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        let checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
     });
 
-    if (element) {
-      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
-      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+    // Export CSV Client Side Logic
+    function exportTableToCSV(filename) {
+        let csv = [];
+        let rows = document.querySelectorAll("#approvalTable tr");
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 1; j < cols.length; j++) { // Skip checkbox
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s+)/gm, " ");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
+        }
+        let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
     }
 
-    const rows = document.querySelectorAll('.table-row-item');
-    
-    rows.forEach(row => {
-      if (criteria === 'all') {
-        row.style.display = '';
-        return;
-      }
-
-      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
-
-      if (criteria === 'success' && (statusText === 'success' || statusText === 'approved')) {
-         row.style.display = '';
-      } else if (criteria === 'rejected' && statusText === 'rejected') {
-         row.style.display = '';
-      } else {
-         row.style.display = 'none';
-      }
+    // Intercept Reject Submit Form dengan SweetAlert2
+    document.querySelectorAll('.decision-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let currentForm = this;
+            Swal.fire({
+                title: 'Reject Request?',
+                text: "Are you sure you want to reject this production request?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Reject it!',
+                customClass: { popup: 'font-nunito bg-white dark:bg-slate-900 max-w-[90%] sm:max-w-md' }
+            }).then((result) => { if (result.isConfirmed) currentForm.submit(); });
+        });
     });
-  }
+
+    @if(session('success'))
+        Swal.fire({ icon: 'success', title: 'Success!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false, customClass: { popup: 'font-nunito' } });
+    @endif
 </script>
+
+<style>
+    /* Paksa Font Nunito & Teks Hitam Pekat */
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #approvalTable, #approvalTable tbody tr td { 
+        font-family: 'Nunito', sans-serif !important; 
+    }
+    
+    /* Scrollbar minimalis horizontal */
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    
+    #approvalTable td, #approvalTable th {
+        vertical-align: middle !important;
+    }
+    .custom-pagination nav svg { width: 14px; height: 14px; display: inline; }
+    .custom-pagination nav div:first-child { display: none; }
+</style>
 @endsection

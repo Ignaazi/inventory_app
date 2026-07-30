@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('stock_engs', function (Blueprint $table) {
-            // Menghapus kolom yang tidak berguna secara aman
-            $table->dropColumn('list_sparepart_eng_id');
+            // Cek terlebih dahulu apakah kolom benar-benar ada sebelum di-drop
+            if (Schema::hasColumn('stock_engs', 'list_sparepart_eng_id')) {
+                $table->dropColumn('list_sparepart_eng_id');
+            }
         });
     }
 
@@ -23,8 +25,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('stock_engs', function (Blueprint $table) {
-            // Mengembalikan kolom jika dilakukan rollback
-            $table->bigInteger('list_sparepart_eng_id')->unsigned()->default(0)->after('id');
+            // Cek dulu agar saat rollback tidak membuat kolom ganda jika sudah ada
+            if (!Schema::hasColumn('stock_engs', 'list_sparepart_eng_id')) {
+                $table->bigInteger('list_sparepart_eng_id')->unsigned()->default(0)->after('id');
+            }
         });
     }
 };

@@ -1,9 +1,33 @@
 @extends('admin')
 
 @section('content')
-<!-- Memastikan font Nunito ter-load dengan baik jika belum ada di template utama -->
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+[x-cloak] { display: none !important; }
+
+@media print {
+    body * {
+        visibility: hidden;
+        background: white !important;
+        color: black !important;
+    }
+    #print-target-box, #print-target-box * {
+        visibility: visible;
+    }
+    #print-target-box {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
 
 <div class="mx-auto w-full max-w-7xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="approvalFormHandler()" x-cloak>
     
@@ -21,7 +45,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
                 Kembali
             </a>
-            <button type="button" @click="generatePDF()" class="flex items-center gap-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-md active:scale-95 cursor-pointer">
+            <button type="button" @click="generatePDF()" class="flex items-center gap-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4H7v4a2 2 0 002 2zM9 9V5a2 2 0 012-2h2a2 2 0 012 2v4M7 13h10" />
                 </svg>
@@ -36,54 +60,63 @@
             @csrf
             
             @php 
-                $hasStaffSigned = !empty($req->staff_signature);
-                $isStaffTurn = !$hasStaffSigned && ($req->status === 'Pending');
+                $hasStaffSigned = !empty($req->engineering_signature) || in_array($req->status, ['Checked by Staff', 'Approved']);
+                $hasAdminSigned = !empty($req->spv_signature) || $req->status === 'Approved';
                 
-                $hasSpvSigned = !empty($req->spv_signature);
-                $isSpvTurn = $hasStaffSigned && !$hasSpvSigned && ($req->status === 'Checked by Staff');
+                $isStaffTurn = !$hasStaffSigned && ($req->status === 'Pending' || $req->status === 'Draft Submit');
+                $isAdminTurn = $hasStaffSigned && !$hasAdminSigned && ($req->status === 'Checked by Staff');
             @endphp
 
-            <input type="hidden" name="signer_role" value="{{ $isStaffTurn ? 'staff' : 'spv' }}">
-            <input type="hidden" name="signature_image" x-bind:value="signatureImg">
-            <input type="hidden" name="stamp_image" x-bind:value="stampImg">
+            <input type="hidden" name="signer_role" value="{{ $isStaffTurn ? 'staff' : 'admin' }}">
+            <input type="hidden" name="signature_image" x-bind:value="signatureRawPath">
 
             <div class="p-5 sm:p-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    <!-- LEFT SIDE: PARAMETER DATA INPUTS -->
                     <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        
-                        <!-- 1. Requestor -->
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-xs font-black uppercase text-black tracking-wider">NIK / Requestor</label>
-                            <input type="text" value="{{ $req->requestor }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">NIK</label>
+                            <input type="text" value="{{ optional($req->user)->nik }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 2. Line Machine -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">Name</label>
+                            <input type="text" value="{{ optional($req->user)->name }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Line</label>
-                            <input type="text" value="{{ $req->line_machine }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" value="{{ optional($req->lineProduction)->no_line }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 3. Sparepart ID -->
-                        <div class="flex flex-col gap-1.5 sm:col-span-2">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">Machine Name</label>
+                            <input type="text" value="{{ optional($req->lineProduction)->name_machine }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Sparepart ID</label>
-                            <input type="text" value="{{ $req->sparepart_name }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" value="{{ optional($req->sparepart)->sparepart_id ?? $req->sparepart_id }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 4. SAP Code -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">SAP Code</label>
-                            <input type="text" value="{{ $req->sap_code ?? '-' }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" value="{{ optional($req->sparepart)->sap_code ?? '-' }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 5. Quantity -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">Part Number</label>
+                            <input type="text" value="{{ optional($req->sparepart)->part_number ?? '-' }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Quantity Requested</label>
-                            <input type="text" value="{{ $req->qty_req }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <div class="relative flex items-center">
+                                <input type="text" value="{{ $req->qty_req }}" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 pr-10 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                                <span class="absolute right-3 text-xs font-bold text-slate-400">Pcs</span>
+                            </div>
                         </div>
 
-                        <!-- 6. Remark -->
                         <div class="flex flex-col gap-1.5 sm:col-span-2">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Remark</label>
                             <textarea readonly rows="2" class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed resize-none outline-none dark:bg-meta-4/30">{{ $req->remark }}</textarea>
@@ -92,15 +125,15 @@
 
                     <!-- RIGHT SIDE: LIVE DATABASE DIGITAL AUTHORIZATION DISPLAY -->
                     <div class="flex flex-col justify-between bg-slate-50 dark:bg-slate-900/40 p-4 rounded-md border border-slate-300 dark:border-strokedark relative z-0">
-                        @if($hasSpvSigned)
+                        @if($hasAdminSigned)
                             <div class="my-auto text-center p-4">
-                                <span class="bg-emerald-600 text-white px-3 py-1.5 rounded text-[10px] font-black tracking-wide uppercase">APPROVAL COMPLETED</span>
-                                <p class="text-[10px] text-slate-500 font-bold mt-2">Otorisasi form telah selesai diproses.</p>
+                                <span class="bg-emerald-600 text-white px-3 py-1.5 rounded text-[10px] font-black tracking-wide uppercase">APPROVED BY ADMIN</span>
+                                <p class="text-[10px] text-slate-500 font-bold mt-2">Seluruh alur otorisasi dokumen selesai diproses.</p>
                             </div>
                         @elseif($req->status === 'Rejected')
                             <div class="my-auto text-center p-4">
                                 <span class="bg-rose-600 text-white px-3 py-1.5 rounded text-[10px] font-black tracking-wide uppercase">FORM REJECTED</span>
-                                <p class="text-[10px] text-slate-500 font-bold mt-2">{{ $req->reject_remark ?? 'Ditolak' }}</p>
+                                <p class="text-[10px] text-slate-500 font-bold mt-2">{{ $req->reject_remark ?? 'Permohonan ditolak oleh tim Engineering.' }}</p>
                             </div>
                         @else
                             <div>
@@ -113,11 +146,8 @@
                                     <div class="absolute inset-0 z-10 flex items-center justify-center p-2" x-show="signatureImg">
                                         <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                                     </div>
-                                    <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none" x-show="stampImg">
-                                        <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-80">
-                                    </div>
                                     
-                                    <div class="z-30 text-center" x-show="!signatureImg && !stampImg">
+                                    <div class="z-30 text-center" x-show="!signatureImg">
                                         <div class="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] uppercase tracking-wider border border-indigo-200 dark:border-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded-md">
                                             Secure E-Sign Dynamic<br>
                                             <span class="text-[8px] text-black font-sans font-bold tracking-normal">Linked to: {{ auth()->user()->name }}</span>
@@ -130,14 +160,12 @@
                                 <span class="text-black dark:text-white">TTD DATA: 
                                     <span :class="signatureImg ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-white'" class="ml-1 px-2.5 py-1 rounded text-[9px] font-black tracking-wide" x-text="signatureImg ? 'ACTIVE' : 'NONE'"></span>
                                 </span>
-                                <span class="text-slate-500 font-black">ROLE: <span class="text-indigo-600">{{ $isStaffTurn ? 'STAFF' : 'SPV' }}</span></span>
                             </div>
                         @endif
                     </div>
                 </div>
 
-                @if(!$hasSpvSigned && $req->status !== 'Rejected')
-                <!-- CONTAINER ACTION FOOTER BUTTONS -->
+                @if(!$hasAdminSigned && $req->status !== 'Rejected')
                 <div class="mt-6 pt-4 border-t border-slate-200 dark:border-strokedark flex flex-col sm:flex-row justify-end gap-2.5">
                     <button type="button" @click="triggerReject()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-black border-2 border-slate-500 rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer">
                         Reject
@@ -145,7 +173,7 @@
 
                     <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 hover:opacity-90 text-white rounded-md px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all active:scale-95 border-none cursor-pointer shadow-md">
                         <svg class="w-3.5 h-3.5 inline-block mr-1 align-middle -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        <span class="align-middle" x-text="isStaffTurn ? 'Checked' : 'Approved'"></span>
+                        <span class="align-middle" x-text="isStaffTurn ? 'Mark as Checked' : 'Mark as Approved'"></span>
                     </button>
                 </div>
                 @endif
@@ -153,7 +181,7 @@
         </form>
     </div>
 
-    <!-- LIVE PREVIEW FORM AREA -->
+    <!-- LIVE PREVIEW FORM AREA (PRINT VIEW) -->
     <div id="print-target-box" class="print:m-0 print:p-0">
         <div class="bg-white text-black p-8 sm:p-10 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-nunito">
             
@@ -169,7 +197,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide rounded-sm">FORM REQUEST NOZZLE</h2>
-                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $req->request_no ?? 'REQ-PRD-SIIX-001' }}</p>
+                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $req->request_no ?? 'REQPROD001' }}</p>
                 </div>
             </div>
 
@@ -178,19 +206,31 @@
                     <tbody>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NIK</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $req->requestor }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->nik }}</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 px-4 font-black text-black uppercase bg-slate-50 px-3 border-r border-black text-black">NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->name }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">LINE</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $req->line_machine }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->lineProduction)->no_line }}</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">MACHINE NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->lineProduction)->name_machine }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SPAREPART ID</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $req->sparepart_name }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->sparepart)->sparepart_id ?? $req->sparepart_id }}</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PART NUMBER</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->sparepart)->part_number ?? '-' }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SAP CODE</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ $req->sap_code ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ optional($req->sparepart)->sap_code ?? '-' }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Remark</td>
@@ -207,24 +247,23 @@
             <!-- DIGITAL SIGNATURE MATRIX GRID -->
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8 rounded-sm overflow-hidden">
                 
-                <!-- 1. Requested By -->
+                <!-- 1. Requested By (Production Department) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Requested By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="prodSignatureImg">
                             <img :src="prodSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
-                        <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none" x-show="prodStampImg">
-                            <img :src="prodStampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
-                        </div>
-                        <div class="z-30 px-2 my-auto" x-show="!prodSignatureImg && !prodStampImg">
+                        <div class="z-30 px-2 my-auto" x-show="!prodSignatureImg">
                             <div class="text-green-600 font-mono text-[9px] font-black uppercase tracking-tighter border border-green-300 bg-green-50 py-0.5 rounded mx-auto max-w-[130px]">
                                 VERIFIED
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-black uppercase text-black tracking-wide truncate">{{ $req->requestor }}</p>
+                        <p class="font-black uppercase text-black tracking-wide truncate">
+                            {{ optional($req->user)->name ?? '( _________________ )' }}
+                        </p>
                         <p class="text-[9px] text-black font-black uppercase mt-0.5">Production Department</p>
                     </div>
                 </div>
@@ -234,7 +273,6 @@
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         
-                        <!-- Live preview ketika Staff sedang proses ttd -->
                         <template x-if="isStaffTurn && signatureImg">
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
                                 <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
@@ -244,27 +282,23 @@
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="staffSignatureImg">
                             <img :src="staffSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
-                        <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none" x-show="staffStampImg">
-                            <img :src="staffStampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
-                        </div>
 
-                        <span x-show="!staffSignatureImg && (!isStaffTurn || !signatureImg)" class="text-black text-[9px] font-black my-auto">( Pending Stage )</span>
+                        <span x-show="!staffSignatureImg && (!isStaffTurn || !signatureImg)" class="text-slate-400 text-[9px] font-black my-auto">( Pending Stage )</span>
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black tracking-wide truncate">
-                            {{ $req->staff_name ?? ($isStaffTurn && auth()->check() ? auth()->user()->name : '( _________________ )') }}
+                            {{ $req->staff_name ?? ( !empty($req->engineering_signature) && auth()->check() ? auth()->user()->name : '( _________________ )' ) }}
                         </p>
                         <p class="text-[9px] text-black font-black uppercase mt-0.5">Staff Engineering</p>
                     </div>
                 </div>
 
-                <!-- 3. Approved By (Engineering SPV) -->
+                <!-- 3. Approved By (Engineering Admin / SPV) -->
                 <div class="flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         
-                        <!-- Live preview ketika SPV sedang proses ttd -->
-                        <template x-if="isSpvTurn && signatureImg">
+                        <template x-if="isAdminTurn && signatureImg">
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
                                 <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                             </div>
@@ -273,17 +307,14 @@
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="spvSignatureImg">
                             <img :src="spvSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
-                        <div class="absolute inset-0 z-20 flex items-center justify-center p-1 pointer-events-none" x-show="spvStampImg">
-                            <img :src="spvStampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
-                        </div>
 
-                        <span x-show="!spvSignatureImg && (!isSpvTurn || !signatureImg)" class="text-black text-[9px] font-black my-auto">( Pending Stage )</span>
+                        <span x-show="!spvSignatureImg && (!isAdminTurn || !signatureImg)" class="text-slate-400 text-[9px] font-black my-auto">( Pending Stage )</span>
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black tracking-wide truncate">
-                            {{ $req->spv_name ?? ($isSpvTurn && auth()->check() ? auth()->user()->name : '( _________________ )') }}
+                            {{ $req->spv_name ?? ( !empty($req->spv_signature) && auth()->check() ? auth()->user()->name : '( _________________ )' ) }}
                         </p>
-                        <p class="text-[9px] text-black font-black uppercase mt-0.5">SPV Engineering</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Admin / SPV Engineering</p>
                     </div>
                 </div>
             </div>
@@ -298,43 +329,28 @@
     </form>
 </div>
 
-<style>
-[x-cloak] { display: none !important; }
-
-/* Menghilangkan CSS cetak global berbahaya untuk mengamankan Sidebar & Navbar Dashboard Monitor */
-@media print {
-    .print\:hidden {
-        display: none !important;
-    }
-}
-</style>
-
 <script>
 function approvalFormHandler() {
     const prodSignPath = "{{ $req->production_signature ?? '' }}";
-    const prodStampPath = "{{ $req->production_stamp ?? '' }}";
-    const staffSignPath = "{{ $req->staff_signature ?? '' }}";
-    const staffStampPath = "{{ $req->staff_stamp ?? '' }}";
-    const spvSignPath = "{{ $req->spv_signature ?? '' }}";
-    const spvStampPath = "{{ $req->spv_stamp ?? '' }}";
+    const userSignPath = "{{ $req->user && $req->user->signature_path ? $req->user->signature_path : '' }}";
+    const activeProdPath = prodSignPath || userSignPath;
 
+    const staffSignPath = "{{ $req->engineering_signature ?? '' }}"; 
+    const spvSignPath = "{{ $req->spv_signature ?? '' }}";
     const userAuthSignaturePath = "{{ auth()->check() && auth()->user()->signature_path ? auth()->user()->signature_path : '' }}";
 
     return {
         isStaffTurn: @json($isStaffTurn),
-        isSpvTurn: @json($isSpvTurn),
-        stampImg: null,
+        isAdminTurn: @json($isAdminTurn),
+        signatureRawPath: userAuthSignaturePath,
 
         signatureImg: userAuthSignaturePath ? (userAuthSignaturePath.startsWith('http') ? userAuthSignaturePath : "{{ asset('storage') }}/" + userAuthSignaturePath.replace(/^\/?(storage\/)?/, '')) : null,
-
-        prodSignatureImg: prodSignPath ? (prodSignPath.startsWith('http') ? prodSignPath : "{{ asset('storage') }}/" + prodSignPath.replace(/^\/?(storage\/)?/, '')) : null,
-        prodStampImg: prodStampPath ? (prodStampPath.startsWith('http') ? prodStampPath : "{{ asset('storage') }}/" + prodStampPath.replace(/^\/?(storage\/)?/, '')) : null,
+        
+        prodSignatureImg: activeProdPath ? (activeProdPath.startsWith('http') ? activeProdPath : "{{ asset('storage') }}/" + activeProdPath.replace(/^\/?(storage\/)?/, '')) : null,
         
         staffSignatureImg: staffSignPath ? (staffSignPath.startsWith('http') ? staffSignPath : "{{ asset('storage') }}/" + staffSignPath.replace(/^\/?(storage\/)?/, '')) : null,
-        staffStampImg: staffStampPath ? (staffStampPath.startsWith('http') ? staffStampPath : "{{ asset('storage') }}/" + staffStampPath.replace(/^\/?(storage\/)?/, '')) : null,
         
         spvSignatureImg: spvSignPath ? (spvSignPath.startsWith('http') ? spvSignPath : "{{ asset('storage') }}/" + spvSignPath.replace(/^\/?(storage\/)?/, '')) : null,
-        spvStampImg: spvStampPath ? (spvStampPath.startsWith('http') ? spvStampPath : "{{ asset('storage') }}/" + spvStampPath.replace(/^\/?(storage\/)?/, '')) : null,
 
         generatePDF() {
             window.print();
@@ -360,11 +376,11 @@ function approvalFormHandler() {
             });
         },
         handleApprovalSubmit() {
-            if (!this.signatureImg) {
+            if (!this.signatureImg || this.signatureRawPath === '') {
                 Swal.fire({
                     icon: 'error',
                     title: 'Otorisasi Gagal',
-                    text: 'Akun Anda belum memiliki file tanda tangan digital di database sistem! Silakan upload TTD di profil terlebih dahulu.',
+                    text: 'Akun Anda belum memiliki data tanda tangan digital terdaftar! Silakan upload TTD di profil terlebih dahulu.',
                     confirmButtonColor: '#2563eb'
                 });
                 return false;
@@ -372,8 +388,8 @@ function approvalFormHandler() {
             
             const isStaff = this.isStaffTurn;
             Swal.fire({
-                title: isStaff ? 'Konfirmasi Checked?' : 'Konfirmasi Approval?',
-                text: isStaff ? "Request akan ditandai sebagai CHECKED dan diteruskan ke SPV." : "Request akan langsung ditandai sebagai APPROVED.",
+                title: isStaff ? 'Konfirmasi Verifikasi Dokumen?' : 'Konfirmasi Final Approval?',
+                text: isStaff ? "Dokumen akan ditandai sebagai CHECKED dan diteruskan ke Admin Engineering." : "Dokumen akan disetujui sepenuhnya menjadi APPROVED.",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#2563eb',

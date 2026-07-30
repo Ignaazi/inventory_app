@@ -6,31 +6,46 @@ use Illuminate\Database\Eloquent\Model;
 
 class RequestProd extends Model
 {
-    // WAJIB TAMBAHKAN BARIS INI:
+    // Mengarahkan model ke nama tabel yang benar di database
     protected $table = 'production_requests';
 
-    // Pastikan fillable mencantumkan semua field yang ada di struktur database baru
+    // Bersihkan fillable, sisakan hanya kolom-kolom hasil skema database baru
     protected $fillable = [
+        'user_id',
         'list_line_production_id',
         'sparepart_id',
         'request_no',
-        'sparepart_name',
-        'sap_code',
         'remark',
         'qty_req',
-        'line_machine',
-        'requestor',
         'production_signature',
-        'production_stamp',
-        'status',
-        'staff_name',
-        'staff_signature',
-        'staff_stamp',
-        'spv_name',
+        'engineering_signature',
         'spv_signature',
-        'spv_stamp',
-        'approved_by',
-        'signature_path',
+        'status',
         'reject_remark'
     ];
+
+    /**
+     * Relasi ke master data User (Pembuat Request)
+     */
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
+    /**
+     * Relasi ke master data Sparepart Engineering
+     * FIX: Menghubungkan foreign key 'sparepart_id' di tabel ini langsung ke primary key 'id' (integer) di master sparepart
+     */
+    public function sparepart()
+    {
+        return $this->belongsTo(\App\Models\ListSparepartEng::class, 'sparepart_id', 'id');
+    }
+
+    /**
+     * Relasi ke master data Line Produksi
+     */
+    public function lineProduction()
+    {
+        return $this->belongsTo(\App\Models\Production\ListLineProduction::class, 'list_line_production_id');
+    }
 }

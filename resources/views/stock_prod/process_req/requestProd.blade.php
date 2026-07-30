@@ -33,7 +33,7 @@
 
 <div class="mx-auto w-full max-w-7xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="signatureFormHandler()" x-cloak>
     
-    <!-- HEADER SECTION (SESUAI CONTOH REQUEST) -->
+    <!-- HEADER SECTION -->
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito print:hidden">
         <div>
             <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight" x-text="draft_id ? 'EDIT DRAFT SPAREPART REQUEST' : 'CREATE SPAREPART REQUEST'"></h2>
@@ -56,7 +56,7 @@
         </div>
     @endif
 
-    <!-- MAIN INPUT FORM CARD (MELENGKUNG TIPIS rounded-md) -->
+    <!-- MAIN INPUT FORM CARD -->
     <div class="bg-white dark:bg-boxdark border border-slate-300 dark:border-strokedark rounded-md shadow-sm overflow-hidden print:hidden mb-10">
         <form id="requestForm" :action="getFormAction()" method="POST" @submit.prevent="handleFormAction">
             @csrf
@@ -65,7 +65,6 @@
             <input type="hidden" name="action_type" x-model="actionType">
             <input type="hidden" name="draft_id" x-model="draft_id">
             <input type="hidden" name="signature_data" x-bind:value="signatureImg">
-            <input type="hidden" name="stamp_data" x-bind:value="stampImg">
             <input type="hidden" name="list_line_production_id" value="{{ $activeLine->id ?? '' }}">
 
             <div class="p-5 sm:p-6">
@@ -74,19 +73,31 @@
                     <!-- LEFT SIDE: PARAMETER DATA INPUTS -->
                     <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         
-                        <!-- 1. Requestor -->
+                        <!-- 1. NIK -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">NIK</label>
-                            <input type="text" name="requestor" x-model="requestor" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" x-model="requestor_nik" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 2. Line Machine -->
+                        <!-- 2. NAME -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">Name</label>
+                            <input type="text" x-model="requestor_name" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 3. Line (DIPISAH) -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Line</label>
-                            <input type="text" name="line_machine" x-model="line_machine" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" x-model="line_no" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 3. Dropdown Sparepart (Hanya ID) -->
+                        <!-- 4. Machine Name (DIPISAH) -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">Machine Name</label>
+                            <input type="text" x-model="machine_name" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 5. Dropdown Sparepart (Hanya ID) -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Sparepart ID</label>
                             <select name="sparepart_id" x-model="selected_id" @change="updateSparepartDetails()" required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-slate-900 dark:text-white">
@@ -95,28 +106,27 @@
                                     <option value="{{ $part->id }}" class="text-black">{{ $part->sparepart_id }}</option>
                                 @endforeach
                             </select>
-                            <input type="hidden" name="sparepart_name" x-model="sparepart_name">
                         </div>
 
-                        <!-- 4. SAP Code -->
+                        <!-- 6. SAP Code -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">SAP Code</label>
-                            <input type="text" name="sap_code" x-model="sap_code" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <input type="text" x-model="sap_code" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 5. Part Number -->
+                        <!-- 7. Part Number -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Part Number</label>
                             <input type="text" x-model="part_number" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 6. Quantity Requested -->
+                        <!-- 8. Quantity Requested -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Quantity Requested</label>
                             <input type="number" name="qty_req" x-model="qty_req" min="1" required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white">
                         </div>
 
-                        <!-- 7. Remark / Keterangan -->
+                        <!-- 9. Remark / Keterangan -->
                         <div class="flex flex-col gap-1.5 sm:col-span-2">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Remark</label>
                             <textarea name="remark" x-model="remark" rows="2" placeholder="Reason for change..." required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold resize-none text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white"></textarea>
@@ -135,14 +145,11 @@
                                 <div class="absolute inset-0 z-10 flex items-center justify-center p-2" x-show="signatureImg">
                                     <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                                 </div>
-                                <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none" x-show="stampImg">
-                                    <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-80">
-                                </div>
                                 
-                                <div class="z-30 text-center" x-show="!signatureImg && !stampImg">
+                                <div class="z-30 text-center" x-show="!signatureImg">
                                     <div class="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] uppercase tracking-wider border border-indigo-200 dark:border-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded-md">
                                         Secure E-Sign Dynamic<br>
-                                        <span class="text-[8px] text-black font-sans font-bold tracking-normal" x-text="requestor ? 'Linked to: ' + requestor : 'Waiting for name...'"></span>
+                                        <span class="text-[8px] text-black font-sans font-bold tracking-normal" x-text="requestor_name ? 'Linked to: ' + requestor_name : 'Waiting for name...'"></span>
                                     </div>
                                 </div>
                             </div>
@@ -150,7 +157,6 @@
 
                         <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-wider pt-2 border-t border-slate-300 dark:border-strokedark mt-3">
                             <span class="text-black dark:text-white">TTD DATA: 
-                                <!-- BULET SECURE DIHAPUS, GANTI REMARK BADGE HIJAU TEBAL -->
                                 <span :class="signatureImg ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-white'" class="ml-1 px-2.5 py-1 rounded text-[9px] font-black tracking-wide" x-text="signatureImg ? 'ACTIVE' : 'NONE'"></span>
                             </span>
                         </div>
@@ -175,7 +181,7 @@
         </form>
     </div>
 
-    <!-- LIVE PREVIEW FORM AREA (MELENGKUNG TIPIS rounded-md & PRINT ONLY TARGET) -->
+    <!-- LIVE PREVIEW FORM AREA -->
     <div id="print-target-box" class="print:m-0 print:p-0">
         <div class="bg-white text-black p-8 sm:p-10 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-nunito">
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
@@ -190,7 +196,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide rounded-sm">FORM REQUEST NOZZLE</h2>
-                    <p class="text-[9px] text-black font-mono font-bold mt-1" x-text="request_no ? 'Doc No: ' + request_no : 'Doc No: REQ-PRD-SIIX-001'"></p>
+                    <p class="text-[9px] text-black font-mono font-bold mt-1" x-text="request_no ? 'Doc No: ' + request_no : 'Doc No: REQPROD001'"></p>
                 </div>
             </div>
 
@@ -199,15 +205,23 @@
                     <tbody>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NIK</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="requestor || ''">-</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="requestor_nik || ''">-</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="requestor_name || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">LINE</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="line_machine || ''">-</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="line_no || ''">-</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">MACHINE NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="machine_name || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SPAREPART ID</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="sparepart_name || ''">-</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="sparepart_id_text || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PART NUMBER</td>
@@ -236,18 +250,14 @@
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="signatureImg">
                             <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
-                        <div class="absolute inset-0 z-20 flex items-center justify-center p-0 pointer-events-none" x-show="stampImg">
-                            <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-95">
-                        </div>
-                        <div class="z-30 px-2 my-auto" x-show="requestor && !signatureImg && !stampImg">
+                        <div class="z-30 px-2 my-auto" x-show="requestor_name && !signatureImg">
                             <div class="text-green-600 font-mono text-[9px] font-black uppercase tracking-tighter border border-green-300 bg-green-50 py-0.5 rounded mx-auto max-w-[130px]">
                                 VERIFIED
                             </div>
                         </div>
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <!-- UNDERLINE DIHAPUS TOTAL DI SINI -->
-                        <p class="font-black uppercase text-black tracking-wide truncate" x-text="requestor || '( _________________ )'"></p>
+                        <p class="font-black uppercase text-black tracking-wide truncate" x-text="requestor_name || '( _________________ )'"></p>
                         <p class="text-[9px] text-black font-black uppercase mt-0.5">Production Department</p>
                     </div>
                 </div>
@@ -268,48 +278,58 @@
 
 <script>
     function signatureFormHandler() {
+        // Data User
+        const userNik = "{{ optional($requestData ?? null)->user ? $requestData->user->nik : (auth()->check() ? auth()->user()->nik : '') }}";
+        const userName = "{{ optional($requestData ?? null)->user ? $requestData->user->name : (auth()->check() ? auth()->user()->name : '') }}";
+        
+        // Data Line & Machine dipisah secara presisi
+        const lineNoData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->no_line : ($activeLine ? $activeLine->no_line : '-') }}";
+        const machineNameData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->name_machine : ($activeLine ? $activeLine->name_machine : 'ADMINISTRATOR AREA') }}";
+
         const userSignature = "{{ auth()->check() && auth()->user()->signature_path ? auth()->user()->signature_path : '' }}";
         const requestSignature = "{{ optional($requestData ?? null)->production_signature ?? '' }}";
         const activeSignaturePath = requestSignature || userSignature;
-        const sparepartsList = {!! json_encode($spareparts ?? []) !!};
         
+        const sparepartsList = {!! json_encode($spareparts ?? []) !!};
         const initialId = '{{ old('sparepart_id', optional($requestData ?? null)->sparepart_id ?? '') }}';
-        let initialPartNumber = '';
-        let initialSparepartName = '';
-        let initialSapCode = '';
+        
+        let initialPartNumber = '-';
+        let initialSapCode = '-';
+        let initialSparepartIdText = '-';
 
         if (initialId) {
             const matched = sparepartsList.find(item => item.id == initialId);
             if (matched) {
                 initialPartNumber = matched.part_number ? matched.part_number : '-';
-                initialSparepartName = matched.category + ' (' + matched.sparepart_id + ')';
                 initialSapCode = matched.sap_code ? matched.sap_code : '-';
+                initialSparepartIdText = matched.sparepart_id;
             }
         }
     
         return {
-            requestor: '{{ old('requestor', optional($requestData ?? null)->requestor ?? (auth()->check() ? auth()->user()->name : '')) }}',
-            line_machine: '{{ old('line_machine', optional($requestData ?? null)->line_machine ?? ($activeLine ? "LINE " . $activeLine->no_line . " - " . $activeLine->name_machine : "")) }}',
+            requestor_nik: userNik,
+            requestor_name: userName,
+            line_no: lineNoData,
+            machine_name: machineNameData,
             selected_id: initialId,
-            sparepart_name: '{{ old('sparepart_name', optional($requestData ?? null)->sparepart_name ?? '') }}' || initialSparepartName,
-            sap_code: '{{ old('sap_code', optional($requestData ?? null)->sap_code ?? '') }}' || initialSapCode,
+            sparepart_id_text: initialSparepartIdText,
+            sap_code: initialSapCode,
             part_number: initialPartNumber, 
             remark: '{{ old('remark', optional($requestData ?? null)->remark ?? '') }}',
             qty_req: {{ old('qty_req', optional($requestData ?? null)->qty_req ?? 1) }},
             draft_id: '{{ optional($requestData ?? null)->id ?? '' }}',
             request_no: '{{ optional($requestData ?? null)->request_no ?? '' }}',
             signatureImg: activeSignaturePath ? (activeSignaturePath.startsWith('http') ? activeSignaturePath : "{{ asset('storage') }}/" + activeSignaturePath.replace(/^\/?(storage\/)?/, '')) : null,
-            stampImg: '{{ optional($requestData ?? null)->production_stamp ?? '' }}' ? '{{ asset('storage/' . optional($requestData ?? null)->production_stamp) }}' : null,     
             actionType: 'submit',
 
             updateSparepartDetails() {
                 const part = sparepartsList.find(item => item.id == this.selected_id);
                 if (part) {
-                    this.sparepart_name = part.category + ' (' + part.sparepart_id + ')';
+                    this.sparepart_id_text = part.sparepart_id;
                     this.sap_code = part.sap_code ? part.sap_code : '-';
                     this.part_number = part.part_number ? part.part_number : '-';
                 } else {
-                    this.sparepart_name = ''; this.sap_code = ''; this.part_number = '';
+                    this.sparepart_id_text = '-'; this.sap_code = '-'; this.part_number = '-';
                 }
             },
     
@@ -323,8 +343,8 @@
             },
     
             resetAll() {
-                this.selected_id = ''; this.sparepart_name = ''; this.sap_code = '';
-                this.part_number = ''; this.remark = ''; this.qty_req = 1;
+                this.selected_id = ''; this.sparepart_id_text = '-'; this.sap_code = '-';
+                this.part_number = '-'; this.remark = ''; this.qty_req = 1;
             },
     
             submitAs(type) {
