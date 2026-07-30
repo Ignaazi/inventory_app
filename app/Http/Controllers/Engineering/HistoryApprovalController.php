@@ -15,13 +15,17 @@ class HistoryApprovalController extends Controller
         $history = HistoryApproval::query()
             ->with('productionRequest') 
             ->when($search, function($query, $search) {
-                return $query->where('request_no', 'LIKE', "%{$search}%")
-                             ->orWhere('line_machine', 'LIKE', "%{$search}%")
-                             ->orWhere('sparepart_name', 'LIKE', "%{$search}%");
+                return $query->where(function($q) use ($search) {
+                    $q->where('request_no', 'LIKE', "%{$search}%")
+                      ->orWhere('line_machine', 'LIKE', "%{$search}%")
+                      ->orWhere('sparepart_name', 'LIKE', "%{$search}%")
+                      ->orWhere('nik', 'LIKE', "%{$search}%")
+                      ->orWhere('approver_name', 'LIKE', "%{$search}%");
+                });
             })
             ->orderBy('processed_at', 'desc')
-            ->paginate(15) // Diubah ke 15 baris sesuai request konsep halaman baru
-            ->withQueryString(); // Memastikan parameter search/filter aman saat pindah halaman
+            ->paginate(15) 
+            ->withQueryString(); 
 
         return view('stock_eng.process_req.historyApproval', compact('history', 'search'));
     }
@@ -35,10 +39,11 @@ class HistoryApprovalController extends Controller
             $log = HistoryApproval::findOrFail($id);
             $log->delete();
 
-            return redirect()->route('approval.history')
+            // Disesuaikan dengan nama route 'eng.approval.history.destroy' di blade lo
+            return redirect()->back()
                              ->with('success', 'History approval berhasil dihapus!');
         } catch (\Exception $e) {
-            return redirect()->route('approval.history')
+            return redirect()->back()
                              ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
         }
     }

@@ -86,7 +86,7 @@
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
             <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1450px]" id="approvalTable">
                 <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">
                             <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
                         </th>
@@ -105,27 +105,32 @@
                         <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Action Decision</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-slate-950 dark:text-slate-200 font-nunito bg-transparent">
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($requests as $index => $req)
                     @php
                         $statusText = 'unknown';
-                        $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                        $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300';
                         
-                        if(str_contains(strtolower($req->status), 'draft')) {
+                        $rawStatus = strtolower($req->status);
+                        
+                        if(str_contains($rawStatus, 'draft')) {
                             $statusText = 'draft';
-                            $badgeClass = 'bg-gray-100 text-gray-950 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-                        } elseif(str_contains(strtolower($req->status), 'pending')) {
+                            $badgeClass = 'bg-gray-100 text-gray-950 border-gray-300';
+                        } elseif(str_contains($rawStatus, 'pending')) {
                             $statusText = 'pending';
-                            $badgeClass = 'bg-amber-50 text-amber-950 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
-                        } elseif(str_contains(strtolower($req->status), 'staff') || str_contains(strtolower($req->status), 'checked') || str_contains(strtolower($req->status), 'success') || str_contains(strtolower($req->status), 'approved')) {
+                            $badgeClass = 'bg-amber-50 text-amber-950 border-amber-300';
+                        } elseif(str_contains($rawStatus, 'staff') || str_contains($rawStatus, 'checked')) {
+                            $statusText = 'checked';
+                            $badgeClass = 'bg-blue-50 text-blue-950 border-blue-300';
+                        } elseif(str_contains($rawStatus, 'success') || str_contains($rawStatus, 'approved')) {
                             $statusText = 'approved';
-                            $badgeClass = 'bg-emerald-50 text-emerald-950 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50';
-                        } elseif(str_contains(strtolower($req->status), 'reject')) {
+                            $badgeClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        } elseif(str_contains($rawStatus, 'reject')) {
                             $statusText = 'rejected';
-                            $badgeClass = 'bg-rose-50 text-rose-950 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50';
-                        } elseif(str_contains(strtolower($req->status), 'finished')) {
+                            $badgeClass = 'bg-rose-50 text-rose-950 border-rose-300';
+                        } elseif(str_contains($rawStatus, 'finished')) {
                             $statusText = 'finished';
-                            $badgeClass = 'bg-purple-50 text-purple-950 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/50';
+                            $badgeClass = 'bg-purple-50 text-purple-950 border-purple-300';
                         }
                     @endphp
                     <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
@@ -133,23 +138,23 @@
                             <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer">
                         </td>
 
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-slate-950 dark:text-slate-400">
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             {{ $requests->firstItem() + $index }}
                         </td>
                         
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap text-slate-950 dark:text-slate-100">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap">
                             {{ $req->request_no }}
                         </td>
 
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
                             {{ optional($req->user)->nik ?? $req->nik ?? '-' }}
                         </td>
 
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
                             {{ optional($req->user)->name ?? $req->requestor ?? '-' }}
                         </td>
 
-                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal text-blue-600 dark:text-blue-400">
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal">
                             @if($req->sparepart)
                                 {{ $req->sparepart->sparepart_id ?? $req->sparepart->id }}
                             @else
@@ -162,40 +167,40 @@
                             @endif
                         </td>
 
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-950 dark:text-slate-200">
-                            {{ sprintf("%02d", $req->qty_req) }}
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
+                            {{ $req->qty_req }}
                         </td>
 
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-nowrap text-slate-950 dark:text-slate-200">
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-nowrap">
                             {{ optional($req->lineProduction)->no_line ?? ($req->line_machine ? explode(' - ', $req->line_machine)[0] : '-') }}
                         </td>
                         
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-normal break-words leading-normal text-slate-950 dark:text-slate-200">
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-normal break-words leading-normal">
                             {{ optional($req->lineProduction)->name_machine ?? ($req->line_machine ? (explode(' - ', $req->line_machine)[1] ?? '-') : '-') }}
                         </td>
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex justify-center items-center">
-                                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm {{ $badgeClass }}">
+                                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm status-badge {{ $badgeClass }}">
                                     {{ $statusText === 'unknown' ? $req->status : $statusText }}
                                 </span>
                             </div>
                         </td>
 
-                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center font-semibold tracking-wide whitespace-normal break-words leading-normal text-slate-950 dark:text-slate-200">
+                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center font-semibold tracking-wide whitespace-normal break-words leading-normal">
                             {{ $req->remark ?? '-' }}
                         </td>
 
                         {{-- CREATED AT --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-950 dark:text-slate-400 text-center">
-                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ $req->created_at ? $req->created_at->format('d/m/Y') : '-' }}</div>
-                            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ $req->created_at ? $req->created_at->format('H:i') : '-' }} WIB</div>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
+                            <div class="font-bold">{{ $req->created_at ? $req->created_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] mt-0.5">{{ $req->created_at ? $req->created_at->format('H:i') : '-' }} WIB</div>
                         </td>
 
                         {{-- UPDATED AT --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-950 dark:text-slate-400 text-center">
-                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ $req->updated_at ? $req->updated_at->format('d/m/Y') : '-' }}</div>
-                            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ $req->updated_at ? $req->updated_at->format('H:i') : '-' }} WIB</div>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
+                            <div class="font-bold">{{ $req->updated_at ? $req->updated_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] mt-0.5">{{ $req->updated_at ? $req->updated_at->format('H:i') : '-' }} WIB</div>
                         </td>
                         
                         {{-- DECISION ACTION --}}
@@ -214,14 +219,14 @@
                                         Approve
                                     </a>
                                 @else
-                                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider">Processed</span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider processed-text">Processed</span>
                                 @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="14" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito dark:bg-slate-900">
+                        <td colspan="14" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No production requests waiting in review queue.
                         </td>
                     </tr>
@@ -232,10 +237,10 @@
 
         {{-- FOOTER PAGINATION RESPONSIF --}}
         <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
-            <p class="text-[11px] font-black text-slate-950 dark:text-slate-400 tracking-wide uppercase font-nunito text-center sm:text-left">
+            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
                 Showing {{ $requests->firstItem() ?? 0 }} to {{ $requests->lastItem() ?? 0 }} of {{ $requests->total() ?? 0 }} Entries
             </p>
-            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito text-slate-950 dark:text-white w-full sm:w-auto custom-pagination">
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black">
                 {{ $requests->links() }}
             </div>
         </div>
@@ -293,9 +298,28 @@
 </script>
 
 <style>
-    /* Paksa Font Nunito & Teks Hitam Pekat */
-    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #approvalTable, #approvalTable tbody tr td { 
+    /* Mengatur Font Secara Global */
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #approvalTable { 
         font-family: 'Nunito', sans-serif !important; 
+    }
+
+    /* Memaksa Teks di Dalam Body Table Menggunakan Warna Hitam Pekat */
+    .table-body-data tr td, 
+    .table-body-data tr td div,
+    .table-empty-text,
+    .processed-text {
+        color: #000000 !important;
+    }
+
+    /* Pengecualian Warna Spesifik Teks untuk Status Badge & Tombol Akses */
+    .status-badge {
+        /* Warna teks dinamis mengikuti isi background badge masing-masing */
+        color: inherit !important; 
+    }
+
+    /* Memastikan Text di Header Table Tetap Putih */
+    .table-header-row th {
+        color: #ffffff !important;
     }
     
     /* Scrollbar minimalis horizontal */
