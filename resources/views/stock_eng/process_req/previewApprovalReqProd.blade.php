@@ -1,7 +1,7 @@
 @extends('admin')
 
 @section('content')
-{{-- TRICK BULLETPROOF: Deteksi otomatis variabel dari Controller (Log History vs Direct Request) --}}
+{{-- TRICK BULLETPROOF: Deteksi otomatis variabel dari Controller --}}
 @php
     $log = $log ?? null;
     $req = $req ?? $requestData ?? $productionRequest ?? $data ?? null;
@@ -18,7 +18,7 @@
     </div>
 @else
 
-{{-- NORMALISASI DATA: Memastikan data ter-ekstrak dengan aman & seragam --}}
+{{-- NORMALISASI DATA --}}
 @php
     if ($isHistory && $log instanceof \App\Models\Engineering\HistoryApproval) {
         $targetId = $log->production_request_id ?? $log->id;
@@ -26,7 +26,6 @@
         $nik = $log->nik ?? optional(optional($log->productionRequest)->user)->nik ?? '-';
         $name = $log->approver_name ?? optional(optional($log->productionRequest)->user)->name ?? '-';
         
-        // Pemisahan cerdas untuk Line & Machine Name dari data log lama
         $lineMachine = $log->line_machine ?? '';
         if (!empty($lineMachine) && str_contains($lineMachine, ' - ')) {
             $parts = explode(' - ', $lineMachine, 2);
@@ -102,45 +101,106 @@
 }
 </style>
 
-<div class="mx-auto w-full max-w-4xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="engineeringApprovalHandler()" x-cloak>
+<!-- CONTAINER GEDE 7XL BIAR PADAT DAN KETAT GAK BANYAK RENGGANGAN KOSONG -->
+<div class="mx-auto w-full max-w-7xl pb-8 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="engineeringApprovalHandler()" x-cloak>
     
-    <!-- TOP BAR ACTION BUTTONS -->
-    <div class="mb-4 flex justify-between items-center print:hidden">
-        {{-- THIN MINIMALIST TIMELINE FLOW --}}
-        <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-slate-100/80 dark:bg-slate-900 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800">
-            <span class="text-emerald-600">Requested</span>
-            <span class="text-slate-400 font-normal">➔</span>
-            <span :class="staffSignatureImg ? 'text-emerald-600' : (currentStatus === 'rejected' ? 'text-rose-600' : 'text-slate-400')">Checked by Staff</span>
-            <span class="text-slate-400 font-normal">➔</span>
-            <span :class="spvSignatureImg ? 'text-emerald-600' : (currentStatus === 'rejected' ? 'text-rose-600' : 'text-slate-400')">Approved Final</span>
+    <!-- TOP BAR HEADER & BUTTON ACTIONS -->
+    <div class="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 print:hidden">
+        {{-- HEADER POJOK KIRI ATAS SESUAI IMAGE MOCKUP --}}
+        <div>
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-black dark:text-white">Preview Form Request Sparepart</h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-bold mt-0.5 tracking-wide">Real-Time Authorization Progress</p>
         </div>
-
-        <div class="flex items-center gap-2">
-            <a href="{{ url()->previous() }}" class="inline-flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-all active:scale-95 shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-                Kembali
+        
+        {{-- BUTTON ACTIONS KANAN --}}
+        <div class="flex items-center gap-3 self-end sm:self-auto">
+            <a href="{{ route('eng.in') }}" 
+               class="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:opacity-90 transition-all active:scale-95 uppercase tracking-wider no-underline">
+                <i class="fas fa-arrow-left text-xs"></i> Kembali
             </a>
-            <button type="button" @click="printDocument()" class="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-90 text-white rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-all active:scale-95 shadow-sm cursor-pointer">
+            
+            <button type="button" @click="printDocument()" 
+                    class="flex items-center gap-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4H7v4a2 2 0 002 2zM9 9V5a2 2 0 012-2h2a2 2 0 012 2v4M7 13h10" />
                 </svg>
-                Print PDF
+                DOWNLOAD PDF
             </button>
         </div>
     </div>
 
-    <!-- INTERACTIVE ACTION PANEL -->
-    <div class="mb-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 print:hidden">
-        @if($isHistory || $status === 'approved' || $status === 'rejected' || $status === 'success' || $status === 'finished' || $status === 'checked')
-            <div class="text-center py-1">
-                <p class="text-xs font-black uppercase tracking-wide" :class="currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'checked' || currentStatus === 'finished' ? 'text-emerald-600' : (currentStatus === 'rejected' ? 'text-rose-600' : 'text-blue-600')">
-                    Status Dokumen: <span x-text="currentStatus"></span>
-                </p>
-                <p class="text-[10px] text-slate-400 font-semibold mt-0.5">
-                    {{ $isHistory ? 'Mode Arsip Riwayat (Read-Only).' : 'Permohonan sudah selesai diproses.' }}
-                </p>
+    <!-- TIMELINE FLOW DENGAN IDENTITAS WARNA PER FASE (KUNING -> BIRU -> IJO / MERAH JIKA REJECT) -->
+    <div class="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm print:hidden">
+        <div class="flex items-center justify-center w-full max-w-3xl mx-auto">
+            
+            <!-- Step 1: Requested (Selalu Kuning sebagai tanda awal buletan produksi) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full bg-amber-500 text-white flex items-center justify-center font-black shadow-md border-4 border-amber-100 dark:border-amber-950 text-base">
+                    ✓
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 mt-2 text-center">Requested</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Production</span>
             </div>
-        @else
+
+            <!-- Connector Line 1 (Garis permanen tidak putus) -->
+            <div class="w-16 sm:w-28 h-1.5 rounded-full -mt-5 transition-all duration-300 mx-2" 
+                 :class="{
+                    'bg-blue-500': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                    'bg-rose-500': currentStatus === 'rejected' && !staffSignatureImg,
+                    'bg-slate-300 dark:bg-slate-700': currentStatus === 'request' || currentStatus === 'pending'
+                 }"></div>
+            
+            <!-- Step 2: Checked By Staff (Kuning/Abu jika belum, Biru jika checked, Merah jika reject staff) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 border-4 shadow-sm"
+                     :class="{
+                        'bg-slate-300 text-slate-500 border-slate-100': currentStatus === 'request' || currentStatus === 'pending',
+                        'bg-blue-500 text-white border-blue-100': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'bg-rose-500 text-white border-rose-100': currentStatus === 'rejected' && !staffSignatureImg
+                     }">
+                    <span x-text="(currentStatus === 'rejected' && !staffSignatureImg) ? '✕' : ((currentStatus === 'checked' || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished' || (currentStatus === 'rejected' && staffSignatureImg)) ? '✓' : '2')"></span>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-wider mt-2 text-center transition-colors duration-300" 
+                      :class="{
+                        'text-slate-400': currentStatus === 'request' || currentStatus === 'pending',
+                        'text-blue-600': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'text-rose-600': currentStatus === 'rejected' && !staffSignatureImg
+                      }" x-text="(currentStatus === 'rejected' && !staffSignatureImg) ? 'Rejected' : 'Checked'">Checked</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Eng Staff</span>
+            </div>
+            
+            <!-- Connector Line 2 (Garis permanen tidak putus) -->
+            <div class="w-16 sm:w-28 h-1.5 rounded-full -mt-5 transition-all duration-300 mx-2" 
+                 :class="{
+                    'bg-emerald-500': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                    'bg-rose-500': currentStatus === 'rejected' && staffSignatureImg,
+                    'bg-slate-300 dark:bg-slate-700': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                 }"></div>
+            
+            <!-- Step 3: Approved Final (Hijau jika approve, Merah jika reject SPV, Abu jika belum) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 border-4 shadow-sm"
+                     :class="{
+                        'bg-emerald-500 text-white border-emerald-100': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'bg-rose-500 text-white border-rose-100': currentStatus === 'rejected' && staffSignatureImg,
+                        'bg-slate-300 text-slate-400 border-slate-100': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                     }">
+                    <span x-text="(currentStatus === 'rejected' && staffSignatureImg) ? '✕' : ((currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished') ? '✓' : '3')"></span>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-wider mt-2 text-center transition-colors duration-300" 
+                      :class="{
+                        'text-emerald-600': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'text-rose-600': currentStatus === 'rejected' && staffSignatureImg,
+                        'text-slate-400': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                      }" x-text="(currentStatus === 'rejected' && staffSignatureImg) ? 'Rejected' : 'Approved'">Approved</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Admin / SPV</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERACTIVE ACTION PANEL -->
+    @if(!$isHistory && $status !== 'approved' && $status !== 'rejected' && $status !== 'success' && $status !== 'finished' && $status !== 'checked')
+        <div class="mb-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 print:hidden">
             <form action="{{ Route::has('eng.request.process') ? route('eng.request.process', $targetId) : url('engineering/request/process/' . $targetId) }}" method="POST" class="space-y-3">
                 @csrf
                 <div class="flex gap-3">
@@ -170,10 +230,10 @@
                     </button>
                 </div>
             </form>
-        @endif
-    </div>
+        </div>
+    @endif
 
-    <!-- LIVE PREVIEW FORM AREA (PRINT VIEW) -->
+    <!-- LIVE PREVIEW FORM AREA (PRINT VIEW TARGET - DIKUNCI TOTAL TANPA PERUBAHAN STRUKTUR INTERN) -->
     <div id="print-target-box" class="print:m-0 print:p-0">
         <div class="bg-white text-black p-8 sm:p-10 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-nunito">
             
@@ -271,7 +331,9 @@
                         </div>
                         <div class="z-30 my-auto px-2" x-show="!staffSignatureImg">
                             <template x-if="currentStatus === 'rejected'">
-                                <span class="text-rose-600 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded font-bold text-[8px] uppercase">STOPPED</span>
+                                <div class="inline-block border-4 border-double border-red-600 text-red-600 font-black text-[12px] uppercase tracking-widest px-2.5 py-0.5 rounded transform -rotate-12 shadow-[0_2px_4px_rgba(220,38,38,0.15)] bg-white/90 font-mono scale-110">
+                                    REJECTED
+                                </div>
                             </template>
                             <template x-if="currentStatus !== 'rejected'">
                                 <span class="text-slate-400 text-[9px] font-black">( Pending Stage )</span>
@@ -295,7 +357,9 @@
                         </div>
                         <div class="z-30 my-auto px-2" x-show="!spvSignatureImg">
                             <template x-if="currentStatus === 'rejected'">
-                                <span class="text-rose-600 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded font-bold text-[8px] uppercase">STOPPED</span>
+                                <div class="inline-block border-4 border-double border-red-600 text-red-600 font-black text-[12px] uppercase tracking-widest px-2.5 py-0.5 rounded transform -rotate-12 shadow-[0_2px_4px_rgba(220,38,38,0.15)] bg-white/90 font-mono scale-110">
+                                    REJECTED
+                                </div>
                             </template>
                             <template x-if="currentStatus !== 'rejected'">
                                 <span class="text-slate-400 text-[9px] font-black">( Pending Stage )</span>
@@ -310,14 +374,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- REJECTION NOTE AT THE BOTTOM -->
-            @if(!empty($rejectRemark))
-                <div class="mt-6 border border-red-400 bg-red-50 p-3 rounded-sm print:border-black print:bg-white">
-                    <h4 class="text-[10px] font-black text-red-700 uppercase tracking-wide">Alasan Penolakan (Reject Remark):</h4>
-                    <p class="text-xs font-bold text-slate-800 mt-0.5 italic">" {{ $rejectRemark }} "</p>
-                </div>
-            @endif
 
         </div>
     </div>

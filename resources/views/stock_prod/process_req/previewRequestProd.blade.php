@@ -3,18 +3,77 @@
 @section('content')
 {{-- TRICK BULLETPROOF: Deteksi otomatis variabel dari Controller --}}
 @php
+    $log = $log ?? null;
     $req = $req ?? $requestData ?? $productionRequest ?? $data ?? null;
+    $hasData = $log || $req;
+    $isHistory = (bool)$log;
 @endphp
 
-@if(!$req)
+@if(!$hasData)
     <div class="mx-auto max-w-lg mt-10 p-6 bg-red-50 border border-red-200 rounded-md text-center font-nunito">
         <h3 class="text-red-800 font-black uppercase">Variabel Data Tidak Ditemukan!</h3>
         <p class="text-xs text-slate-600 mt-2">
-            Controller lo belum mengirimkan data ke view ini. Pastikan di Controller lo memakai: <br>
-            <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-red-600">return view('...', compact('req'));</code>
+            Data tidak dapat dimuat. Pastikan Controller melempar variabel data dengan benar.
         </p>
     </div>
 @else
+
+{{-- NORMALISASI DATA --}}
+@php
+    if ($isHistory && $log instanceof \App\Models\Engineering\HistoryApproval) {
+        $targetId = $log->production_request_id ?? $log->id;
+        $reqNo = $log->request_no ?? optional($log->productionRequest)->request_no ?? 'REQPROD001';
+        $nik = $log->nik ?? optional(optional($log->productionRequest)->user)->nik ?? '-';
+        $name = $log->approver_name ?? optional(optional($log->productionRequest)->user)->name ?? '-';
+        
+        $lineMachine = $log->line_machine ?? '';
+        if (!empty($lineMachine) && str_contains($lineMachine, ' - ')) {
+            $parts = explode(' - ', $lineMachine, 2);
+            $line = $parts[0];
+            $machineName = $parts[1];
+        } else {
+            $line = !empty($lineMachine) ? $lineMachine : (optional(optional($log->productionRequest)->lineProduction)->no_line ?? '-');
+            $machineName = optional(optional($log->productionRequest)->lineProduction)->name_machine ?? '-';
+        }
+        
+        $sparepartId = $log->sparepart_id ?? (optional($log->productionRequest)->sparepart ? (optional($log->productionRequest->sparepart)->sparepart_id ?? optional($log->productionRequest->sparepart)->id) : '-');
+        $partNumber = $log->part_number ?? optional(optional($log->productionRequest)->sparepart)->part_number ?? '-';
+        $sapCode = $log->sap_code ?? optional(optional($log->productionRequest)->sparepart)->sap_code ?? '-';
+        $qtyReq = (int)($log->qty_req ?? optional($log->productionRequest)->qty_req ?? 0);
+        $remark = $log->remark ?? optional($log->productionRequest)->remark ?? '-';
+        $status = strtolower($log->status ?? optional($log->productionRequest)->status ?? 'pending');
+        
+        $prodSign = $log->production_signature ?? optional($log->productionRequest)->production_signature ?? '';
+        $engSign = $log->engineering_signature ?? optional($log->productionRequest)->engineering_signature ?? '';
+        $spvSign = $log->spv_signature ?? optional($log->productionRequest)->spv_signature ?? '';
+        $userSignPath = optional(optional($log->productionRequest)->user)->signature_path ?? '';
+        $activeProdPath = $prodSign ?: $userSignPath;
+        
+        $rejectRemark = $log->reject_remark ?? optional($log->productionRequest)->reject_remark ?? '';
+    } else {
+        $targetId = $req->id ?? 0;
+        $reqNo = $req->request_no ?? 'REQPROD001';
+        $nik = optional($req->user)->nik ?? '-';
+        $name = optional($req->user)->name ?? '-';
+        $line = optional($req->lineProduction)->no_line ?? '-';
+        $machineName = optional($req->lineProduction)->name_machine ?? '-';
+        $sparepartId = optional($req->sparepart)->sparepart_id ?? $req->sparepart_id ?? '-';
+        $partNumber = optional($req->sparepart)->part_number ?? '-';
+        $sapCode = optional($req->sparepart)->sap_code ?? '-';
+        $qtyReq = (int)($req->qty_req ?? 0);
+        $remark = $req->remark ?? '-';
+        $status = strtolower($req->status ?? 'pending');
+        
+        $prodSign = $req->production_signature ?? '';
+        $engSign = $req->engineering_signature ?? '';
+        $spvSign = $req->spv_signature ?? '';
+        $userSignPath = optional($req->user)->signature_path ?? '';
+        $activeProdPath = $prodSign ?: $userSignPath;
+        
+        $rejectRemark = $req->reject_remark ?? '';
+    }
+@endphp
+
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;900&display=swap" rel="stylesheet">
 
 <style>
@@ -42,81 +101,109 @@
 }
 </style>
 
-<div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="documentTrackerHandler()" x-cloak>
+<!-- CONTAINER GEDE 7XL BIAR PADAT DAN KETAT GAK BANYAK RENGGANGAN KOSONG -->
+<div class="mx-auto w-full max-w-7xl pb-8 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="engineeringApprovalHandler()" x-cloak>
     
-    <!-- TOP HEADER & ACTION BUTTONS -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
+    <!-- TOP BAR HEADER & BUTTON ACTIONS -->
+    <div class="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 print:hidden">
+        {{-- HEADER POJOK KIRI ATAS SESUAI IMAGE MOCKUP --}}
         <div>
-            <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <span class="h-5 w-1.5 bg-indigo-600 rounded-full"></span>
-                <span>Track Sparepart Request</span>
-            </h2>
-            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Real-Time Authorization Progress</p>
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-black dark:text-white">Preview Form Request Sparepart</h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-bold mt-0.5 tracking-wide">Real-Time Authorization Progress</p>
         </div>
         
-        <div class="flex items-center gap-2 self-start sm:self-center">
-            <a href="{{ url()->previous() }}" class="inline-flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md px-4 py-2 text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95">
+        {{-- BUTTON ACTIONS KANAN --}}
+        <div class="flex items-center gap-3 self-end sm:self-auto">
+            {{-- TOMBOL KEMBALI MENGIKUTI PARTISI REQUEST USER --}}
+            <a href="{{ url()->previous() }}" class="inline-flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md px-4 py-2 text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 no-underline">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
                 Kembali
             </a>
-            <button type="button" @click="printDocument()" class="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer">
+            
+            <button type="button" @click="printDocument()" 
+                    class="flex items-center gap-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4H7v4a2 2 0 002 2zM9 9V5a2 2 0 012-2h2a2 2 0 012 2v4M7 13h10" />
                 </svg>
-                Print / Download PDF
+                DOWNLOAD PDF
             </button>
         </div>
     </div>
 
-    <!-- LIVE VISUAL PROGRESS TIMELINE -->
-    <div class="mb-8 bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark rounded-xl p-5 shadow-sm print:hidden">
-        <h4 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-4">Live Tracking Status Flow</h4>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 relative">
-            <!-- STEP 1: PRODUCTION REQUEST -->
-            <div class="flex items-center gap-3 md:flex-col md:text-center md:px-4 relative">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950">
+    <!-- TIMELINE FLOW DENGAN IDENTITAS WARNA PER FASE (KUNING -> BIRU -> IJO / MERAH JIKA REJECT) -->
+    <div class="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm print:hidden">
+        <div class="flex items-center justify-center w-full max-w-3xl mx-auto">
+            
+            <!-- Step 1: Requested (Selalu Kuning sebagai tanda awal buletan produksi) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full bg-amber-500 text-white flex items-center justify-center font-black shadow-md border-4 border-amber-100 dark:border-amber-950 text-base">
                     ✓
                 </div>
-                <div class="mt-1">
-                    <p class="text-xs font-black uppercase text-slate-800 dark:text-white">Requested</p>
-                    <p class="text-[10px] text-slate-400 font-bold leading-tight mt-0.5">Oleh Production</p>
-                </div>
-                <div class="hidden md:block absolute top-4 left-[60%] w-[80%] h-[2px] bg-slate-200 dark:bg-slate-700 -z-10" :class="staffSignatureImg ? 'bg-emerald-500' : ''"></div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 mt-2 text-center">Requested</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Production</span>
             </div>
 
-            <!-- STEP 2: STAFF ENGINEERING CHECK -->
-            <div class="flex items-center gap-3 md:flex-col md:text-center md:px-4 relative mt-3 md:mt-0">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all"
-                     :class="staffSignatureImg ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950' : (currentStatus === 'rejected' ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400')">
-                    <span x-text="staffSignatureImg ? '✓' : '2'"></span>
+            <!-- Connector Line 1 (Garis permanen tidak putus) -->
+            <div class="w-16 sm:w-28 h-1.5 rounded-full -mt-5 transition-all duration-300 mx-2" 
+                 :class="{
+                    'bg-blue-500': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                    'bg-rose-500': currentStatus === 'rejected' && !staffSignatureImg,
+                    'bg-slate-300 dark:bg-slate-700': currentStatus === 'request' || currentStatus === 'pending'
+                 }"></div>
+            
+            <!-- Step 2: Checked By Staff (Kuning/Abu jika belum, Biru jika checked, Merah jika reject staff) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 border-4 shadow-sm"
+                     :class="{
+                        'bg-slate-300 text-slate-500 border-slate-100': currentStatus === 'request' || currentStatus === 'pending',
+                        'bg-blue-500 text-white border-blue-100': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'bg-rose-500 text-white border-rose-100': currentStatus === 'rejected' && !staffSignatureImg
+                     }">
+                    <span x-text="(currentStatus === 'rejected' && !staffSignatureImg) ? '✕' : ((currentStatus === 'checked' || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished' || (currentStatus === 'rejected' && staffSignatureImg)) ? '✓' : '2')"></span>
                 </div>
-                <div class="mt-1">
-                    <p class="text-xs font-black uppercase" :class="staffSignatureImg ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Checked by Staff</p>
-                    <p class="text-[10px] text-slate-4 font-bold leading-tight mt-0.5" x-text="staffSignatureImg ? 'Verified by Eng Staff' : (currentStatus === 'rejected' ? 'Proses Terhenti' : 'Menunggu Staff Engineering')"></p>
-                </div>
-                <div class="hidden md:block absolute top-4 left-[60%] w-[80%] h-[2px] bg-slate-200 dark:bg-slate-700 -z-10" :class="spvSignatureImg ? 'bg-emerald-500' : ''"></div>
+                <span class="text-[10px] font-black uppercase tracking-wider mt-2 text-center transition-colors duration-300" 
+                      :class="{
+                        'text-slate-400': currentStatus === 'request' || currentStatus === 'pending',
+                        'text-blue-600': currentStatus === 'checked' || (currentStatus === 'rejected' && staffSignatureImg) || currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'text-rose-600': currentStatus === 'rejected' && !staffSignatureImg
+                      }" x-text="(currentStatus === 'rejected' && !staffSignatureImg) ? 'Rejected' : 'Checked'">Checked</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Eng Staff</span>
             </div>
-
-            <!-- STEP 3: FINAL APPROVAL SPV/ADMIN -->
-            <div class="flex items-center gap-3 md:flex-col md:text-center md:px-4 relative mt-3 md:mt-0">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all"
-                     :class="spvSignatureImg ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'">
-                    <span x-text="spvSignatureImg ? '✓' : '3'"></span>
+            
+            <!-- Connector Line 2 (Garis permanen tidak putus) -->
+            <div class="w-16 sm:w-28 h-1.5 rounded-full -mt-5 transition-all duration-300 mx-2" 
+                 :class="{
+                    'bg-emerald-500': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                    'bg-rose-500': currentStatus === 'rejected' && staffSignatureImg,
+                    'bg-slate-300 dark:bg-slate-700': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                 }"></div>
+            
+            <!-- Step 3: Approved Final (Hijau jika approve, Merah jika reject SPV, Abu jika belum) -->
+            <div class="flex flex-col items-center flex-1 relative">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 border-4 shadow-sm"
+                     :class="{
+                        'bg-emerald-500 text-white border-emerald-100': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'bg-rose-500 text-white border-rose-100': currentStatus === 'rejected' && staffSignatureImg,
+                        'bg-slate-300 text-slate-400 border-slate-100': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                     }">
+                    <span x-text="(currentStatus === 'rejected' && staffSignatureImg) ? '✕' : ((currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished') ? '✓' : '3')"></span>
                 </div>
-                <div class="mt-1">
-                    <p class="text-xs font-black uppercase" :class="spvSignatureImg ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Final Approved</p>
-                    <p class="text-[10px] text-slate-400 font-bold leading-tight mt-0.5" x-text="spvSignatureImg ? 'Selesai / Approved' : 'Menunggu Admin/SPV'"></p>
-                </div>
+                <span class="text-[10px] font-black uppercase tracking-wider mt-2 text-center transition-colors duration-300" 
+                      :class="{
+                        'text-emerald-600': currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'finished',
+                        'text-rose-600': currentStatus === 'rejected' && staffSignatureImg,
+                        'text-slate-400': currentStatus === 'request' || currentStatus === 'pending' || currentStatus === 'checked' || (currentStatus === 'rejected' && !staffSignatureImg)
+                      }" x-text="(currentStatus === 'rejected' && staffSignatureImg) ? 'Rejected' : 'Approved'">Approved</span>
+                <span class="text-[9px] text-slate-400 font-bold mt-0.5">Admin / SPV</span>
             </div>
         </div>
     </div>
 
-    <!-- DOCUMENT LIVE PREVIEW AREA -->
-    <div id="print-target-box" class="w-full">
-        <div class="bg-white text-black p-8 sm:p-12 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-sans">
+    <!-- LIVE PREVIEW FORM AREA (PRINT VIEW TARGET - DIKUNCI TOTAL TANPA PERUBAHAN STRUKTUR INTERN) -->
+    <div id="print-target-box" class="print:m-0 print:p-0">
+        <div class="bg-white text-black p-8 sm:p-10 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-nunito">
             
-            <!-- KOP SURAT FORM FISIK -->
+            <!-- HEAD KOP SURAT FORM -->
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
                 <div class="flex items-center gap-4">
                     <div class="w-16 h-16 flex items-center justify-center overflow-hidden">
@@ -124,144 +211,134 @@
                     </div>  
                     <div>
                         <h1 class="text-lg font-black uppercase tracking-tight text-black">PT. SIIX EMS KARAWANG</h1>
-                        <p class="text-[10px] font-black text-slate-500 tracking-wider uppercase">Electronic Manufacturing Services</p>
+                        <p class="text-[10px] font-black text-black tracking-wider uppercase">Electronic Manufacturing Services</p>
                     </div>
                 </div>
                 <div class="text-right">
                     <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide rounded-sm">FORM SPAREPART REQUEST</h2>
-                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $req->request_no ?? '-' }}</p>
+                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $reqNo }}</p>
                 </div>
             </div>
 
-            <!-- DETAIL CONTENT TABLE -->
+            <!-- DETAIL CONTENT DATA TABLE -->
             <div class="mb-6">
                 <table class="w-full border-collapse text-xs border border-black">
                     <tbody>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NIK</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->nik ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $nik }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NAME</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->name ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $name }}</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">LINE & MACHINE</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">
-                                {{ optional($req->lineProduction)->no_line ?? '-' }} - {{ optional($req->lineProduction)->name_machine ?? '-' }}
-                            </td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">LINE</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $line }}</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">MACHINE NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $machineName }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SPAREPART ID</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ optional($req->sparepart)->sparepart_id ?? $req->sparepart_id ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $sparepartId }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PART NUMBER</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ optional($req->sparepart)->part_number ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $partNumber }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SAP CODE</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ optional($req->sparepart)->sap_code ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ $sapCode }}</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Remark</td>
+                            <td class="py-2.5 px-4 font-semibold text-black tracking-wide whitespace-normal break-words leading-normal">{{ $remark }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Quantity Requested</td>
-                            <td class="py-2.5 px-4 font-black text-black">{{ (int)($req->qty_req ?? 0) }} Pcs</td>
-                        </tr>
-                        <tr class="border-b border-black">
-                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Remark / Purpose</td>
-                            <td class="py-2.5 px-4 font-semibold text-slate-900 tracking-wide whitespace-normal break-words leading-normal">{{ $req->remark ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black">{{ $qtyReq }} Pcs</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- LIVE SIGNATURE MATRIX GRID -->
+            <!-- DIGITAL SIGNATURE MATRIX GRID -->
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8 rounded-sm overflow-hidden">
                 
-                <!-- 1. Requested By -->
+                <!-- 1. Requested By (Production Department) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Requested By</div>
-                    
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="prodSignatureImg">
                             <img :src="prodSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
                         <div class="z-30 px-2 my-auto" x-show="!prodSignatureImg">
-                            <div class="text-green-600 font-mono text-[8px] font-black uppercase tracking-tighter border border-green-300 bg-green-50 py-1 rounded mx-auto max-w-[120px]">
-                                ✓ SYSTEM VERIFIED
+                            <div class="text-green-600 font-mono text-[9px] font-black uppercase tracking-tighter border border-green-300 bg-green-50 py-0.5 rounded mx-auto max-w-[130px]">
+                                VERIFIED
                             </div>
                         </div>
                     </div>
-
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-black uppercase text-black tracking-wide truncate px-1">
-                            {{ optional($req->user)->name ? '( ' . optional($req->user)->name . ' )' : '( _________________ )' }}
+                        <p class="font-black uppercase text-black tracking-wide truncate">
+                            {{ $name !== '-' ? $name : '( _________________ )' }}
                         </p>
-                        <p class="text-[9px] text-slate-500 font-black uppercase mt-0.5">Production Department</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Production Department</p>
                     </div>
                 </div>
 
-                <!-- 2. Checked By -->
+                <!-- 2. Checked By (Engineering Staff) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By</div>
-                    
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="staffSignatureImg">
                             <img :src="staffSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
                         <div class="z-30 my-auto px-2" x-show="!staffSignatureImg">
                             <template x-if="currentStatus === 'rejected'">
-                                <span class="text-rose-600 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded font-bold text-[8px] uppercase tracking-wide">🛑 Stopped</span>
+                                <div class="inline-block border-4 border-double border-red-600 text-red-600 font-black text-[12px] uppercase tracking-widest px-2.5 py-0.5 rounded transform -rotate-12 shadow-[0_2px_4px_rgba(220,38,38,0.15)] bg-white/90 font-mono scale-110">
+                                    REJECTED
+                                </div>
                             </template>
                             <template x-if="currentStatus !== 'rejected'">
-                                <span class="text-amber-500 font-mono text-[8px] border border-amber-200 bg-amber-50/60 px-2 py-0.5 rounded animate-pulse">🕒 Waiting Staff</span>
+                                <span class="text-slate-400 text-[9px] font-black">( Pending Stage )</span>
                             </template>
                         </div>
                     </div>
-
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-black uppercase text-black tracking-wide truncate px-1" x-text="staffSignatureImg ? '( Checked by Staff )' : '( _________________ )'">
+                        <p class="font-black uppercase text-black tracking-wide truncate">
+                            {{ $isHistory && $log->approver_name && str_contains(strtolower($log->status), 'check') ? $log->approver_name : ( !empty($engSign) ? 'Verified Staff' : '( _________________ )' ) }}
                         </p>
-                        <p class="text-[9px] text-slate-500 font-black uppercase mt-0.5">Staff Engineering</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Staff Engineering</p>
                     </div>
                 </div>
 
-                <!-- 3. Approved By -->
+                <!-- 3. Approved By (Engineering Admin / SPV) -->
                 <div class="flex flex-col justify-between h-36 bg-white relative z-0">
                     <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By</div>
-                    
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="spvSignatureImg">
                             <img :src="spvSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                         </div>
                         <div class="z-30 my-auto px-2" x-show="!spvSignatureImg">
                             <template x-if="currentStatus === 'rejected'">
-                                <span class="text-rose-600 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded font-bold text-[8px] uppercase tracking-wide">🛑 Stopped</span>
+                                <div class="inline-block border-4 border-double border-red-600 text-red-600 font-black text-[12px] uppercase tracking-widest px-2.5 py-0.5 rounded transform -rotate-12 shadow-[0_2px_4px_rgba(220,38,38,0.15)] bg-white/90 font-mono scale-110">
+                                    REJECTED
+                                </div>
                             </template>
                             <template x-if="currentStatus !== 'rejected'">
-                                <span class="text-slate-400 italic text-[9px]" x-text="staffSignatureImg ? '🕒 Waiting Admin' : '( Queue )'"></span>
+                                <span class="text-slate-400 text-[9px] font-black">( Pending Stage )</span>
                             </template>
                         </div>
                     </div>
-
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-black uppercase text-black tracking-wide truncate px-1" x-text="spvSignatureImg ? '( Approved by Admin )' : '( _________________ )'">
+                        <p class="font-black uppercase text-black tracking-wide truncate">
+                            {{ $isHistory && $log->approver_name && str_contains(strtolower($log->status), 'appr') ? $log->approver_name : ( !empty($spvSign) ? 'Verified Admin' : '( _________________ )' ) }}
                         </p>
-                        <p class="text-[9px] text-slate-500 font-black uppercase mt-0.5">Admin / SPV Engineering</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Admin / SPV Engineering</p>
                     </div>
                 </div>
-            </div>
-
-            <!-- ALASAN REJECT -->
-            @if(strtolower($req->status ?? '') === 'rejected' || !empty($req->reject_remark))
-                <div class="mt-6 border-2 border-red-400 bg-red-50 p-4 rounded-md print:border-black print:bg-white">
-                    <h4 class="text-xs font-black text-red-700 uppercase tracking-wide print:text-black">REJECTION REMARK:</h4>
-                    <p class="text-xs font-bold text-slate-700 mt-1 italic print:text-black">" {{ $req->reject_remark ?? 'Permohonan ditolak oleh tim Engineering.' }} "</p>
-                </div>
-            @endif
-
-            <div class="mt-12 border-t border-dashed border-slate-300 pt-4 text-center print:block hidden">
-                <p class="text-[8px] text-slate-400 font-mono uppercase tracking-widest">SIIX-SPAREPART-TRACKING-SYSTEM • LIVE CONFIDENTIAL DOCUMENT</p>
             </div>
 
         </div>
@@ -269,20 +346,22 @@
 </div>
 
 <script>
-function documentTrackerHandler() {
-    const prodSignPath = "{{ $req->production_signature ?? '' }}";
-    const userSignPath = "{{ $req->user && $req->user->signature_path ? $req->user->signature_path : '' }}";
-    const activeProdPath = prodSignPath || userSignPath;
-
-    const staffSignPath = "{{ $req->engineering_signature ?? '' }}"; 
-    const spvSignPath = "{{ $req->spv_signature ?? '' }}";
+function engineeringApprovalHandler() {
+    const activeProdPath = "{{ $activeProdPath }}";
+    const staffSignPath = "{{ $engSign }}"; 
+    const spvSignPath = "{{ $spvSign }}";
 
     return {
-        currentStatus: "{{ strtolower($req->status ?? 'pending') }}",
+        currentStatus: "{{ $status }}",
+        chosenAction: null,
         
         prodSignatureImg: activeProdPath ? (activeProdPath.startsWith('http') || activeProdPath.startsWith('data:image') ? activeProdPath : "{{ asset('storage') }}/" + activeProdPath.replace(/^\/?(storage\/)?/, '')) : null,
         staffSignatureImg: staffSignPath ? (staffSignPath.startsWith('http') || staffSignPath.startsWith('data:image') ? staffSignPath : "{{ asset('storage') }}/" + staffSignPath.replace(/^\/?(storage\/)?/, '')) : null,
         spvSignatureImg: spvSignPath ? (spvSignPath.startsWith('http') || spvSignPath.startsWith('data:image') ? spvSignPath : "{{ asset('storage') }}/" + spvSignPath.replace(/^\/?(storage\/)?/, '')) : null,
+
+        setAction(type) {
+            this.chosenAction = type;
+        },
 
         printDocument() {
             window.print();
