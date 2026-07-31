@@ -1,20 +1,75 @@
 @extends('admin')
 
 @section('content')
-{{-- TRICK BULLETPROOF: Deteksi otomatis variabel dari Controller --}}
+{{-- TRICK BULLETPROOF: Deteksi otomatis variabel dari Controller (Log History vs Direct Request) --}}
 @php
+    $log = $log ?? null;
     $req = $req ?? $requestData ?? $productionRequest ?? $data ?? null;
+    $hasData = $log || $req;
+    $isHistory = (bool)$log; // Deteksi apakah diakses dari modul History Log
 @endphp
 
-@if(!$req)
+@if(!$hasData)
     <div class="mx-auto max-w-lg mt-10 p-6 bg-red-50 border border-red-200 rounded-md text-center font-nunito">
         <h3 class="text-red-800 font-black uppercase">Variabel Data Tidak Ditemukan!</h3>
         <p class="text-xs text-slate-600 mt-2">
-            Controller lo belum mengirimkan data ke view ini. Pastikan di Controller lo memakai: <br>
-            <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-red-600">return view('...', compact('req'));</code>
+            Controller Engineering belum mengirimkan data ke view ini. Pastikan di Controller lo memakai: <br>
+            <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-red-600">return view('...', compact('log'));</code>
         </p>
     </div>
 @else
+
+{{-- NORMALISASI DATA: Memastikan data ter-ekstrak dengan aman walau data history lama tidak punya relasi --}}
+@php
+    if ($isHistory && $log instanceof \App\Models\Engineering\HistoryApproval) {
+        $targetId = $log->production_request_id ?? $log->id;
+        $reqNo = $log->request_no ?? optional($log->productionRequest)->request_no ?? '-';
+        $nik = $log->nik ?? optional(optional($log->productionRequest)->user)->nik ?? '-';
+        $name = $log->approver_name ?? optional(optional($log->productionRequest)->user)->name ?? '-';
+        
+        $lineMachine = $log->line_machine ?? '-';
+        if (($lineMachine === '-' || empty($lineMachine)) && $log->productionRequest && $log->productionRequest->lineProduction) {
+            $lineMachine = (optional($log->productionRequest->lineProduction)->no_line ?? '') . ' - ' . (optional($log->productionRequest->lineProduction)->name_machine ?? '');
+        }
+        
+        $sparepartId = $log->sparepart_id ?? (optional($log->productionRequest)->sparepart ? (optional($log->productionRequest->sparepart)->sparepart_id ?? optional($log->productionRequest->sparepart)->id) : '-');
+        $partNumber = $log->part_number ?? optional(optional($log->productionRequest)->sparepart)->part_number ?? '-';
+        $sapCode = $log->sap_code ?? optional(optional($log->productionRequest)->sparepart)->sap_code ?? '-';
+        $qtyReq = (int)($log->qty_req ?? optional($log->productionRequest)->qty_req ?? 0);
+        $remark = $log->remark ?? optional($log->productionRequest)->remark ?? '-';
+        $status = strtolower($log->status ?? optional($log->productionRequest)->status ?? 'pending');
+        
+        $prodSign = $log->production_signature ?? optional($log->productionRequest)->production_signature ?? '';
+        $engSign = $log->engineering_signature ?? optional($log->productionRequest)->engineering_signature ?? '';
+        $spvSign = $log->spv_signature ?? optional($log->productionRequest)->spv_signature ?? '';
+        $userSignPath = optional(optional($log->productionRequest)->user)->signature_path ?? '';
+        $activeProdPath = $prodSign ?: $userSignPath;
+        
+        $rejectRemark = $log->reject_remark ?? optional($log->productionRequest)->reject_remark ?? '';
+    } else {
+        // Fallback jika diakses dari modul request reguler aktif
+        $targetId = $req->id ?? 0;
+        $reqNo = $req->request_no ?? '-';
+        $nik = optional($req->user)->nik ?? '-';
+        $name = optional($req->user)->name ?? '-';
+        $lineMachine = (optional($req->lineProduction)->no_line ?? '-') . ' - ' . (optional($req->lineProduction)->name_machine ?? '-');
+        $sparepartId = optional($req->sparepart)->sparepart_id ?? $req->sparepart_id ?? '-';
+        $partNumber = optional($req->sparepart)->part_number ?? '-';
+        $sapCode = optional($req->sparepart)->sap_code ?? '-';
+        $qtyReq = (int)($req->qty_req ?? 0);
+        $remark = $req->remark ?? '-';
+        $status = strtolower($req->status ?? 'pending');
+        
+        $prodSign = $req->production_signature ?? '';
+        $engSign = $req->engineering_signature ?? '';
+        $spvSign = $req->spv_signature ?? '';
+        $userSignPath = optional($req->user)->signature_path ?? '';
+        $activeProdPath = $prodSign ?: $userSignPath;
+        
+        $rejectRemark = $req->reject_remark ?? '';
+    }
+@endphp
+
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;900&display=swap" rel="stylesheet">
 
 <style>
@@ -42,16 +97,18 @@
 }
 </style>
 
-<div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="documentTrackerHandler()" x-cloak>
+<div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="engineeringApprovalHandler()" x-cloak>
     
     <!-- TOP HEADER & ACTION BUTTONS -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
             <h2 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <span class="h-5 w-1.5 bg-indigo-600 rounded-full"></span>
-                <span>Track Sparepart Request</span>
+                <span class="h-5 w-1.5 bg-amber-500 rounded-full"></span>
+                <span>Engineering Otorisasi Detail</span>
             </h2>
-            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Real-Time Authorization Progress</p>
+            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                {{ $isHistory ? 'Mode Arsip / Riwayat Laporan Persetujuan' : 'Review & Authorize Sparepart Request' }}
+            </p>
         </div>
         
         <div class="flex items-center gap-2 self-start sm:self-center">
@@ -69,7 +126,7 @@
     </div>
 
     <!-- LIVE VISUAL PROGRESS TIMELINE -->
-    <div class="mb-8 bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark rounded-xl p-5 shadow-sm print:hidden">
+    <div class="mb-6 bg-white dark:bg-boxdark border border-slate-200 dark:border-strokedark rounded-xl p-5 shadow-sm print:hidden">
         <h4 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-4">Live Tracking Status Flow</h4>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 relative">
@@ -93,7 +150,7 @@
                 </div>
                 <div class="mt-1">
                     <p class="text-xs font-black uppercase" :class="staffSignatureImg ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Checked by Staff</p>
-                    <p class="text-[10px] text-slate-4 font-bold leading-tight mt-0.5" x-text="staffSignatureImg ? 'Verified by Eng Staff' : (currentStatus === 'rejected' ? 'Proses Terhenti' : 'Menunggu Staff Engineering')"></p>
+                    <p class="text-[10px] text-slate-400 font-bold leading-tight mt-0.5" x-text="staffSignatureImg ? 'Verified by Eng Staff' : (currentStatus === 'rejected' ? 'Proses Terhenti' : 'Menunggu Staff Engineering')"></p>
                 </div>
                 <div class="hidden md:block absolute top-4 left-[60%] w-[80%] h-[2px] bg-slate-200 dark:bg-slate-700 -z-10" :class="spvSignatureImg ? 'bg-emerald-500' : ''"></div>
             </div>
@@ -110,6 +167,70 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- INTERACTIVE ACTION CENTER PANEL -->
+    <div class="mb-8 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 print:hidden">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-500">Status & Action Panel</h3>
+        </div>
+
+        @if($isHistory || $status === 'approved' || $status === 'rejected' || $status === 'success' || $status === 'finished' || $status === 'checked')
+            <!-- PREVENT ACTION: BILA DIAKSES DARI MENU HISTORY / DATA SUDAH FINISH -->
+            <div class="bg-white dark:bg-boxdark p-4 rounded-lg border border-slate-200 text-center">
+                <p class="text-sm font-black uppercase tracking-wide" :class="currentStatus === 'approved' || currentStatus === 'success' || currentStatus === 'checked' || currentStatus === 'finished' ? 'text-emerald-600' : (currentStatus === 'rejected' ? 'text-rose-600' : 'text-blue-600')">
+                    Document Status: <span class="uppercase" x-text="currentStatus"></span>
+                </p>
+                <p class="text-[11px] text-slate-400 font-semibold mt-1">
+                    @if($isHistory)
+                        Dokumen ini dibuka melalui riwayat data (History Log Archive - Read Only).
+                    @else
+                        Permohonan ini sudah diproses dan tidak membutuhkan tindakan otorisasi lebih lanjut.
+                    @endif
+                </p>
+            </div>
+        @else
+            <!-- FORM PROSES APPROVAL/REJECT (Hanya aktif jika request statusnya murni pending/draft) -->
+            <form action="{{ Route::has('eng.request.process') ? route('eng.request.process', $targetId) : url('engineering/request/process/' . $targetId) }}" method="POST" class="space-y-4">
+                @csrf
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" @click="setAction('approve')" 
+                            class="flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-xs font-black uppercase tracking-wider transition-all border active:scale-95"
+                            :class="chosenAction === 'approve' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-200' : 'bg-white dark:bg-boxdark text-slate-700 dark:text-white border-slate-200 hover:bg-slate-100'">
+                        ✓ Setujui & TTD
+                    </button>
+
+                    <button type="button" @click="setAction('reject')" 
+                            class="flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-xs font-black uppercase tracking-wider transition-all border active:scale-95"
+                            :class="chosenAction === 'reject' ? 'bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-200' : 'bg-white dark:bg-boxdark text-slate-700 dark:text-white border-slate-200 hover:bg-slate-100'">
+                        🛑 Tolak Dokumen
+                    </button>
+                </div>
+
+                <input type="hidden" name="status" :value="chosenAction">
+
+                <div x-show="chosenAction === 'reject'" x-transition class="bg-white dark:bg-boxdark p-4 rounded-lg border border-rose-200 space-y-2">
+                    <label class="block text-xs font-black text-rose-700 uppercase tracking-wide">Alasan Penolakan (Reject Remark) *</label>
+                    <textarea name="reject_remark" required rows="3" class="w-full text-xs font-semibold p-2.5 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-500 bg-slate-50 text-black dark:text-white dark:bg-slate-800" placeholder="Tulis alasan kenapa sparepart ini ditolak..."></textarea>
+                </div>
+
+                <div x-show="chosenAction === 'approve'" x-transition class="bg-white dark:bg-boxdark p-4 rounded-lg border border-emerald-200">
+                    <p class="text-[11px] text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
+                        Dengan memproses dokumen ini, sistem akan otomatis menempelkan tanda tangan digital akun Engineering Anda pada kolom matriks otorisasi di bawah ini secara resmi.
+                    </p>
+                </div>
+
+                <div x-show="chosenAction" x-transition class="flex justify-end pt-2">
+                    <button type="submit" class="bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded shadow transition-all active:scale-95 cursor-pointer">
+                        Submit Keputusan
+                    </button>
+                </div>
+            </form>
+        @endif
     </div>
 
     <!-- DOCUMENT LIVE PREVIEW AREA -->
@@ -129,7 +250,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide rounded-sm">FORM SPAREPART REQUEST</h2>
-                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $req->request_no ?? '-' }}</p>
+                    <p class="text-[9px] text-black font-mono font-bold mt-1">Doc No: {{ $reqNo }}</p>
                 </div>
             </div>
 
@@ -139,37 +260,35 @@
                     <tbody>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NIK</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->nik ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $nik }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NAME</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ optional($req->user)->name ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $name }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">LINE & MACHINE</td>
-                            <td class="py-2.5 px-4 font-black text-black uppercase">
-                                {{ optional($req->lineProduction)->no_line ?? '-' }} - {{ optional($req->lineProduction)->name_machine ?? '-' }}
-                            </td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase">{{ $lineMachine }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SPAREPART ID</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ optional($req->sparepart)->sparepart_id ?? $req->sparepart_id ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ $sparepartId }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PART NUMBER</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ optional($req->sparepart)->part_number ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black uppercase">{{ $partNumber }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SAP CODE</td>
-                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ optional($req->sparepart)->sap_code ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">{{ $sapCode }}</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Quantity Requested</td>
-                            <td class="py-2.5 px-4 font-black text-black">{{ (int)($req->qty_req ?? 0) }} Pcs</td>
+                            <td class="py-2.5 px-4 font-black text-black">{{ $qtyReq }} Pcs</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">Remark / Purpose</td>
-                            <td class="py-2.5 px-4 font-semibold text-slate-900 tracking-wide whitespace-normal break-words leading-normal">{{ $req->remark ?? '-' }}</td>
+                            <td class="py-2.5 px-4 font-semibold text-slate-900 tracking-wide whitespace-normal break-words leading-normal">{{ $remark }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -195,7 +314,7 @@
 
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black tracking-wide truncate px-1">
-                            {{ optional($req->user)->name ? '( ' . optional($req->user)->name . ' )' : '( _________________ )' }}
+                            {{ $name !== '-' ? '( ' . $name . ' )' : '( _________________ )' }}
                         </p>
                         <p class="text-[9px] text-slate-500 font-black uppercase mt-0.5">Production Department</p>
                     </div>
@@ -252,11 +371,11 @@
                 </div>
             </div>
 
-            <!-- ALASAN REJECT -->
-            @if(strtolower($req->status ?? '') === 'rejected' || !empty($req->reject_remark))
+            <!-- DETAIL REMARK REJECT DI BAWAH DOKUMEN -->
+            @if($status === 'rejected' || !empty($rejectRemark))
                 <div class="mt-6 border-2 border-red-400 bg-red-50 p-4 rounded-md print:border-black print:bg-white">
                     <h4 class="text-xs font-black text-red-700 uppercase tracking-wide print:text-black">REJECTION REMARK:</h4>
-                    <p class="text-xs font-bold text-slate-700 mt-1 italic print:text-black">" {{ $req->reject_remark ?? 'Permohonan ditolak oleh tim Engineering.' }} "</p>
+                    <p class="text-xs font-bold text-slate-700 mt-1 italic print:text-black">" {{ $rejectRemark ?: 'Permohonan ditolak oleh tim Engineering.' }} "</p>
                 </div>
             @endif
 
@@ -269,20 +388,22 @@
 </div>
 
 <script>
-function documentTrackerHandler() {
-    const prodSignPath = "{{ $req->production_signature ?? '' }}";
-    const userSignPath = "{{ $req->user && $req->user->signature_path ? $req->user->signature_path : '' }}";
-    const activeProdPath = prodSignPath || userSignPath;
-
-    const staffSignPath = "{{ $req->engineering_signature ?? '' }}"; 
-    const spvSignPath = "{{ $req->spv_signature ?? '' }}";
+function engineeringApprovalHandler() {
+    const activeProdPath = "{{ $activeProdPath }}";
+    const staffSignPath = "{{ $engSign }}"; 
+    const spvSignPath = "{{ $spvSign }}";
 
     return {
-        currentStatus: "{{ strtolower($req->status ?? 'pending') }}",
+        currentStatus: "{{ $status }}",
+        chosenAction: null,
         
         prodSignatureImg: activeProdPath ? (activeProdPath.startsWith('http') || activeProdPath.startsWith('data:image') ? activeProdPath : "{{ asset('storage') }}/" + activeProdPath.replace(/^\/?(storage\/)?/, '')) : null,
         staffSignatureImg: staffSignPath ? (staffSignPath.startsWith('http') || staffSignPath.startsWith('data:image') ? staffSignPath : "{{ asset('storage') }}/" + staffSignPath.replace(/^\/?(storage\/)?/, '')) : null,
         spvSignatureImg: spvSignPath ? (spvSignPath.startsWith('http') || spvSignPath.startsWith('data:image') ? spvSignPath : "{{ asset('storage') }}/" + spvSignPath.replace(/^\/?(storage\/)?/, '')) : null,
+
+        setAction(type) {
+            this.chosenAction = type;
+        },
 
         printDocument() {
             window.print();

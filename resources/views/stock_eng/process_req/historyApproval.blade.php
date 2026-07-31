@@ -70,7 +70,7 @@
 
         {{-- AREA SCROLL HORIZONTAL --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1650px]" id="approvalTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1730px]" id="approvalTable">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">
@@ -89,6 +89,7 @@
                         <th class="px-4 py-3.5 w-[150px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Remark</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Created At</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Updated At</th>
+                        <th class="px-3 py-3.5 w-[80px] border-l border-blue-500 dark:bg-blue-900/50 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
@@ -131,17 +132,14 @@
                             {{ $log->approver_name ?? optional(optional($log->productionRequest)->user)->name ?? '-' }}
                         </td>
                         
-                        {{-- SPAREPART ID --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap">
                             {{ $log->sparepart_id ?? (optional($log->productionRequest)->sparepart ? (optional($log->productionRequest->sparepart)->sparepart_id ?? optional($log->productionRequest->sparepart)->id) : '-') }}
                         </td>
 
-                        {{-- PART NUMBER --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
                             {{ $log->part_number ?? optional(optional($log->productionRequest)->sparepart)->part_number ?? '-' }}
                         </td>
 
-                        {{-- SAP CODE --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
                             {{ $log->sap_code ?? optional(optional($log->productionRequest)->sparepart)->sap_code ?? '-' }}
                         </td>
@@ -172,10 +170,22 @@
                             <div class="font-bold">{{ $updatedAt ? \Carbon\Carbon::parse($updatedAt)->format('d/m/Y') : '-' }}</div>
                             <div class="text-[10px] mt-0.5">{{ $updatedAt ? \Carbon\Carbon::parse($updatedAt)->format('H:i') : '-' }} WIB</div>
                         </td>
+
+                        {{-- ACTION BUTTON PREVIEW: DIARAHKAN MENGGUNAKAN ROUTE NAME YANG VALID AGAR TIDAK 404 --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <div class="flex justify-center items-center">
+                                <a href="{{ route('approval.history.preview', $log->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all shadow-md active:scale-95 cursor-pointer" title="Preview Approval">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="14" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                        <td colspan="15" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No approval history records logged.
                         </td>
                     </tr>

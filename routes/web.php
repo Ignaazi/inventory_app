@@ -117,7 +117,7 @@ Route::middleware('auth')->group(function () {
         });
     });
     
-    // --- GRUP PRODUCTION (Ubah bagian ini di web.php lu) ---
+    // --- GRUP PRODUCTION ---
     Route::middleware('role:admin,production')->group(function () {
         
         // Bungkus rute request ke dalam satu grup biar konsisten
@@ -176,7 +176,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
     
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // RUTE APPROVAL HISTORY & PREVIEW JALUR ASLI BLADE LO
     Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
+    Route::get('/engineering/approval-history/preview/{id}', [HistoryApprovalController::class, 'preview'])->name('approval.history.preview');
     Route::delete('/approval/history/{id}', [HistoryApprovalController::class, 'destroy'])->name('approval.history.destroy');
     
 });

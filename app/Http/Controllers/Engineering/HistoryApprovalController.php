@@ -42,6 +42,22 @@ class HistoryApprovalController extends Controller
     }
 
     /**
+     * Menampilkan halaman preview detail request dari history log
+     */
+    public function preview($id)
+    {
+        // Ambil data history log beserta seluruh relasi data production request utamanya
+        $log = HistoryApproval::with([
+            'productionRequest.user', 
+            'productionRequest.sparepart', 
+            'productionRequest.lineProduction'
+        ])->findOrFail($id);
+
+        // Diarahkan ke folder: views/stock_eng/process_req/previewApprovalReqProd.blade.php
+        return view('stock_eng.process_req.previewApprovalReqProd', compact('log'));
+    }
+
+    /**
      * Menghapus record history approval
      */
     public function destroy($id)

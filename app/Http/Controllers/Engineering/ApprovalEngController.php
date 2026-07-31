@@ -84,8 +84,8 @@ class ApprovalEngController extends Controller
 
         $approverName = $user ? $user->name : (($role === 'staff') ? 'Engineering Staff' : 'Admin Engineering');
         
-        // Ambil identifier sparepart dari tabel master lewat relasi model lu
-        $sparepartName = $requestData->sparepart 
+        // FIX: Diubah ke $sparepartId dan diarahkan ke kolom 'sparepart_id' di tabel history_approvals
+        $sparepartId = $requestData->sparepart 
             ? ($requestData->sparepart->sparepart_id ?? $requestData->sparepart->id ?? '-') 
             : '-'; 
         
@@ -114,13 +114,13 @@ class ApprovalEngController extends Controller
                 'engineering_signature' => $signaturePath ? $signaturePath : $oldSignature, 
             ]);
 
-            // Simpan log lengkap ke tabel history flat
+            // Simpan log lengkap ke tabel history flat (FIXED: sparepart_id)
             HistoryApproval::create([
                 'production_request_id' => $requestData->id,
                 'request_no'            => $requestData->request_no,
                 'nik'                   => optional($requestData->user)->nik ?? '-', 
                 'approver_name'         => $approverName,
-                'sparepart_name'        => $sparepartName, 
+                'sparepart_id'          => $sparepartId, 
                 'qty_req'               => $requestData->qty_req,
                 'line_machine'          => $lineMachineText,
                 'status'                => 'Checked by Staff',
@@ -163,12 +163,13 @@ class ApprovalEngController extends Controller
                     'processed_at'  => now(),
                 ]);
             } else {
+                // FIXED: sparepart_id
                 HistoryApproval::create([
                     'production_request_id' => $requestData->id,
                     'request_no'            => $requestData->request_no,
                     'nik'                   => optional($requestData->user)->nik ?? '-',
                     'approver_name'         => $approverName,
-                    'sparepart_name'        => $sparepartName,
+                    'sparepart_id'          => $sparepartId,
                     'qty_req'               => $requestData->qty_req,
                     'line_machine'          => $lineMachineText,
                     'status'                => 'Approved',
@@ -189,7 +190,8 @@ class ApprovalEngController extends Controller
         $requestData = RequestProd::with(['user', 'sparepart', 'lineProduction'])->findOrFail($id);
         $approverName = Auth::check() ? Auth::user()->name : 'Engineering Reviewer';
         
-        $sparepartName = $requestData->sparepart 
+        // FIX: Diubah ke $sparepartId
+        $sparepartId = $requestData->sparepart 
             ? ($requestData->sparepart->sparepart_id ?? $requestData->sparepart->id ?? '-') 
             : '-';
 
@@ -198,12 +200,13 @@ class ApprovalEngController extends Controller
         $lineMachineText = $lineNo . ' - ' . $machineName;
         $reason = $request->input('reason', 'Ditolak oleh Engineering');
 
+        // FIXED: sparepart_id
         HistoryApproval::create([
             'production_request_id' => $requestData->id,
             'request_no'            => $requestData->request_no,
             'nik'                   => optional($requestData->user)->nik ?? '-',
             'approver_name'         => $approverName,
-            'sparepart_name'        => $sparepartName,
+            'sparepart_id'          => $sparepartId,
             'qty_req'               => $requestData->qty_req,
             'line_machine'          => $lineMachineText,
             'status'                => 'Rejected',
