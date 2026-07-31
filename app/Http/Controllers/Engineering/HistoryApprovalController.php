@@ -12,19 +12,30 @@ class HistoryApprovalController extends Controller
     {
         $search = $request->input('search');
 
+        // Eager loading tetep dipakai biar part_number & sap_code ke-load otomatis
+        // Data lama yang production_request_id-nya NULL dijamin TETEP MUNCUL aman
         $history = HistoryApproval::query()
-            ->with('productionRequest') 
+            ->with(['productionRequest.user', 'productionRequest.sparepart', 'productionRequest.lineProduction'])
             ->when($search, function($query, $search) {
                 return $query->where(function($q) use ($search) {
+                    // Search langsung ke kolom lokal tabel history_approvals
                     $q->where('request_no', 'LIKE', "%{$search}%")
                       ->orWhere('line_machine', 'LIKE', "%{$search}%")
-                      ->orWhere('sparepart_name', 'LIKE', "%{$search}%")
+                      ->orWhere('sparepart_id', 'LIKE', "%{$search}%") // FIX: Pakai sparepart_id sesuai entitas baru
                       ->orWhere('nik', 'LIKE', "%{$search}%")
-                      ->orWhere('approver_name', 'LIKE', "%{$search}%");
+                      ->orWhere('approver_name', 'LIKE', "%{$search}%")
+                      ->orWhere('status', 'LIKE', "%{$search}%")
+                      ->orWhere('remark', 'LIKE', "%{$search}%")
+                      
+                      // Tambahan: Biar bisa search menembus tabel spareparts lewat relasi
+                      ->orWhereHas('productionRequest.sparepart', function($spQuery) use ($search) {
+                          $spQuery->where('part_number', 'LIKE', "%{$search}%")
+                                  ->orWhere('sap_code', 'LIKE', "%{$search}%");
+                      });
                 });
             })
-            ->orderBy('processed_at', 'desc')
-            ->paginate(15) 
+            ->orderBy('processed_at', 'desc') // Konsisten urut berdasarkan processed_at dari DB lo
+            ->paginate(25) 
             ->withQueryString(); 
 
         return view('stock_eng.process_req.historyApproval', compact('history', 'search'));
@@ -39,12 +50,9 @@ class HistoryApprovalController extends Controller
             $log = HistoryApproval::findOrFail($id);
             $log->delete();
 
-            // Disesuaikan dengan nama route 'eng.approval.history.destroy' di blade lo
-            return redirect()->back()
-                             ->with('success', 'History approval berhasil dihapus!');
+            return redirect()->back()->with('success', 'History approval berhasil dihapus!');
         } catch (\Exception $e) {
-            return redirect()->back()
-                             ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menghapus data: ' . $e->getMessage());
         }
     }
 }

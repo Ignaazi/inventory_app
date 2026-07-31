@@ -11,8 +11,9 @@ class HistoryApproval extends Model
 
     protected $table = 'history_approvals';
 
+    // Pastikan fillable mencakup semua kolom target agar tidak diblokir Laravel saat insert massal
     protected $fillable = [
-        'production_request_id', // Foreign Key utama terhubung ke tabel production_requests
+        'production_request_id', 
         'request_no',
         'nik',
         'approver_name',
@@ -29,11 +30,12 @@ class HistoryApproval extends Model
     ];
 
     /**
-     * Relasi utama ke tabel production_requests
+     * Relasi ke model RequestProd (tabel production_requests)
      */
     public function productionRequest()
     {
-        // Berubah menggunakan field production_request_id agar presisi sesuai migration terbaru
-        return $this->belongsTo(\App\Models\Production\RequestProd::class, 'production_request_id');
+        // Parameter kedua menegaskan foreign key di tabel history_approvals
+        // Parameter ketiga menegaskan primary key di tabel production_requests
+        return $this->belongsTo(\App\Models\Production\RequestProd::class, 'production_request_id', 'id');
     }
 }
