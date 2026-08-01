@@ -58,17 +58,18 @@ class MaterialReceivedController extends Controller
                 $pr->qty_remaining = max(0, $pr->qty_pr - $totalReceived);
                 return $pr;
             })
-            ->filter(function ($pr) use ($pr_id) {
-                // Hanya tampilkan PR yang sisa kuotanya > 0 (belum selesai), atau sedang dipilih
-                return $pr->qty_remaining > 0 || $pr->id == $pr_id;
+            ->filter(function ($pr) {
+                // Hanya loloskan PR yang kuotanya masih ada (> 0).
+                return $pr->qty_remaining > 0;
             })
             ->values();
 
+        // Proteksi jika user mencoba akses direct link PR lewat URL
         if ($pr_id) {
             $selectedPr = $purchaseRequests->firstWhere('id', $pr_id);
             if (!$selectedPr) {
                 return redirect()->route('costing.material.list')
-                    ->with('error', 'Dokumen PR tidak ditemukan atau seluruh item Qty sudah selesai dipenuhi!');
+                    ->with('error', 'Dokumen PR tidak ditemukan atau status item Qty sudah selesai dipenuhi (CLOSED)!');
             }
         }
 
@@ -76,12 +77,16 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 3. HALAMAN PREVIEW DOKUMEN VIA AJAX/MODAL
+     * 3. HALAMAN PREVIEW DOKUMEN VIA BLADE VIEW (Klik Mata)
+     * FIX SINKRONISASI: Variabel distandarkan menggunakan $mr sesuai target Blade
      */
     public function show($id)
     {
+        // Ambil data MR beserta relasi PR, sparepart, dan user pembuatnya
         $mr = MaterialReceived::with(['user', 'purchaseRequest.sparepart', 'purchaseRequest.user'])->findOrFail($id);
-        return response()->json($mr);
+        
+        // Mengarahkan ke file material_received_preview.blade.php di folder cost_section
+        return view('cost_section.material_received_preview', compact('mr'));
     }
 
     /**
@@ -108,19 +113,29 @@ class MaterialReceivedController extends Controller
         
         $maxAllowed = $pr->qty_pr - $alreadyReceived;
 
-        // Proteksi server-side: QTY ACTUAL tidak boleh melebihi kapasitas QTY PR REQ
-        if ($request->qty_received > $maxAllowed) {
+        // Proteksi jika sisa saldo PR 0 atau minus, block langsung!
+        if ($maxAllowed <= 0) {
             return redirect()->back()->withErrors([
-                'qty_received' => "Jumlah QTY ACTUAL ({$request->qty_received} Pcs) melebihi batas QTY PR REQ terbuka (Maksimal sisa: {$maxAllowed} Pcs)."
+                'purchase_request_id' => "Transaksi Ditolak! Dokumen PR ini sudah berstatus CLOSED dan seluruh kuantitasnya telah terpenuhi."
             ]);
         }
 
-        // ==========================================
-        // LOGIKA BARU: MENENTUKAN STATUS QTY (OPEN / CLOSED)
-        // ==========================================
+        // Proteksi server-side: Input Qty Received tidak boleh melampaui sisa balance yang tersedia
+        if ($request->qty_received > $maxAllowed) {
+            return redirect()->back()->withErrors([
+                'qty_received' => "Jumlah QTY RECEIVED ({$request->qty_received} Pcs) melebihi sisa batas QTY PR terbuka (Maksimal sisa: {$maxAllowed} Pcs)."
+            ]);
+        }
+
+        // MENENTUKAN STATUS QTY LANGSUNG DENGAN MINUSNYA KE DATABASE
         $qtyGap = max(0, $maxAllowed - $request->qty_received);
-        $qtyStatus = ($qtyGap === 0) ? 'closed' : 'open';
-        // ==========================================
+
+        if ($qtyGap === 0) {
+            $qtyStatus = 'CLOSE';
+        } else {
+            // Database akan langsung menyimpan string lengkap, contoh: "OPEN (-5 Pcs)"
+            $qtyStatus = 'OPEN (-' . number_format($qtyGap) . ' Pcs)';
+        }
 
         // Generate nomor MR final
         $latestMr = MaterialReceived::orderBy('id', 'desc')->first();
@@ -141,15 +156,14 @@ class MaterialReceivedController extends Controller
             'purchase_request_id' => $request->purchase_request_id,
             'user_id'             => Auth::id(),
             'qty_received'        => $request->qty_received,
-            'qty_status'          => $qtyStatus, // <--- Menyimpan Status Ke Kolom Migrasi Baru
+            'qty_status'          => $qtyStatus, 
             'lot_no'              => $request->lot_no,
             'remark'              => $request->remark,
             'status'              => 'pending',
             'prepared_signature'  => $signaturePath,
         ]);
 
-        $statusMsg = ($qtyStatus === 'closed') ? 'CLOSED (Semua item terpenuhi)' : 'OPEN (Parsial)';
-        return redirect()->route('costing.material.list')->with('success', "Form MR berhasil diajukan dengan status Qty: {$statusMsg}!");
+        return redirect()->route('costing.material.list')->with('success', "Form MR berhasil diajukan dengan status Qty: {$qtyStatus}!");
     }
 
     /**

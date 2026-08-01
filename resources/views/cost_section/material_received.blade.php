@@ -64,6 +64,7 @@
             @csrf
             
             <input type="hidden" name="prepared_signature" x-bind:value="signaturePathHidden">
+            <input type="hidden" name="no_mr" x-bind:value="mr_no">
 
             <div class="p-5 sm:p-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -89,7 +90,7 @@
                             <select name="purchase_request_id" x-model="selected_pr_id" @change="updatePrDetails()" required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-slate-900 dark:text-white">
                                 <option value="" class="text-black">-- Pilih No Dokumen PR --</option>
                                 <template x-for="pr in purchaseRequests" :key="pr.id">
-                                    <option :value="pr.id" class="text-black" x-text="pr.no_pr" :selected="pr.id == selected_pr_id"></option>
+                                    <option :value="pr.id" class="text-black" x-text="pr.no_pr + ' (Sisa: ' + pr.qty_remaining + ')'" :selected="pr.id == selected_pr_id"></option>
                                 </template>
                             </select>
                         </div>
@@ -118,16 +119,16 @@
                             <input type="text" x-model="category" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 5. Qty PR Req -->
+                        <!-- 5. Qty PR Open Balance -->
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-xs font-black uppercase text-black tracking-wider">5. QTY PR REQ</label>
+                            <label class="text-xs font-black uppercase text-black tracking-wider">5. QTY PR OPEN BALANCE</label>
                             <input type="text" x-model="qty_pr_req" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-slate-700 cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 6. Qty Actual -->
+                        <!-- 6. Qty Received (Menggantikan Qty Actual agar sesuai DB) -->
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-xs font-black uppercase text-black tracking-wider">6. QTY ACTUAL</label>
-                            <input type="number" name="qty_received" x-model="qty_actual" min="1" :max="qty_pr_req" required @input="calculateGap()" class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">6. QTY RECEIVED</label>
+                            <input type="number" name="qty_received" x-model="qty_received" min="1" :max="qty_pr_req" required @input="calculateGap()" class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white">
                         </div>
 
                         <!-- 7. Qty Gap + Badge Status Dinamis (OPEN/CLOSED) -->
@@ -135,7 +136,7 @@
                             <label class="text-xs font-black uppercase text-black tracking-wider">7. QTY GAP (REMAINING BALANCE)</label>
                             <div class="w-full rounded-md border py-2 px-3 text-xs font-black outline-none transition shadow-sm flex items-center justify-between"
                                  :class="qty_gap == 0 ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300'">
-                                <span x-text="qty_gap + ' Pcs'">0 Pcs</span>
+                                <span x-text="qty_gap == 0 ? '0 Pcs' : '-' + qty_gap + ' Pcs'">0 Pcs</span>
                                 <span :class="qty_gap == 0 ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'" 
                                       class="px-2.5 py-0.5 rounded text-[10px] font-black tracking-wider transition-all" 
                                       x-text="qty_gap == 0 ? 'CLOSED' : 'OPEN'">
@@ -247,17 +248,17 @@
                         </tr>
                         
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY PR REQ</td>
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY PR OPEN BALANCE</td>
                             <td class="py-2.5 px-4 font-black text-black" x-text="qty_pr_req ? qty_pr_req + ' Pcs' : '-'">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY ACTUAL</td>
-                            <td class="py-2.5 px-4 font-black text-indigo-600 font-extrabold" x-text="qty_actual ? qty_actual + ' Pcs' : '0 Pcs'">0 Pcs</td>
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY RECEIVED</td>
+                            <td class="py-2.5 px-4 font-black text-indigo-600 font-extrabold" x-text="qty_received ? qty_received + ' Pcs' : '0 Pcs'">0 Pcs</td>
                         </tr>
                         <tr class="border-b border-black">
                             <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY GAP</td>
                             <td class="py-2.5 px-4 font-black font-extrabold flex items-center justify-between" :class="qty_gap == 0 ? 'text-emerald-600' : 'text-amber-600'">
-                                <span x-text="qty_gap + ' Pcs'">0 Pcs</span>
+                                <span x-text="qty_gap == 0 ? '0 Pcs' : '-' + qty_gap + ' Pcs'">0 Pcs</span>
                                 <span :class="qty_gap == 0 ? 'border border-emerald-600 bg-emerald-50 text-emerald-700' : 'border border-amber-500 bg-amber-50 text-amber-700'" 
                                       class="px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase print:inline-block" 
                                       x-text="qty_gap == 0 ? 'STATUS: CLOSED' : 'STATUS: OPEN'">
@@ -344,7 +345,7 @@
         return {
             costing_nik: userNik,
             costing_name: userName,
-            mr_no: '{{ optional($materialReceived ?? null)->no_mr ?? $nextMrNo ?? '' }}',
+            mr_no: '{{ $nextMrNo ?? '' }}',
             purchaseRequests: prList,
             selected_pr_id: initialPrId,
             pr_no_text: initialPrNo,
@@ -355,7 +356,7 @@
             category: initialCategory,
 
             qty_pr_req: initialQtyPrReq,
-            qty_actual: '{{ old('qty_received', 1) }}',
+            qty_received: '{{ old('qty_received', 1) }}', // Menggunakan qty_received sesuai database
             qty_gap: 0,
             remark: '{{ old('remark', '') }}',
             signaturePathHidden: userSignature,
@@ -382,8 +383,8 @@
                     }
                     this.qty_pr_req = pr.qty_remaining !== undefined ? pr.qty_remaining : 0;
                     
-                    if (parseInt(this.qty_actual) > this.qty_pr_req) {
-                        this.qty_actual = this.qty_pr_req;
+                    if (parseInt(this.qty_received) > this.qty_pr_req) {
+                        this.qty_received = this.qty_pr_req;
                     }
                 } else {
                     this.pr_no_text = '-';
@@ -392,17 +393,17 @@
                     this.sap_code = '-';
                     this.category = '-';
                     this.qty_pr_req = 0;
-                    this.qty_actual = 1;
+                    this.qty_received = 1;
                 }
                 this.calculateGap();
             },
 
             calculateGap() {
                 let req = parseInt(this.qty_pr_req) || 0;
-                let act = parseInt(this.qty_actual) || 0;
+                let act = parseInt(this.qty_received) || 0;
                 
                 if (act < 0) {
-                    this.qty_actual = 0;
+                    this.qty_received = 0;
                     act = 0;
                 }
                 
@@ -419,7 +420,7 @@
                 this.sap_code = '-';
                 this.category = '-';
                 this.qty_pr_req = 0;
-                this.qty_actual = 1;
+                this.qty_received = 1;
                 this.qty_gap = 0;
                 this.remark = '';
             },
@@ -429,12 +430,12 @@
                 if (!form.reportValidity()) return;
 
                 let req = parseInt(this.qty_pr_req) || 0;
-                let act = parseInt(this.qty_actual) || 0;
+                let act = parseInt(this.qty_received) || 0;
 
                 if (act > req) {
                     Swal.fire({
                         title: 'Batas Qty Terlewati!',
-                        text: `QTY ACTUAL (${act} Pcs) tidak boleh melebihi jumlah QTY PR REQ terbuka (${req} Pcs).`,
+                        text: `QTY RECEIVED (${act} Pcs) tidak boleh melebihi jumlah QTY PR OPEN BALANCE (${req} Pcs).`,
                         icon: 'error',
                         confirmButtonColor: '#ef4444'
                     });
