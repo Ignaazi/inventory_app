@@ -22,7 +22,6 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Mengarah ke file resources/views/users/add_users.blade.php
         return view('users.add_users');
     }
 
@@ -31,6 +30,7 @@ class UserController extends Controller
         $request->validate([
             'name'      => 'required|string|max:255',
             'nik'       => 'required|string|unique:users,nik',
+            'email'     => 'nullable|email|max:255|unique:users,email', // ◄ TAMBAHAN: Validasi email unik tapi boleh kosong
             'password'  => 'required|min:6',
             'role'      => 'required|in:admin,engineering,production,costing',
             'image'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
@@ -52,13 +52,13 @@ class UserController extends Controller
         User::create([
             'name'               => $request->name,
             'nik'                => $request->nik,
+            'email'              => $request->email, // ◄ TAMBAHAN: Menyimpan input email ke database
             'password'           => Hash::make($request->password),
             'role'               => $request->role,
             'profile_photo_path' => $profilePath,
             'signature_path'     => $signaturePath,
         ]);
 
-        // 🛠️ Diubah dari back() ke redirect route index agar langsung kembali ke tabel utama
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan!');
     }
 
@@ -76,6 +76,7 @@ class UserController extends Controller
         $request->validate([
             'name'      => 'required|string|max:255',
             'nik'       => ['required', 'string', Rule::unique('users')->ignore($user->id)],
+            'email'     => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($user->id)], // ◄ TAMBAHAN: Validasi update email
             'password'  => 'nullable|min:6',
             'role'      => 'required|in:admin,engineering,production,costing',
             'image'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -83,9 +84,10 @@ class UserController extends Controller
         ]);
 
         $data = [
-            'name' => $request->name,
-            'nik'  => $request->nik, 
-            'role' => $request->role,
+            'name'  => $request->name,
+            'nik'   => $request->nik, 
+            'email' => $request->email, // ◄ TAMBAHAN: Update data email
+            'role'  => $request->role,
         ];
 
         if ($request->filled('password')) {

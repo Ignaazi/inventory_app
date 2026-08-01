@@ -55,4 +55,4 @@ class ListSparepartEng extends Model
     {
         return $this->hasMany(StockEng::class, 'sparepart_id');
     }
-}
+}   

@@ -49,6 +49,13 @@
                            class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2 text-xs md:text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
+                <!-- INPUT EMAIL (TAMBAHAN BARU) -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Email Address</label>
+                    <input type="email" name="email" value="{{ old('email') }}" placeholder="Enter email address" 
+                           class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-3.5 py-2 text-xs md:text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
                 <!-- DROPDOWN ROLE -->
                 <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Select Role / Department</label>

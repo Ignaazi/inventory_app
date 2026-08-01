@@ -13,7 +13,7 @@
 <div class="create-pr-view -m-4 md:-m-6 2xl:-m-10 bg-[#F9F9FB] dark:bg-slate-900 min-h-[calc(100vh-80px)] text-slate-950 dark:text-slate-100 font-sans p-4">
     
     <div class="px-4 pt-4 max-w-full mx-auto">
-        <h1 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">Create Purchase Request</h1>
+        <h1 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">Verify & Check Purchase Request</h1>
     </div>
 
     <div class="p-4 max-w-full mx-auto">
@@ -32,7 +32,7 @@
 
         @if ($errors->any())
         <div class="mb-4 p-4 bg-rose-50 border border-rose-400 text-rose-900 text-xs font-bold rounded shadow-sm">
-            <p class="uppercase mb-1 font-black">Gagal Menyimpan! Periksa Input Berikut:</p>
+            <p class="uppercase mb-1 font-black">Gagal Memproses! Periksa Kembali Data:</p>
             <ul class="list-disc pl-4 font-bold">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -50,19 +50,19 @@
                 </div>
                 
                 <div class="flex items-center bg-gray-200 dark:bg-slate-700 rounded overflow-hidden text-[10px] font-black border border-gray-300 dark:border-slate-600">
-                    <span class="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white px-4 py-1 relative after:content-[''] after:absolute after:top-0 after:right-[-6px] after:border-y-[12px] after:border-y-transparent after:border-l-[6px] after:border-l-orange-500 z-10">Pending</span>
-                    <span class="text-slate-700 dark:text-slate-300 px-4 py-1">Checked</span>
+                    <span class="text-slate-500 dark:text-slate-400 px-4 py-1">Pending</span>
+                    {{-- WARNA STRIP GRADASI DIUBAH JADI BIRU MODERN DENGAN PANAH MATCHING --}}
+                    <span class="bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white px-4 py-1 relative after:content-[''] after:absolute after:top-0 after:right-[-6px] after:border-y-[12px] after:border-y-transparent after:border-l-[6px] after:border-l-sky-500 z-10">Checked</span>
                     <span class="text-slate-700 dark:text-slate-300 px-4 py-1">Approved</span>
                 </div>
             </div>
 
-            <form id="odooPrForm" action="{{ route('purchase.request.store') }}" method="POST" class="p-6 md:p-8">
+            <form id="odooPrForm" action="{{ route('purchase.request.check', $pr->id) }}" method="POST" class="p-6 md:p-8">
                 @csrf
 
                 <div class="mb-6">
                     <label class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Purchase Request Reference</label>
-                    <input type="hidden" name="no_pr" value="{{ $generatedPrCode }}">
-                    <h2 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">{{ $generatedPrCode }}</h2>
+                    <h2 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">{{ $pr->no_pr }}</h2>
                 </div>
 
                 <!-- MAIN FORM GRID -->
@@ -73,69 +73,56 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Requester Name</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? Auth::user()->name : 'muhammad ignazi' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->user)->name ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">NIK / NIM</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? (Auth::user()->nim ?? Auth::user()->nik) : '20260001' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->user)->nim ?? optional($pr->user)->nik ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Email Address</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? Auth::user()->email : 'ignazi@company.com' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->user)->email ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide">Sparepart ID <span class="text-rose-500">*</span></label>
+                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide">Sparepart ID</label>
                             <div class="col-span-2">
-                                <select name="sparepart_id" id="sparepart_select" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-sm font-black text-indigo-600 dark:text-indigo-400 p-0 cursor-pointer">
-                                    <option value="" disabled selected>Select Sparepart ID...</option>
-                                    @foreach($spareparts as $item)
-                                        {{-- FIX: Value diubah mengirim $item->id database, data-sparepart-id membawa string kustomnya --}}
-                                        <option value="{{ $item->id }}" 
-                                                data-sparepart-id="{{ $item->sparepart_id }}"
-                                                data-part="{{ $item->part_number }}"
-                                                data-sap="{{ $item->sap_code ?? '-' }}"
-                                                data-category="{{ $item->category }}"
-                                                {{ old('sparepart_id') == $item->id ? 'selected' : '' }}>
-                                            {{ $item->sparepart_id }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <input type="text" value="{{ optional($pr->sparepart)->sparepart_id ?? $pr->sparepart_id }}" readonly class="w-full bg-transparent border-0 text-indigo-600 dark:text-indigo-400 font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Part Number</label>
                             <div class="col-span-2">
-                                <input type="text" id="display_part_number" readonly placeholder="Auto-filled" class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->sparepart)->part_number ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">SAP Code</label>
                             <div class="col-span-2">
-                                <input type="text" id="display_sap_code" readonly placeholder="Auto-filled" class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->sparepart)->sap_code ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Category</label>
                             <div class="col-span-2">
-                                <input type="text" id="display_category" readonly placeholder="Auto-filled" class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->sparepart)->category ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Quantity (QTY) <span class="text-rose-500">*</span></label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Quantity (QTY)</label>
                             <div class="col-span-2 flex items-center gap-1">
-                                <input type="number" name="qty_pr" id="qty_input" min="1" value="{{ old('qty_pr', 1) }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 outline-none focus:ring-0" placeholder="0">
+                                <input type="text" value="{{ $pr->qty_pr }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                                 <span class="text-xs text-slate-600 dark:text-slate-400 font-black uppercase pr-2">Pcs</span>
                             </div>
                         </div>
@@ -146,13 +133,13 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Priority</label>
                             <div class="col-span-2 flex gap-6">
-                                <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-black text-slate-950 dark:text-white">
-                                    <input type="radio" name="priority" value="normal" {{ old('priority', 'normal') == 'normal' ? 'checked' : '' }} class="text-orange-500 focus:ring-0 border-gray-400 w-4 h-4">
-                                    <span>Normal</span>
+                                <label class="inline-flex items-center gap-2 text-xs font-black text-slate-950 dark:text-white">
+                                    <input type="radio" disabled {{ $pr->priority == 'normal' ? 'checked' : '' }} class="text-orange-500 focus:ring-0 border-gray-400 w-4 h-4 cursor-not-allowed">
+                                    <span class="{{ $pr->priority == 'normal' ? 'text-slate-950 dark:text-white font-black' : 'text-slate-400' }}">Normal</span>
                                 </label>
-                                <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-black text-rose-600">
-                                    <input type="radio" name="priority" value="urgent" {{ old('priority') == 'urgent' ? 'checked' : '' }} class="text-red-500 focus:ring-0 border-gray-400 w-4 h-4">
-                                    <span>Urgent</span>
+                                <label class="inline-flex items-center gap-2 text-xs font-black text-rose-600">
+                                    <input type="radio" disabled {{ $pr->priority == 'urgent' ? 'checked' : '' }} class="text-red-500 focus:ring-0 border-gray-400 w-4 h-4 cursor-not-allowed">
+                                    <span class="{{ $pr->priority == 'urgent' ? 'text-rose-600 font-black' : 'text-slate-400' }}">Urgent</span>
                                 </label>
                             </div>
                         </div>
@@ -160,23 +147,21 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Request Date</label>
                             <div class="col-span-2">
-                                <input type="datetime-local" name="request_date" value="{{ old('request_date') ? \Carbon\Carbon::parse(old('request_date'))->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i') }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
+                                <input type="text" value="{{ $pr->request_date ? \Carbon\Carbon::parse($pr->request_date)->format('d/m/Y H:i') : '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Expected Arrival <span class="text-rose-500">*</span></label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Expected Arrival</label>
                             <div class="col-span-2">
-                                <input type="datetime-local" name="expected_arrival_date" value="{{ old('expected_arrival_date') ? \Carbon\Carbon::parse(old('expected_arrival_date'))->format('Y-m-d\TH:i') : now()->addDays(3)->format('Y-m-d\TH:i') }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
+                                <input type="text" value="{{ $pr->expected_arrival_date ? \Carbon\Carbon::parse($pr->expected_arrival_date)->format('d/m/Y H:i') : '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Destination</label>
                             <div class="col-span-2">
-                                <select name="destination" id="destination_select" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-sm font-bold text-slate-950 dark:text-white p-0 cursor-pointer">
-                                    <option value="Costing & Procurement Room" selected>Costing & Procurement Room</option>
-                                </select>
+                                <input type="text" value="{{ $pr->destination }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
                     </div>
@@ -189,7 +174,7 @@
                     </div>
                     
                     <div class="mt-2 mb-6">
-                        <textarea name="remark" rows="3" required placeholder="Define why engineering needs this purchase request..." class="w-full p-3 border border-gray-300 dark:border-slate-600 rounded bg-transparent focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm font-bold text-slate-950 dark:text-white transition-all resize-none">{{ old('remark') }}</textarea>
+                        <textarea readonly rows="3" class="w-full p-3 border border-gray-300 dark:border-slate-600 rounded bg-transparent outline-none text-sm font-bold text-slate-950 dark:text-white transition-all resize-none cursor-not-allowed">{{ $pr->remark ?? 'No notes provided.' }}</textarea>
                     </div>
                 </div>
 
@@ -198,10 +183,10 @@
                     
                     <!-- Tab Headers -->
                     <div class="flex border-b border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-800 text-xs font-black uppercase tracking-wider">
-                        <button type="button" id="btn-tab-products" onclick="switchOdooTab('products')" class="px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all">
+                        <button type="button" id="btn-tab-products" onclick="switchOdooTab('products')" class="px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all cursor-pointer">
                             Products Details
                         </button>
-                        <button type="button" id="btn-tab-approval" onclick="switchOdooTab('approval')" class="px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all">
+                        <button type="button" id="btn-tab-approval" onclick="switchOdooTab('approval')" class="px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all cursor-pointer">
                             Approval Workflow (Proses TTD)
                         </button>
                     </div>
@@ -209,7 +194,7 @@
                     <!-- Tab Contents Container -->
                     <div class="p-4">
                         
-                        {{-- CONTENT TAB 1: PRODUCT DETAILS TABLE (LIVE SYNCED) --}}
+                        {{-- CONTENT TAB 1: PRODUCT DETAILS TABLE --}}
                         <div id="odoo-tab-products" class="block overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
@@ -224,12 +209,14 @@
                                 </thead>
                                 <tbody>
                                     <tr class="border-b border-gray-300 dark:border-slate-600 font-black text-slate-950 dark:text-white bg-white dark:bg-slate-800">
-                                        <td id="table_sparepart_id" class="p-3 border-r border-gray-300 dark:border-slate-600 text-indigo-600 dark:text-indigo-400">-</td>
-                                        <td id="table_part_number" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
-                                        <td id="table_sap_code" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
-                                        <td id="table_category" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
-                                        <td id="table_qty" class="p-3 border-r border-gray-300 dark:border-slate-600 text-center text-orange-600">1 Pcs</td>
-                                        <td id="table_destination" class="p-3">Costing & Procurement Room</td>
+                                        <td class="p-3 border-r border-gray-300 dark:border-slate-600 text-indigo-600 dark:text-indigo-400">
+                                            {{ optional($pr->sparepart)->sparepart_id ?? $pr->sparepart_id }}
+                                        </td>
+                                        <td class="p-3 border-r border-gray-300 dark:border-slate-600">{{ optional($pr->sparepart)->part_number ?? '-' }}</td>
+                                        <td class="p-3 border-r border-gray-300 dark:border-slate-600">{{ optional($pr->sparepart)->sap_code ?? '-' }}</td>
+                                        <td class="p-3 border-r border-gray-300 dark:border-slate-600">{{ optional($pr->sparepart)->category ?? '-' }}</td>
+                                        <td class="p-3 border-r border-gray-300 dark:border-slate-600 text-center text-orange-600">{{ $pr->qty_pr }} Pcs</td>
+                                        <td class="p-3">{{ $pr->destination }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -243,9 +230,11 @@
                                 <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 1: Prepared By</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
-                                        @if(Auth::user() && (Auth::user()->signature_path || Auth::user()->signature))
+                                        @if($pr->prepared_signature)
+                                            <img src="{{ asset('storage/' . $pr->prepared_signature) }}" alt="Prepared Signature" class="max-h-14 object-contain">
+                                        @elseif(optional($pr->user)->signature_path || optional($pr->user)->signature)
                                             @php
-                                                $sigFile = Auth::user()->signature_path ?? Auth::user()->signature;
+                                                $sigFile = $pr->user->signature_path ?? $pr->user->signature;
                                                 $sigUrl = (str_contains($sigFile, 'uploads/') || str_contains($sigFile, 'storage/')) 
                                                     ? asset($sigFile) 
                                                     : asset('storage/' . $sigFile);
@@ -255,18 +244,28 @@
                                             <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs rounded border border-amber-300">SYSTEM GENERATED</span>
                                         @endif
                                     </div>
-                                    <span class="block font-black text-slate-950 dark:text-white">{{ Auth::user() ? Auth::user()->name : 'Muhammad Ignazi' }}</span>
+                                    <span class="block font-black text-slate-950 dark:text-white">{{ optional($pr->user)->name ?? '-' }}</span>
                                     <span class="text-xs text-slate-500 font-bold">Requester (Engineering)</span>
                                 </div>
 
-                                <!-- TTD 2: CHECKED BY -->
-                                <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
-                                    <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 2: Checked By</span>
-                                    <div class="h-16 flex items-center justify-center font-black text-slate-300 dark:text-slate-600 border-b border-dashed border-gray-300 dark:border-slate-600 mb-2 italic">
-                                        Waiting Approval
+                                <!-- TTD 2: CHECKED BY (DIGANTI LOGIC-NYA BIAR LANGSUNG MUNCULIN GAMBAR TTD USER YANG SEDANG LOGIN) -->
+                                <div class="border-2 border-indigo-500 dark:border-indigo-400 rounded bg-white dark:bg-slate-800 p-4 shadow-sm">
+                                    <span class="block text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Step 2: Checked By (You)</span>
+                                    <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
+                                        @if(Auth::user() && (Auth::user()->signature_path || Auth::user()->signature))
+                                            @php
+                                                $sigFileChecker = Auth::user()->signature_path ?? Auth::user()->signature;
+                                                $sigUrlChecker = (str_contains($sigFileChecker, 'uploads/') || str_contains($sigFileChecker, 'storage/')) 
+                                                    ? asset($sigFileChecker) 
+                                                    : asset('storage/' . $sigFileChecker);
+                                            @endphp
+                                            <img src="{{ $sigUrlChecker }}" alt="Checker Signature" class="max-h-14 object-contain">
+                                        @else
+                                            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs rounded border border-blue-300">SYSTEM GENERATED</span>
+                                        @endif
                                     </div>
-                                    <span class="block font-black text-slate-400 dark:text-slate-500">- Pending Checker -</span>
-                                    <span class="text-xs text-slate-500 font-bold">Admin Engineering</span>
+                                    <span class="block font-black text-slate-950 dark:text-white">{{ Auth::user() ? Auth::user()->name : 'Admin Engineering' }}</span>
+                                    <span class="text-xs text-indigo-500 font-bold">Waiting Verification</span>
                                 </div>
 
                                 <!-- TTD 3: APPROVED BY -->
@@ -285,10 +284,13 @@
                     </div>
                 </div>
 
-                <!-- SAVE BUTTON ACTIONS -->
-                <div class="flex justify-end pt-6 mt-6 border-t border-gray-300 dark:border-slate-600">
-                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 hover:opacity-95 text-white text-xs font-black rounded shadow-md uppercase tracking-wider transition-all transform hover:-translate-y-0.5">
-                        Save Purchase Request
+                <!-- ACTIONS BUTTONS -->
+                <div class="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-300 dark:border-slate-600">
+                    <a href="{{ route('purchase.request.list') }}" class="px-6 py-2.5 bg-gray-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black rounded shadow-sm uppercase tracking-wider transition-all hover:bg-gray-300 dark:hover:bg-slate-600 text-center">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 hover:opacity-95 text-white text-xs font-black rounded shadow-md uppercase tracking-wider transition-all transform hover:-translate-y-0.5">
+                        Confirm & Mark as Checked
                     </button>
                 </div>
 
@@ -312,74 +314,17 @@
             tabApproval.classList.remove('block');
             tabApproval.classList.add('hidden');
 
-            btnProducts.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all";
-            btnApproval.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all";
+            btnProducts.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all cursor-pointer";
+            btnApproval.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all cursor-pointer";
         } else {
             tabProducts.classList.remove('block');
             tabProducts.classList.add('hidden');
             tabApproval.classList.remove('hidden');
             tabApproval.classList.add('block');
 
-            btnProducts.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all";
-            btnApproval.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all";
+            btnProducts.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 outline-none transition-all cursor-pointer";
+            btnApproval.className = "px-6 py-3 border-r border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-orange-600 outline-none transition-all cursor-pointer";
         }
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const selectElement = document.getElementById('sparepart_select');
-        const qtyInput = document.getElementById('qty_input');
-        
-        function updateSparepartFields() {
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            
-            if (selectedOption && selectedOption.value !== "") {
-                // FIX: Mengambil data-sparepart-id kustom untuk visual tabel Odoo
-                const customPrId = selectedOption.getAttribute('data-sparepart-id');
-                const part = selectedOption.getAttribute('data-part');
-                const sap = selectedOption.getAttribute('data-sap');
-                const category = selectedOption.getAttribute('data-category');
-                
-                document.getElementById('display_part_number').value = part;
-                document.getElementById('display_sap_code').value = sap;
-                document.getElementById('display_category').value = category;
-
-                document.getElementById('table_sparepart_id').innerText = customPrId;
-                document.getElementById('table_part_number').innerText = part;
-                document.getElementById('table_sap_code').innerText = sap;
-                document.getElementById('table_category').innerText = category;
-            } else {
-                document.getElementById('display_part_number').value = '';
-                document.getElementById('display_sap_code').value = '';
-                document.getElementById('display_category').value = '';
-
-                document.getElementById('table_sparepart_id').innerText = '-';
-                document.getElementById('table_part_number').innerText = '-';
-                document.getElementById('table_sap_code').innerText = '-';
-                document.getElementById('table_category').innerText = '-';
-            }
-        }
-
-        function updateLiveQty() {
-            const qtyVal = qtyInput.value ? qtyInput.value : 0;
-            document.getElementById('table_qty').innerText = qtyVal + ' Pcs';
-        }
-
-        selectElement.addEventListener('change', updateSparepartFields);
-        qtyInput.addEventListener('input', updateLiveQty);
-        
-        updateSparepartFields();
-        updateLiveQty();
-    });
 </script>
-
-<style>
-    #qty_input::-webkit-outer-spin-button,
-    #qty_input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    #qty_input {
-        -moz-appearance: textfield;
-    }
-</style>
 @endsection

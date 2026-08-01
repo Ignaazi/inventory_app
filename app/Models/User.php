@@ -20,6 +20,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'nik',
+        'email', // <--- Ditambahkan di sini agar SPV bisa nge-save email lewat sistem
         'password',
         'role', 
         'profile_photo_path',

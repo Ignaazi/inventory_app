@@ -71,16 +71,29 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
         Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
         
-        // ROUTE PURCHASE REQUEST & HISTORY
-        Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('eng.pr.index');
+                // =========================================================================
+        // 🚀 ROUTE PURCHASE REQUEST & FLOW VERIFIKASI (UPDATED WITHOUT COSTING MODULE)
+        // =========================================================================
+
+        // Opsi 1: Nama alias diganti jadi 'purchase.request.index' agar sinkron dengan blade
+        Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('purchase.request.index');
         Route::post('/eng/purchase-request', [PurchaseRequestEngController::class, 'store'])->name('purchase.request.store'); 
 
+        // Rute Verifikasi Meja Kerja 1 (Admin / Checker)
+        Route::get('/eng/purchase-request/list', [PurchaseRequestEngController::class, 'listRequests'])->name('purchase.request.list');
+        Route::post('/eng/purchase-request/{id}/reject', [PurchaseRequestEngController::class, 'rejectRequest'])->name('purchase.request.reject');
+
+        // 🔄 ALUR BARU JALUR CHECKED
+        Route::get('/eng/purchase-request/{id}/check', [PurchaseRequestEngController::class, 'checkedView'])->name('purchase.request.checked.view');
+        Route::post('/eng/purchase-request/{id}/check-confirm', [PurchaseRequestEngController::class, 'checkRequest'])->name('purchase.request.check');
+
+        // Rute History Manajemen Pengajuan PR
         Route::get('/eng/purchase-request/history', [PurchaseRequestHistoryEngController::class, 'index'])->name('purchase.request.history');
         Route::get('/eng/purchase-request/{id}/preview', [PurchaseRequestHistoryEngController::class, 'preview'])->name('purchase.request.preview');
         Route::get('/eng/purchase-request/{id}/edit', [PurchaseRequestHistoryEngController::class, 'edit'])->name('purchase.request.edit');
         Route::put('/eng/purchase-request/{id}/update', [PurchaseRequestHistoryEngController::class, 'update'])->name('purchase.request.update');
         Route::delete('/eng/purchase-request/{id}/delete', [PurchaseRequestHistoryEngController::class, 'destroy'])->name('purchase.request.delete');
-        
+
         // BARCODE PARSING & SETTINGS
         Route::get('/eng/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing.index');
         Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');

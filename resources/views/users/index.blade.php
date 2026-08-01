@@ -91,7 +91,7 @@
 
         {{-- AREA SCROLL HORIZONTAL --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1150px]" id="userTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1350px]" id="userTable">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
                         <th class="px-2 py-3.5 w-[50px] text-center">
@@ -101,6 +101,7 @@
                         <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">Photo</th>
                         <th class="px-4 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-left w-[260px]">Full Name</th>
                         <th class="px-2 py-3.5 w-[150px] border-l border-blue-500 dark:border-blue-900/50">NIK KARYAWAN</th>
+                        <th class="px-4 py-3.5 w-[200px] border-l border-blue-500 dark:border-blue-900/50 text-left">EMAIL</th>
                         <th class="px-2 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">Sign</th>
                         <th class="px-2 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">System Role</th>
                         <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
@@ -133,6 +134,10 @@
 
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 search-nik whitespace-nowrap">
                             {{ $user->nik }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-left border-l border-gray-100 dark:border-slate-800 search-email font-semibold tracking-wide whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $user->email }}">
+                            {{ $user->email ?? '-' }}
                         </td>
 
                         <td class="px-2 py-2 border-l border-gray-100 dark:border-slate-800">
@@ -173,7 +178,7 @@
                         
                         <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex items-center justify-center gap-1.5 w-full">
-                                <button onclick="previewUser('{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random' }}', '{{ $user->name }}', '{{ strtoupper($user->role) }}', '{{ $user->nik }}')" 
+                                <button onclick="previewUser('{{ $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random' }}', '{{ $user->name }}', '{{ strtoupper($user->role) }}', '{{ $user->nik }}', '{{ $user->email ?? '-' }}')" 
                                     type="button" class="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-blue-500 text-white hover:bg-blue-600 active:scale-90 shadow-sm transition-all">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                 </button>
@@ -199,7 +204,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="10" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No account entries found.</td></tr>
+                    <tr><td colspan="11" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No account entries found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -224,7 +229,7 @@
 </div>
 
 <script>
-    // LIVE SEARCH
+    // LIVE SEARCH (Ditambahkan variabel email agar pencarian realtime makin responsif)
     document.getElementById('tableSearch').addEventListener('keyup', function() {
         let value = this.value.toLowerCase();
         let rows = document.querySelectorAll('.table-row-item');
@@ -232,9 +237,10 @@
         rows.forEach(function(row) {
             let name = row.querySelector('.search-name').textContent.toLowerCase();
             let nik = row.querySelector('.search-nik').textContent.toLowerCase();
+            let email = row.querySelector('.search-email').textContent.toLowerCase();
             let role = row.querySelector('.search-role').textContent.toLowerCase();
             
-            if (name.includes(value) || nik.includes(value) || role.includes(value)) {
+            if (name.includes(value) || nik.includes(value) || email.includes(value) || role.includes(value)) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -267,11 +273,12 @@
         downloadLink.click();
     }
 
-    function previewUser(imageUrl, name, role, nik) {
+    function previewUser(imageUrl, name, role, nik, email) {
         Swal.fire({
             title: name,
             html: `<div class="text-center mt-2 space-y-0.5 text-xs font-nunito font-bold text-slate-950 dark:text-slate-200">
                     <p>NIK/Username: <span class="font-bold text-black dark:text-white">${nik}</span></p>
+                    <p>Email PT: <span class="font-bold text-slate-700 dark:text-slate-300">${email}</span></p>
                     <p>Access Group: <span class="font-black text-blue-600 dark:text-blue-400">${role}</span></p>
                    </div>`,
             imageUrl: imageUrl,
