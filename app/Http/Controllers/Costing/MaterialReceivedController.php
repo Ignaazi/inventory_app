@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 class MaterialReceivedController extends Controller
 {
     /**
-     * 1. HALAMAN LIST DATA / TRACKING
+     * 1. HALAMAN LIST DATA / TRACKING (SISI COSTING)
      */
     public function index(Request $request)
     {
@@ -24,10 +24,6 @@ class MaterialReceivedController extends Controller
                 $query->where('no_mr', 'LIKE', "%{$search}%")
                       ->orWhereHas('purchaseRequest', function ($q) use ($search) {
                           $q->where('no_pr', 'LIKE', "%{$search}%");
-                      })
-                      ->orWhereHas('user', function ($q) use ($search) {
-                          $q->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('nik', 'LIKE', "%{$search}%");
                       });
             })
             ->orderBy('created_at', 'desc')
@@ -37,16 +33,14 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 2. HALAMAN FORM INPUT BARU
+     * 2. HALAMAN FORM INPUT BARU (COSTING)
      */
     public function create($pr_id = null)
     {
-        // Generasi Nomor Urut MR Baru Secara Presisi (Contoh: MR000001)
         $latestMr = MaterialReceived::orderBy('id', 'desc')->first();
         $nextId = $latestMr ? $latestMr->id + 1 : 1;
         $nextMrNo = 'MR' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
-        // Ambil semua PR aktif, lalu kalkulasi kuota yang tersisa (terbuka)
         $purchaseRequests = PurchaseRequestEng::with('sparepart')
             ->get()
             ->map(function ($pr) {
@@ -54,22 +48,19 @@ class MaterialReceivedController extends Controller
                     ->whereIn('status', ['pending', 'checked', 'approved'])
                     ->sum('qty_received');
 
-                // Menyuntikkan saldo kuota yang saat ini dibutuhkan ke 'qty_remaining'
                 $pr->qty_remaining = max(0, $pr->qty_pr - $totalReceived);
                 return $pr;
             })
             ->filter(function ($pr) {
-                // Hanya loloskan PR yang kuotanya masih ada (> 0).
                 return $pr->qty_remaining > 0;
             })
             ->values();
 
-        // Proteksi jika user mencoba akses direct link PR lewat URL
         if ($pr_id) {
             $selectedPr = $purchaseRequests->firstWhere('id', $pr_id);
             if (!$selectedPr) {
                 return redirect()->route('costing.material.list')
-                    ->with('error', 'Dokumen PR tidak ditemukan atau status item Qty sudah selesai dipenuhi (CLOSED)!');
+                    ->with('error', 'Dokumen PR tidak ditemukan atau Qty sudah CLOSED!');
             }
         }
 
@@ -77,20 +68,16 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 3. HALAMAN PREVIEW DOKUMEN VIA BLADE VIEW (Klik Mata)
-     * FIX SINKRONISASI: Variabel distandarkan menggunakan $mr sesuai target Blade
+     * 3. HALAMAN PREVIEW DOKUMEN VIA BLADE VIEW (COSTING)
      */
     public function show($id)
     {
-        // Ambil data MR beserta relasi PR, sparepart, dan user pembuatnya
-        $mr = MaterialReceived::with(['user', 'purchaseRequest.sparepart', 'purchaseRequest.user'])->findOrFail($id);
-        
-        // Mengarahkan ke file material_received_preview.blade.php di folder cost_section
+        $mr = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])->findOrFail($id);
         return view('cost_section.material_received_preview', compact('mr'));
     }
 
     /**
-     * 4. PROSES SUBMIT & TTD BERJENJANG (ROLE: COSTING)
+     * 4. PROSES SUBMIT & TTD AWAL (ROLE: COSTING)
      */
     public function storeCostingSignature(Request $request)
     {
@@ -105,119 +92,150 @@ class MaterialReceivedController extends Controller
         ]);
 
         $pr = PurchaseRequestEng::findOrFail($request->purchase_request_id);
-
-        // Hitung ulang saldo terbuka di database server
         $alreadyReceived = MaterialReceived::where('purchase_request_id', $pr->id)
             ->whereIn('status', ['pending', 'checked', 'approved'])
             ->sum('qty_received');
         
         $maxAllowed = $pr->qty_pr - $alreadyReceived;
 
-        // Proteksi jika sisa saldo PR 0 atau minus, block langsung!
         if ($maxAllowed <= 0) {
-            return redirect()->back()->withErrors([
-                'purchase_request_id' => "Transaksi Ditolak! Dokumen PR ini sudah berstatus CLOSED dan seluruh kuantitasnya telah terpenuhi."
-            ]);
+            return redirect()->back()->withErrors(['purchase_request_id' => "Transaksi Ditolak! Dokumen PR ini sudah berstatus CLOSED."]);
         }
 
-        // Proteksi server-side: Input Qty Received tidak boleh melampaui sisa balance yang tersedia
         if ($request->qty_received > $maxAllowed) {
-            return redirect()->back()->withErrors([
-                'qty_received' => "Jumlah QTY RECEIVED ({$request->qty_received} Pcs) melebihi sisa batas QTY PR terbuka (Maksimal sisa: {$maxAllowed} Pcs)."
-            ]);
+            return redirect()->back()->withErrors(['qty_received' => "Jumlah QTY RECEIVED melebihi sisa batas QTY PR terbuka."]);
         }
 
-        // MENENTUKAN STATUS QTY LANGSUNG DENGAN MINUSNYA KE DATABASE
-        $qtyGap = max(0, $maxAllowed - $request->qty_received);
-
-        if ($qtyGap === 0) {
-            $qtyStatus = 'CLOSE';
-        } else {
-            // Database akan langsung menyimpan string lengkap, contoh: "OPEN (-5 Pcs)"
-            $qtyStatus = 'OPEN (-' . number_format($qtyGap) . ' Pcs)';
-        }
-
-        // Generate nomor MR final
         $latestMr = MaterialReceived::orderBy('id', 'desc')->first();
         $nextId = $latestMr ? $latestMr->id + 1 : 1;
         $finalMrNo = 'MR' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
-        // Proses penyimpanan path TTD
-        $signaturePath = null;
-        if (str_contains($request->prepared_signature, 'data:image')) {
-            $signaturePath = $this->uploadBase64Signature($request->prepared_signature, 'prepared');
-        } else {
-            $signaturePath = $request->prepared_signature;
-        }
+        $signaturePath = $this->uploadBase64Signature($request->prepared_signature, 'prepared');
 
-        // Insert ke database
         MaterialReceived::create([
             'no_mr'               => $finalMrNo,
             'purchase_request_id' => $request->purchase_request_id,
             'user_id'             => Auth::id(),
             'qty_received'        => $request->qty_received,
-            'qty_status'          => $qtyStatus, 
-            'lot_no'              => $request->lot_no,
+            'qty_status'          => 'open', 
             'remark'              => $request->remark,
             'status'              => 'pending',
             'prepared_signature'  => $signaturePath,
         ]);
 
-        return redirect()->route('costing.material.list')->with('success', "Form MR berhasil diajukan dengan status Qty: {$qtyStatus}!");
+        return redirect()->route('costing.material.list')->with('success', "Form MR berhasil diajukan ke tim Engineering!");
+    }
+
+    /* =========================================================================
+     * 🌟 BERIKUT ADALAH LOGIC INTEGRASI PINDAHAN DARI SISI ENGINEERING
+     * ========================================================================= */
+
+    /**
+     * 5. HALAMAN UTAMA LIST MONITORING MATERIAL (SISI ENGINEERING)
+     */
+    public function engIndex(Request $request)
+    {
+        $search = $request->get('search');
+        
+        $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('no_mr', 'LIKE', "%{$search}%")
+                      ->orWhereHas('purchaseRequest', function ($q) use ($search) {
+                          $q->where('no_pr', 'LIKE', "%{$search}%");
+                      });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('stock_eng.material_received.eng_list_material_received', compact('receivings', 'search'));
     }
 
     /**
-     * 5. PROSES SIGNATURE STAFF ENGINEERING (CHECKED)
+     * 6. HALAMAN FORM CHECKED / VERIFIKASI (SISI ENGINEERING)
+     * FIX: Nama variabel diubah dari $mr menjadi $receiving agar sinkron dengan file Blade.
+     */
+    public function engConfirm($id)
+    {
+        $receiving = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])->findOrFail($id);
+        
+        return view('stock_eng.material_received.eng_checked_material_received', compact('receiving'));
+    }
+
+    /**
+     * 7. PROSES SIGNATURE STAFF ENGINEERING (STATUS: PENDING -> CHECKED)
+     * UPDATE: Ditambahkan request data qty_received & remark sesuai input di form blade.
      */
     public function signEngineeringStaff($id, Request $request)
     {
+        $receiving = MaterialReceived::findOrFail($id);
+
+        if ($receiving->status !== 'pending') {
+            return redirect()->back()->with('error', 'Dokumen sudah diproses atau di-checked oleh orang lain!');
+        }
+
+        // Kalkulasi batas maksimal Qty open balance secara realtime (Server-side safeguard)
+        $pr = $receiving->purchaseRequest;
+        $alreadyReceived = MaterialReceived::where('purchase_request_id', $receiving->purchase_request_id)
+            ->where('id', '!=', $id) // kecualikan id dokumen aktif ini
+            ->whereIn('status', ['pending', 'checked', 'approved'])
+            ->sum('qty_received');
+            
+        $maxAllowed = $pr->qty_pr - $alreadyReceived;
+
         $request->validate([
             'checked_signature' => 'required|string',
+            'qty_received'      => "required|integer|min:0|max:{$maxAllowed}",
+            'remark'            => 'required|string'
         ]);
-
-        $mr = MaterialReceived::findOrFail($id);
-
-        if ($mr->status !== 'pending') {
-            return redirect()->back()->with('error', 'Status dokumen bukan pending!');
-        }
 
         $signaturePath = $this->uploadBase64Signature($request->checked_signature, 'checked');
 
-        $mr->update([
+        $receiving->update([
             'status'            => 'checked',
-            'checked_signature' => $signaturePath
+            'qty_received'      => $request->qty_received,
+            'checked_signature' => $signaturePath,
+            'remark'            => $request->remark
         ]);
 
-        return redirect()->route('costing.material.list')->with('success', 'Dokumen berhasil dicheck oleh Staff Engineering!');
+        return redirect()->route('eng.material.receiving.index')->with('success', 'Material Received berhasil diperiksa (Checked) oleh Staff Engineering!');
     }
 
     /**
-     * 6. PROSES APPROVAL SUPERVISOR / ADMIN (APPROVED)
+     * 8. PROSES APPROVAL AKHIR SUPERVISOR / ADMIN (STATUS: CHECKED -> APPROVED)
      */
     public function approveEngineeringSpv($id, Request $request)
     {
         $request->validate([
             'approved_signature' => 'required|string',
+            'notes'              => 'nullable|string'
         ]);
 
         $mr = MaterialReceived::findOrFail($id);
 
         if ($mr->status !== 'checked') {
-            return redirect()->back()->with('error', 'Dokumen harus dicheck oleh staff terlebih dahulu!');
+            return redirect()->back()->with('error', 'Dokumen harus melalui status Checked Staff terlebih dahulu!');
         }
 
         $signaturePath = $this->uploadBase64Signature($request->approved_signature, 'approved');
+        $updatedRemark = $mr->remark . ($request->notes ? "\n[SPV Eng Notes]: " . $request->notes : "");
 
         $mr->update([
             'status'             => 'approved',
-            'approved_signature' => $signaturePath
+            'qty_status'         => 'closed', // Otomatis mengunci status qty balance dokumen
+            'approved_signature' => $signaturePath,
+            'remark'             => $updatedRemark
         ]);
 
-        return redirect()->route('costing.material.list')->with('success', 'Dokumen MR Approved oleh Admin!');
+        // Otomatis update status Purchase Request relasinya di sistem Engineering menjadi Done
+        if ($mr->purchaseRequest) {
+            $mr->purchaseRequest->update(['status' => 'done']);
+        }
+
+        return redirect()->route('eng.material.receiving.index')->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED!');
     }
 
     /**
-     * 7. PROSES HAPUS DATA
+     * 9. PROSES HAPUS DATA
      */
     public function destroy($id)
     {
@@ -233,10 +251,14 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * HELPER UPLOAD BASE64 TTD DIGITAL
+     * HELPER UPLOAD BASE64 TTD DIGITAL (STANDAR LARAVEL STORAGE)
      */
     private function uploadBase64Signature($base64String, $prefix)
     {
+        if (!str_contains($base64String, 'data:image')) {
+            return $base64String;
+        }
+
         $image_parts = explode(";base64,", $base64String);
         $image_type_aux = explode("image/", $image_parts[0]);
         $image_type = $image_type_aux[1];
@@ -245,6 +267,6 @@ class MaterialReceivedController extends Controller
         $fileName = 'signatures/mr/' . $prefix . '_' . uniqid() . '.' . $image_type;
         Storage::disk('public')->put($fileName, $image_base64);
         
-        return $fileName;
+        return 'storage/' . $fileName;
     }
 }

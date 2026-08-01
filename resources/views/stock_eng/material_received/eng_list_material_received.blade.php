@@ -1,283 +1,355 @@
 @extends('admin')
 
 @section('content')
+{{-- Load Google Fonts Nunito & SweetAlert2 --}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
-
-  .approval-view, .approval-view * {
-    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
-  }
-
-  .table-row-item {
-    transition: all 0.2s ease-in-out;
-  }
+    .swal2-popup {
+        border-radius: 0.5rem !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    .dark .swal2-popup {
+        background-color: #0f172a !important; 
+        border: 1px solid #1e293b !important; 
+    }
+    .dark .swal2-title, .dark .swal2-html-container {
+        color: #f8fafc !important; 
+    }
 </style>
 
-<div class="approval-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 font-sans antialiased">
-  
-  <div class="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
-        List Eng Material Received
-      </h2>
-      <p class="text-sm font-semibold text-slate-500 dark:text-gray-400 mt-1">PT SIIX EMS INDONESIA • ENGINEERING SECTION</p>
+<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+
+    {{-- Banner Top Alert Status Counter --}}
+    <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
+            <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">SYSTEM RECORD:</span> 
+            Total {{ $receivings->total() }} engineering material received records logged for approval routing.
+        </p>
     </div>
-    <a href="{{ route('eng.material.receiving.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase py-2.5 px-4 shadow-md transition-all active:scale-95">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Confirm Material Received
-    </a>
-  </div>
 
-  @if(session('success'))
-      <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wide shadow-sm">
-          SYSTEM NOTIFICATION: {{ session('success') }}
-      </div>
-  @endif
-
-  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm sm:px-6">
-    
-    <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
-      
-      <div class="relative w-full lg:w-72">
-        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-        </span>
-        <input type="text" placeholder="Search Request..." class="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-semibold text-xs outline-none transition-all focus:border-indigo-500 text-slate-950 dark:text-white placeholder-slate-400">
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-        <div class="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <button type="button" onclick="filterMaterialTable('all', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-gray-700 dark:text-white">
-            All
-          </button>
-          <button type="button" onclick="filterMaterialTable('submitted_by_costing', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            From Costing
-          </button>
-          <button type="button" onclick="filterMaterialTable('approved_by_spv', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Pending SPV
-          </button>
-          <button type="button" onclick="filterMaterialTable('completed', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Completed
-          </button>
-          <button type="button" onclick="filterMaterialTable('rejected', this)" class="filter-btn px-4 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-600 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-            Discrepancy
-          </button>
+    {{-- Header Section --}}
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
+        <div>
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">List Eng Material Received</h2>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS INDONESIA — ENGINEERING SECTION</p>
         </div>
-      </div>
     </div>
 
-    <div class="w-full overflow-x-auto block align-middle">
-      <table class="min-w-full text-left border-collapse mx-auto" id="material-table">
-        <thead>
-          <tr class="border-gray-100 border-y dark:border-gray-800 bg-gray-50/50">
-            <th class="py-2.5 px-3 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">NO</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Receiving Code</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">PR Code</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Qty Received</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center whitespace-nowrap">Status</th>
-            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">1. Costing Sign</th>
-            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">2. Eng Staff Check</th>
-            <th class="py-2.5 px-6 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-28 whitespace-nowrap">3. Eng Spv App</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white whitespace-nowrap">Created At</th>
-            <th class="py-2.5 px-4 text-[10px] font-bold text-slate-950 uppercase dark:text-white text-center w-44 whitespace-nowrap">Action Decision</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 font-medium text-slate-950 dark:text-white">
-          @forelse($receivings as $index => $item)
-          <tr class="material-row-item hover:bg-gray-50/50 transition-colors duration-200 dark:hover:bg-white/[0.02]">
-            
-            <td class="py-3 px-3 text-xs font-bold text-slate-950 dark:text-white whitespace-nowrap">
-              {{ $receivings->firstItem() + $index }}
-            </td>
-
-            <td class="py-3 px-4 text-xs font-bold text-blue-600 dark:text-blue-400 font-mono tracking-wide whitespace-nowrap">
-              {{ $item->receiving_code }}
-            </td>
-            
-            <td class="py-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase whitespace-nowrap">
-              {{ $item->pr_code }}
-            </td>
-
-            <td class="py-3 px-4 text-xs font-bold text-center text-slate-950 dark:text-white whitespace-nowrap">
-              {{ number_format($item->qty_received) }} <span class="text-[10px] text-slate-400 font-normal">Pcs</span>
-            </td>
-            
-            <td class="py-3 px-4 text-center whitespace-nowrap">
-              <span class="status-badge inline-flex items-center justify-center rounded-full px-3 py-0.5 text-[10px] font-bold tracking-tight
-                @if($item->status == 'completed') bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40
-                @elseif($item->status == 'rejected') bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/40
-                @else bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40 @endif">
-                {{ $item->status === 'submitted_by_costing' ? 'Incoming Costing' : ($item->status === 'approved_by_spv' ? 'Pending SPV' : str_replace('_', ' ', ucfirst($item->status))) }}
-              </span>
-            </td>
-
-            <td class="py-2 px-6 text-center whitespace-nowrap">
-                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
-                    @if($item->costing_signature_path && file_exists(public_path($item->costing_signature_path)))
-                        <img src="{{ asset($item->costing_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
-                    @else
-                        <span class="text-slate-400 italic text-[9px] font-semibold">Empty</span>
-                    @endif
+    {{-- PEMBUNGKUS UTAMA TABEL --}}
+    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
+        
+        {{-- HEADER KONTROL RESPONSIF --}}
+        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
+            <!-- Entries Controller -->
+            <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
+                <div class="flex items-center gap-1.5">
+                    <span>Show</span>
+                    <form action="{{ url()->current() }}" method="GET" id="entriesForm">
+                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                            <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }} class="dark:bg-slate-900">10</option>
+                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }} class="dark:bg-slate-900">25</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }} class="dark:bg-slate-900">50</option>
+                        </select>
+                        @if(request('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                    </form>
+                    <span>entries</span>
                 </div>
-            </td>
+            </div>
 
-            <td class="py-2 px-6 text-center whitespace-nowrap">
-                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
-                    @if(($item->engineering_signature_path && file_exists(public_path($item->engineering_signature_path))) || ($item->eng_signature_path && file_exists(public_path($item->eng_signature_path))))
-                        <img src="{{ asset($item->engineering_signature_path ?? $item->eng_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
-                    @else
-                        <span class="text-amber-600 italic text-[9px] font-semibold">Waiting</span>
-                    @endif
+            <!-- Search & Export Grid -->
+            <div class="grid grid-cols-12 gap-2 w-full sm:w-auto order-1 sm:order-2">
+                {{-- LIVE SEARCH INPUT --}}
+                <div class="relative col-span-8 sm:w-60 sm:block">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <form action="{{ route('eng.material.receiving.index') }}" method="GET" class="w-full">
+                        @if(request('per_page'))
+                            <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+                        @endif
+                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search MR, PR, NIK..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
+                    </form>
                 </div>
-            </td>
 
-            <td class="py-2 px-6 text-center whitespace-nowrap">
-                <div class="flex items-center justify-center h-10 w-24 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 shadow-sm overflow-hidden mx-auto">
-                    @if(($item->engineering_spv_signature_path && file_exists(public_path($item->engineering_spv_signature_path))) || ($item->eng_spv_signature_path && file_exists(public_path($item->eng_spv_signature_path))))
-                        <img src="{{ asset($item->engineering_spv_signature_path ?? $item->eng_spv_signature_path) }}?v={{ time() }}" class="max-h-full max-w-full object-contain block mx-auto">
-                    @else
-                        <span class="text-amber-600 italic text-[9px] font-semibold">Waiting</span>
-                    @endif
-                </div>
-            </td>
-
-            <td class="py-3 px-4 text-xs whitespace-nowrap">
-              <div class="font-bold text-slate-800 dark:text-slate-200">
-                {{ $item->created_at ? $item->created_at->format('d/m/y') : '-' }}
-              </div>
-              <div class="text-[10px] font-semibold text-slate-400 mt-0.5">
-                {{ $item->created_at ? $item->created_at->format('H:i') : '' }} WIB
-              </div>
-            </td>
-            
-            <td class="py-3 px-4 whitespace-nowrap">
-              <div class="flex items-center justify-center gap-1.5">
-                @if($item->status === 'submitted_by_costing')
-                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
-                       class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
-                        ⚡ Verify Goods
-                    </a>
-                @elseif($item->status === 'approved_by_spv')
-                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
-                       class="px-2.5 py-1.5 bg-gradient-to-r from-amber-400 to-purple-600 hover:from-amber-500 hover:to-purple-700 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]">
-                        🔑 Spv Approve
-                    </a>
-                @else
-                    <a href="{{ route('eng.material.receiving.show', $item->id) }}" class="px-2.5 py-1.5 bg-gray-600 hover:bg-gray-700 text-white font-black rounded-lg text-[10px] uppercase tracking-widest transition-all text-center inline-block active:scale-[0.98]" title="View Document">
-                        View Doc
-                    </a>
-                @endif
-
-                <form id="delete-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
-                    @csrf @method('DELETE')
-                </form>
-                <button type="button" onclick="confirmDeleteMaterial('{{ $item->id }}', '{{ $item->pr_code }}')" class="px-2 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-black rounded-lg text-[10px] uppercase tracking-wide transition-all active:scale-[0.98]" title="Delete Form">
-                    Delete
+                {{-- TOMBOL EXPORT CSV --}}
+                <button type="button" onclick="exportTableToCSV('eng-material-received.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                    <span class="hidden sm:inline">Export CSV</span>
+                    <span class="sm:hidden">CSV</span>
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
                 </button>
-              </div>
-            </td>
-          </tr>
-          @empty
-          <tr>
-            <td colspan="10" class="p-12 text-center text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">
-              No Material Received Entries Queue Found.
-            </td>
-          </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
+            </div>
+        </div>
 
-    <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-1 border-t border-gray-100 pt-5 dark:border-gray-800">
-      <p class="text-xs font-extrabold text-slate-950 dark:text-white">
-        Showing {{ $receivings->firstItem() ?? 0 }} to {{ $receivings->lastItem() ?? 0 }} of {{ $receivings->total() ?? 0 }} entries
-      </p>
-      <div class="flex items-center">
-        {{ $receivings->links() }}
-      </div>
-    </div>
+        {{-- AREA SCROLL HORIZONTAL --}}
+        <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[2300px]" id="approvalTable">
+                <thead>
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-orange-600 dark:bg-orange-950/80 text-white dark:text-orange-200 font-nunito table-header-row">
+                        <th class="px-2 py-3.5 w-[50px] text-center">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-orange-400 bg-transparent text-orange-600 focus:ring-orange-500 cursor-pointer checked:bg-white checked:border-white">
+                        </th>
+                        <th class="px-2 py-3.5 w-[60px] border-l border-orange-500 bg-orange-700/30">NO</th>
+                        <th class="px-3 py-3.5 w-[220px] border-l border-orange-500 bg-orange-700/30">MR NUMBER</th>
+                        <th class="px-3 py-3.5 w-[220px] border-l border-orange-500 bg-orange-700/30">PR REFERENCE</th>
+                        <th class="px-3 py-3.5 w-[100px] border-l border-orange-500 bg-orange-700/30">NIK</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-orange-500 bg-orange-700/30">Prepared By</th>
+                        
+                        <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[140px]">Sparepart ID</th>
+                        <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[200px]">Part Number</th>
+                        <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[140px]">SAP Code</th>
+                        <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[130px]">Category</th>
+                        
+                        <th class="px-2 py-3.5 w-[120px] border-l border-orange-500 bg-orange-700/30">QTY PR</th>
+                        <th class="px-2 py-3.5 w-[120px] border-l border-orange-500 bg-orange-700/30">QTY RECEIVED</th>
+                        <th class="px-2 py-3.5 w-[160px] border-l border-orange-500 bg-orange-700/30">QTY STATUS</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-755/30">Status Flow</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30 text-center">Created At</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30 text-center">Updated At</th>
+                        <th class="px-3 py-3.5 w-[210px] border-l border-orange-500 bg-orange-700/30 text-center">Action Decision</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
+                    @forelse($receivings as $index => $item)
+                    @php
+                        $statusText = 'unknown';
+                        $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300';
+                        $rawStatus = strtolower($item->status ?? 'unknown');
+                        
+                        if(str_contains($rawStatus, 'pending')) {
+                            $statusText = 'pending';
+                            $badgeClass = 'bg-amber-50 text-amber-950 border-amber-300';
+                        } elseif(str_contains($rawStatus, 'checked')) {
+                            $statusText = 'checked';
+                            $badgeClass = 'bg-blue-50 text-blue-950 border-blue-300';
+                        } elseif(str_contains($rawStatus, 'approved')) {
+                            $statusText = 'approved';
+                            $badgeClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        } elseif(str_contains($rawStatus, 'rejected')) {
+                            $statusText = 'rejected';
+                            $badgeClass = 'bg-rose-50 text-rose-950 border-rose-300';
+                        }
 
-  </div>
+                        // Qty Status Logic
+                        $qtyStatusRaw = strtoupper($item->qty_status ?? 'OPEN');
+                        $qtyStatusClass = 'bg-amber-50 text-amber-950 border-amber-300';
+                        if(!str_contains(strtolower($qtyStatusRaw), 'open')) {
+                            $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        }
+                    @endphp
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
+                        <td class="px-2 py-3.5 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-orange-600 focus:ring-orange-500 cursor-pointer">
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
+                            {{ $receivings->firstItem() + $index }}
+                        </td>
+                        
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap text-left text-indigo-600 dark:text-indigo-400">
+                            {{ $item->no_mr ?? 'MR-SYSTEM-GEN' }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap text-left text-slate-700 dark:text-slate-300 font-mono">
+                            {{ $item->purchaseRequest->no_pr ?? '-' }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
+                            {{ optional($item->user)->nik ?? '-' }}
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-left">
+                            {{ optional($item->user)->name ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-nowrap text-slate-900 dark:text-white">
+                            {{ optional($item->purchaseRequest->sparepart)->sparepart_id ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-left border-l border-gray-100 dark:border-slate-800 font-mono tracking-wide whitespace-nowrap text-slate-800 dark:text-slate-200 uppercase">
+                            {{ optional($item->purchaseRequest->sparepart)->part_number ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 tracking-wide font-mono text-indigo-600 dark:text-indigo-400">
+                            {{ optional($item->purchaseRequest->sparepart)->sap_code ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 tracking-wide uppercase text-[11px]">
+                            {{ optional($item->purchaseRequest->sparepart)->category ?? '-' }}
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-slate-900 dark:text-slate-100 font-extrabold">
+                            {{ number_format(optional($item->purchaseRequest)->qty_pr ?? 0) }} Pcs
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-orange-600 font-black">
+                            {{ number_format($item->qty_received) }} Pcs
+                        </td>
+
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 status-td">
+                            <div class="flex justify-center items-center">
+                                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm status-badge {{ $qtyStatusClass }}">
+                                    {{ $qtyStatusRaw }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 status-td">
+                            <div class="flex justify-center items-center">
+                                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm status-badge {{ $badgeClass }}">
+                                    {{ $statusText }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
+                            <div class="font-bold">{{ $item->created_at ? $item->created_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] mt-0.5 text-slate-500">{{ $item->created_at ? $item->created_at->format('H:i') : '-' }} WIB</div>
+                        </td>
+
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
+                            <div class="font-bold text-slate-800 dark:text-slate-200">{{ $item->updated_at ? $item->updated_at->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[10px] mt-0.5 text-slate-500">{{ $item->updated_at ? $item->updated_at->format('H:i') : '-' }} WIB</div>
+                        </td>
+                        
+                        {{-- BUTTON DENGAN UKURAN KOTAK COMPACT & UJUNG SEDIKIT TUMPUL (ROUNDED-MD) --}}
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <div class="flex justify-center items-center gap-2.5">
+                                @if(strtolower($item->status) == 'pending')
+                                    <form id="reject-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
+                                        @csrf @method('DELETE')
+                                    </form>
+                                    <button type="button" onclick="confirmRejectMaterial('{{ $item->id }}', '{{ $item->purchaseRequest->no_pr ?? $item->no_mr }}')" 
+                                            class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#f74242] to-[#ff9e15] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
+                                        Reject
+                                    </button>
+
+                                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
+                                       class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#00ba90] to-[#2b83f6] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
+                                        Checked
+                                    </a>
+
+                                @elseif(strtolower($item->status) == 'checked')
+                                    <form id="reject-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
+                                        @csrf @method('DELETE')
+                                    </form>
+                                    <button type="button" onclick="confirmRejectMaterial('{{ $item->id }}', '{{ $item->purchaseRequest->no_pr ?? $item->no_mr }}')" 
+                                            class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#f74242] to-[#ff9e15] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
+                                        Reject
+                                    </button>
+
+                                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
+                                       class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#00ba90] to-[#2b83f6] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
+                                        Approve
+                                    </a>
+                                @else
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50 dark:bg-slate-800 px-4 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 processed-text shadow-sm">Processed</span>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="17" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                            No archived material received documents found.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- FOOTER PAGINATION RESPONSIF --}}
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
+            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
+                Showing {{ $receivings->firstItem() ?? 0 }} to {{ $receivings->lastItem() ?? 0 }} of {{ $receivings->total() ?? 0 }} Entries
+            </p>
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black">
+                {{ $receivings->appends(['search' => request('search'), 'per_page' => request('per_page')])->links() }}
+            </div>
+        </div>
+    </div>
 </div>
 
-<style>
-  nav[role="navigation"] svg {
-    width: 16px;
-    height: 16px;
-    display: inline;
-  }
-  nav[role="navigation"] div:first-child {
-    display: none;
-  }
-  .pagination .page-item.active .page-link {
-    background-color: #3C50E0 !important;
-    border-color: #3C50E0 !important;
-    color: white !important;
-    font-weight: bold;
-    font-size: 12px;
-  }
-  .pagination .page-link {
-    color: #0f172a !important; 
-    font-weight: 700;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-</style>
-
 <script>
-function confirmDeleteMaterial(id, prCode) {
-    Swal.fire({
-        title: 'Hapus Data Received?',
-        text: "Data PR " + prCode + " dan semua berkas file tanda tangan digital (.png) di server akan dihapus permanen!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Ya, Hapus Permanen!',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('delete-form-' + id).submit();
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        let checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    function exportTableToCSV(filename) {
+        let csv = [];
+        let rows = document.querySelectorAll("#approvalTable tr");
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 1; j < cols.length; j++) { 
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s+)/gm, " ");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
         }
-    });
-}
-
-function filterMaterialTable(status, element) {
-    const buttons = document.querySelectorAll('.filter-btn');
-    buttons.forEach(btn => {
-      btn.classList.remove('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-      btn.classList.add('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
-    });
-
-    if (element) {
-      element.classList.remove('text-slate-600', 'dark:text-gray-400', 'hover:text-slate-950', 'dark:hover:text-white');
-      element.classList.add('bg-white', 'text-slate-950', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+        let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
     }
 
-    const rows = document.querySelectorAll('.material-row-item');
-    
-    rows.forEach(row => {
-      if (status === 'all') {
-        row.style.display = '';
-        return;
-      }
-
-      const badgeText = row.querySelector('.status-badge').textContent.trim().toLowerCase().replace(/\s+/g, '_');
-
-      if (status === 'submitted_by_costing' && badgeText === 'incoming_costing') {
-         row.style.display = '';
-      } else if (status === 'approved_by_spv' && badgeText === 'pending_spv') {
-         row.style.display = '';
-      } else if (badgeText === status.toLowerCase()) {
-         row.style.display = '';
-      } else {
-         row.style.display = 'none';
-      }
-    });
-}
+    function confirmRejectMaterial(id, prCode) {
+        Swal.fire({
+            title: 'Reject Data Received?',
+            text: "Data berkas dengan referensi PR " + prCode + " akan ditolak!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f74242',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Reject!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('reject-form-' + id).submit();
+            }
+        });
+    }
 </script>
+
+<style>
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #approvalTable { 
+        font-family: 'Nunito', sans-serif !important; 
+    }
+
+    .table-body-data tr td, 
+    .table-body-data tr td div,
+    .table-empty-text {
+        color: #000000 !important;
+    }
+
+    .status-badge {
+        color: inherit !important; 
+    }
+
+    .table-header-row th {
+        color: #ffffff !important;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    
+    #approvalTable td, #approvalTable th {
+        vertical-align: middle !important;
+    }
+    .custom-pagination nav svg { width: 14px; height: 14px; display: inline; }
+    .custom-pagination nav div:first-child { display: none; }
+</style>
 @endsection
