@@ -220,11 +220,12 @@
                             <div class="text-[10px] mt-0.5 text-slate-500">{{ $item->updated_at ? $item->updated_at->format('H:i') : '-' }} WIB</div>
                         </td>
                         
-                        {{-- BUTTON DENGAN UKURAN KOTAK COMPACT & UJUNG SEDIKIT TUMPUL (ROUNDED-MD) --}}
+                        {{-- DYNAMIC ACTION BUTTONS BERDASARKAN STATUS TRANS-FLOW --}}
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             <div class="flex justify-center items-center gap-2.5">
+                                {{-- JIKA STATUS PENDING: MUNCUL REJECT & CHECKED (STAFF LAB) --}}
                                 @if(strtolower($item->status) == 'pending')
-                                    <form id="reject-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
+                                    <form id="reject-form-{{ $item->id }}" action="{{ route('costing.material.delete', $item->id) }}" method="POST" class="hidden">
                                         @csrf @method('DELETE')
                                     </form>
                                     <button type="button" onclick="confirmRejectMaterial('{{ $item->id }}', '{{ $item->purchaseRequest->no_pr ?? $item->no_mr }}')" 
@@ -232,13 +233,14 @@
                                         Reject
                                     </button>
 
-                                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
+                                    <a href="{{ route('eng.material.receiving.create', $item->id) }}" 
                                        class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#00ba90] to-[#2b83f6] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
                                         Checked
                                     </a>
 
+                                {{-- FIX DI SINI: JIKA STATUS CHECKED: MUNCUL REJECT & APPROVE (SUPERVISOR DESK) --}}
                                 @elseif(strtolower($item->status) == 'checked')
-                                    <form id="reject-form-{{ $item->id }}" action="{{ route('eng.material.receiving.destroy', $item->id) }}" method="POST" class="hidden">
+                                    <form id="reject-form-{{ $item->id }}" action="{{ route('costing.material.delete', $item->id) }}" method="POST" class="hidden">
                                         @csrf @method('DELETE')
                                     </form>
                                     <button type="button" onclick="confirmRejectMaterial('{{ $item->id }}', '{{ $item->purchaseRequest->no_pr ?? $item->no_mr }}')" 
@@ -246,11 +248,13 @@
                                         Reject
                                     </button>
 
-                                    <a href="{{ route('eng.material.receiving.create', ['id' => $item->id]) }}" 
-                                       class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#00ba90] to-[#2b83f6] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
+                                    {{-- GARIS INI DIUBAH MENEMBAK ROUTE APPROVAL SUPERVISOR (.approve) --}}
+                                    <a href="{{ route('eng.material.receiving.approve', $item->id) }}" 
+                                       class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
                                         Approve
                                     </a>
                                 @else
+                                    {{-- JIKA STATUS SUDAH APPROVED / REJECTED --}}
                                     <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50 dark:bg-slate-800 px-4 py-1.5 rounded-md border border-gray-200 dark:border-slate-700 processed-text shadow-sm">Processed</span>
                                 @endif
                             </div>

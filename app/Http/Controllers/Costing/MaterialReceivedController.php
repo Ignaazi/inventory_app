@@ -24,6 +24,10 @@ class MaterialReceivedController extends Controller
                 $query->where('no_mr', 'LIKE', "%{$search}%")
                       ->orWhereHas('purchaseRequest', function ($q) use ($search) {
                           $q->where('no_pr', 'LIKE', "%{$search}%");
+                      })
+                      ->orWhereHas('user', function ($q) use ($search) {
+                          $q->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('nik', 'LIKE', "%{$search}%");
                       });
             })
             ->orderBy('created_at', 'desc')
@@ -127,7 +131,7 @@ class MaterialReceivedController extends Controller
     }
 
     /* =========================================================================
-     * 🌟 BERIKUT ADALAH LOGIC INTEGRASI PINDAHAN DARI SISI ENGINEERING
+     * ⚙️ LOGIC INTEGRASI PINDAHAN SISI ENGINEERING
      * ========================================================================= */
 
     /**
@@ -136,23 +140,27 @@ class MaterialReceivedController extends Controller
     public function engIndex(Request $request)
     {
         $search = $request->get('search');
+        $perPage = $request->get('per_page', 10); 
         
         $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
             ->when($search, function ($query) use ($search) {
                 $query->where('no_mr', 'LIKE', "%{$search}%")
                       ->orWhereHas('purchaseRequest', function ($q) use ($search) {
                           $q->where('no_pr', 'LIKE', "%{$search}%");
+                      })
+                      ->orWhereHas('user', function ($q) use ($search) {
+                          $q->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('nik', 'LIKE', "%{$search}%");
                       });
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($perPage);
 
         return view('stock_eng.material_received.eng_list_material_received', compact('receivings', 'search'));
     }
 
     /**
-     * 6. HALAMAN FORM CHECKED / VERIFIKASI (SISI ENGINEERING)
-     * FIX: Nama variabel diubah dari $mr menjadi $receiving agar sinkron dengan file Blade.
+     * 6. HALAMAN FORM CHECKED / VERIFIKASI (SISI ENGINEERING STAFF)
      */
     public function engConfirm($id)
     {
@@ -162,21 +170,34 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 7. PROSES SIGNATURE STAFF ENGINEERING (STATUS: PENDING -> CHECKED)
-     * UPDATE: Ditambahkan request data qty_received & remark sesuai input di form blade.
+     * 7. HALAMAN FORM APPROVAL AKHIR (SISI ENGINEERING SUPERVISOR)
+     */
+    public function engApprove($id)
+    {
+        $receiving = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])->findOrFail($id);
+
+        if (strtolower($receiving->status) !== 'checked') {
+            return redirect()->route('eng.material.receiving.index')
+                ->with('error', 'Dokumen harus berstatus Checked oleh Staff terlebih dahulu sebelum di-approve!');
+        }
+
+        return view('stock_eng.material_received.eng_approve_material_received', compact('receiving'));
+    }
+
+    /**
+     * 8. PROSES SIGNATURE STAFF ENGINEERING (STATUS: PENDING -> CHECKED)
      */
     public function signEngineeringStaff($id, Request $request)
     {
         $receiving = MaterialReceived::findOrFail($id);
 
-        if ($receiving->status !== 'pending') {
+        if (strtolower($receiving->status) !== 'pending') {
             return redirect()->back()->with('error', 'Dokumen sudah diproses atau di-checked oleh orang lain!');
         }
 
-        // Kalkulasi batas maksimal Qty open balance secara realtime (Server-side safeguard)
         $pr = $receiving->purchaseRequest;
         $alreadyReceived = MaterialReceived::where('purchase_request_id', $receiving->purchase_request_id)
-            ->where('id', '!=', $id) // kecualikan id dokumen aktif ini
+            ->where('id', '!=', $id)
             ->whereIn('status', ['pending', 'checked', 'approved'])
             ->sum('qty_received');
             
@@ -201,7 +222,8 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 8. PROSES APPROVAL AKHIR SUPERVISOR / ADMIN (STATUS: CHECKED -> APPROVED)
+     * 9. PROSES APPROVAL AKHIR SUPERVISOR / ADMIN (STATUS: CHECKED -> APPROVED)
+     * FIX: Murni hanya mengubah entitas Material Received saja tanpa menyentuh tabel PR
      */
     public function approveEngineeringSpv($id, Request $request)
     {
@@ -212,46 +234,44 @@ class MaterialReceivedController extends Controller
 
         $mr = MaterialReceived::findOrFail($id);
 
-        if ($mr->status !== 'checked') {
+        if (strtolower($mr->status) !== 'checked') {
             return redirect()->back()->with('error', 'Dokumen harus melalui status Checked Staff terlebih dahulu!');
         }
 
         $signaturePath = $this->uploadBase64Signature($request->approved_signature, 'approved');
         $updatedRemark = $mr->remark . ($request->notes ? "\n[SPV Eng Notes]: " . $request->notes : "");
 
+        // Update record MR sesuai konfigurasi ENUM dari struktur database yang dikirim
         $mr->update([
-            'status'             => 'approved',
-            'qty_status'         => 'closed', // Otomatis mengunci status qty balance dokumen
+            'status'             => 'approved', // Menjadi Approved sesuai enum data
+            'qty_status'         => 'closed',   // Menjadi Closed sesuai enum data
             'approved_signature' => $signaturePath,
             'remark'             => $updatedRemark
         ]);
 
-        // Otomatis update status Purchase Request relasinya di sistem Engineering menjadi Done
-        if ($mr->purchaseRequest) {
-            $mr->purchaseRequest->update(['status' => 'done']);
-        }
+        // KODE PENGUBAH STATUS DI TABEL PURCHASE REQUEST SEKARANG TELAH DIHAPUS TOTAL
 
         return redirect()->route('eng.material.receiving.index')->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED!');
     }
 
     /**
-     * 9. PROSES HAPUS DATA
+     * 10. PROSES HAPUS / REJECT DATA
      */
     public function destroy($id)
     {
         $mr = MaterialReceived::findOrFail($id);
         
-        if ($mr->prepared_signature) Storage::disk('public')->delete($mr->prepared_signature);
-        if ($mr->checked_signature) Storage::disk('public')->delete($mr->checked_signature);
-        if ($mr->approved_signature) Storage::disk('public')->delete($mr->approved_signature);
+        if ($mr->prepared_signature) Storage::disk('public')->delete(str_replace('storage/', '', $mr->prepared_signature));
+        if ($mr->checked_signature) Storage::disk('public')->delete(str_replace('storage/', '', $mr->checked_signature));
+        if ($mr->approved_signature) Storage::disk('public')->delete(str_replace('storage/', '', $mr->approved_signature));
 
         $mr->delete();
 
-        return redirect()->route('costing.material.list')->with('success', 'Data MR berhasil dihapus!');
+        return redirect()->back()->with('success', 'Data Berkas Material Received berhasil dihapus / direject dari sistem!');
     }
 
     /**
-     * HELPER UPLOAD BASE64 TTD DIGITAL (STANDAR LARAVEL STORAGE)
+     * HELPER UPLOAD BASE64 TTD DIGITAL
      */
     private function uploadBase64Signature($base64String, $prefix)
     {
