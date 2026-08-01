@@ -1,210 +1,215 @@
 @extends('admin')
 
 @section('content')
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-{{-- Menentukan mode halaman secara otomatis berdasarkan keberadaan data binding $receiving --}}
-@php
-    $isEditMode = isset($receiving); 
-    $statusMode = $isEditMode ? $receiving->status : 'create';
-@endphp
+<style>
+[x-cloak] { display: none !important; }
 
-<div class="mx-auto w-full max-w-5xl pb-12 px-4 sm:px-6" x-data="materialSignatureWorkflowHandler()">
+@media print {
+    body * {
+        visibility: hidden;
+        background: white !important;
+        color: black !important;
+    }
+    #print-target-box, #print-target-box * {
+        visibility: visible;
+    }
+    #print-target-box {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+
+<div class="mx-auto w-full max-w-7xl pb-12 px-4 sm:px-6 font-nunito text-black dark:text-white" x-data="materialReceivedFormHandler()" x-cloak>
     
-    {{-- HEADER HALAMAN & TOMBOL PRINT --}}
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
+    <!-- HEADER SECTION -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito print:hidden">
         <div>
-            <h2 class="text-lg font-extrabold text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <span class="h-5 w-1.5 bg-blue-600 rounded-full"></span>
-                <span>
-                    @if($statusMode === 'create') SUBMIT MATERIAL RECEIVED (COSTING SECTION)
-                    @elseif($statusMode === 'submitted_by_costing') ⚡ VERIFY GOODS (ENGINEERING STAFF)
-                    @elseif($statusMode === 'approved_by_spv') 🔑 FINAL APPROVAL (ENGINEERING SUPERVISOR)
-                    @else PREVIEW MATERIAL RECEIVED REPORT
-                    @endif
-                </span>
-            </h2>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                PT SIIX EMS INDONESIA • @if($isEditMode) TRANSACTION ID: {{ $receiving->receiving_code }} @else FORWARD TO INCOMING ENGINEERING MODULE @endif
-            </p>
+            <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight">CREATE MATERIAL RECEIVED</h2>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-600 dark:text-slate-400">Costing Electronic Authorization Platform</p>
         </div>
         
-        <div class="self-start sm:self-center flex gap-2">
-            <button type="button" @click="window.print()" class="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95">
-                PRINT REPORT
+        <div class="flex gap-2 self-start sm:self-center">
+            <button type="button" @click="generatePDF()" class="flex items-center gap-1.5 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:opacity-90 text-white rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4H7v4a2 2 0 002 2zM9 9V5a2 2 0 012-2h2a2 2 0 012 2v4M7 13h10" />
+                </svg>
+                DOWNLOAD PDF
             </button>
         </div>
     </div>
 
-    {{-- CONTAINER FORM UTAMA --}}
-    {{-- Form disembunyikan otomatis jika status sudah completed atau rejected --}}
-    @if($statusMode === 'create' || $statusMode === 'submitted_by_costing' || $statusMode === 'approved_by_spv')
-    <div class="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-xl shadow-md overflow-hidden print:hidden mb-10">
-        
-        {{-- TARGET ACTION DIBUAT DINAMIS MENGIKUTI WORKFLOW --}}
-        <form id="workflowMaterialForm" 
-              action="{{ $statusMode === 'create' ? route('costing.signature.store') : ($statusMode === 'submitted_by_costing' ? route('eng.material.receiving.verify', $receiving->id) : route('eng.material.receiving.approve', $receiving->id)) }}" 
-              method="POST" 
-              @submit.prevent="submitWorkflowForm($event)">
+    @if($errors->any())
+        <div class="mb-5 p-3 text-xs text-red-900 rounded-md bg-red-50 font-bold border border-red-200 print:hidden">
+            <ul class="list-disc pl-4">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- MAIN INPUT FORM CARD -->
+    <div class="bg-white dark:bg-boxdark border border-slate-300 dark:border-strokedark rounded-md shadow-sm overflow-hidden print:hidden mb-10">
+        <form id="materialForm" action="{{ route('costing.material.store') }}" method="POST" @submit.prevent="submitForm">
             @csrf
-            @if($isEditMode) @method('POST') @endif
             
-            {{-- Hidden Field Pengirim Base64 dataURL --}}
-            <input type="hidden" name="signature_data" x-bind:value="signatureImg">
-            <input type="hidden" name="stamp_data" x-bind:value="stampImg">
-            <input type="hidden" name="action" x-bind:value="actionDecision">
+            <input type="hidden" name="prepared_signature" x-bind:value="signaturePathHidden">
 
-            <div class="p-5 sm:p-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="p-5 sm:p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    {{-- SISI KIRI: INPUT KONDISI MATERIAL --}}
-                    <div class="flex flex-col gap-4">
+                    <!-- LEFT SIDE: PARAMETER DATA INPUTS -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         
-                        {{-- 1. PILIH PR ATAU DISKLAIMER INFO DARI COSTING --}}
+                        <!-- 1. NIK -->
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Purchase Request Code</label>
-                            @if($statusMode === 'create')
-                                <select name="pr_code" x-model="pr_code" required class="w-full rounded-lg border border-stroke bg-transparent py-2.5 px-4 text-sm font-medium outline-none transition focus:border-primary dark:border-gray-700 dark:bg-form-input dark:text-white">
-                                    <option value="">-- Pilih PR Approved / Done --</option>
-                                    @foreach($availablePRs as $pr)
-                                        <option value="{{ $pr->pr_code }}">{{ $pr->pr_code }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <input type="text" name="pr_code" value="{{ $receiving->pr_code }}" readonly class="w-full rounded-lg border border-slate-200 bg-slate-100 dark:bg-slate-800 py-2.5 px-4 text-sm font-mono font-bold outline-none">
-                            @endif
+                            <label class="text-xs font-black uppercase text-black tracking-wider">1. NIK COSTING</label>
+                            <input type="text" x-model="costing_nik" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        {{-- 2. QTY RECEIVED & LOT NO --}}
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Qty Received</label>
-                                <input type="number" name="qty_received" x-model="qty_received" required min="1" {{ $isEditMode ? 'readonly' : '' }} class="w-full rounded-lg border border-stroke bg-transparent {{ $isEditMode ? 'bg-slate-100 dark:bg-slate-800' : '' }} py-2.5 px-4 text-sm font-medium outline-none">
-                            </div>
-
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Lot / Serial No</label>
-                                <input type="text" name="lot_no" x-model="lot_no" required {{ $isEditMode ? 'readonly' : '' }} class="w-full rounded-lg border border-stroke bg-transparent {{ $isEditMode ? 'bg-slate-100 dark:bg-slate-800' : '' }} py-2.5 px-4 text-sm font-medium outline-none">
-                            </div>
-                        </div>
-
-                        {{-- 3. INPUT TAMBAHAN KHUSUS UNTUK ENGINEERING STAFF (ITEM NAME & SUPPLIER) --}}
-                        @if($statusMode === 'submitted_by_costing')
-                        <div class="grid grid-cols-2 gap-3 border-l-4 border-amber-500 pl-3 my-1">
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-amber-600 tracking-wider">Item Name (Verify)</label>
-                                <input type="text" name="item_name" required placeholder="Input Nama Material" class="w-full rounded-lg border border-amber-400 bg-transparent py-2.5 px-4 text-sm font-medium outline-none">
-                            </div>
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-bold uppercase text-amber-600 tracking-wider">Supplier Name (Verify)</label>
-                                <input type="text" name="supplier_name" required placeholder="Input Supplier" class="w-full rounded-lg border border-amber-400 bg-transparent py-2.5 px-4 text-sm font-medium outline-none">
-                            </div>
-                        </div>
-                        @endif
-
-                        {{-- 4. REMARKS / NOTES SECTION --}}
+                        <!-- 2. NAME -->
                         <div class="flex flex-col gap-1.5">
-                            @if($statusMode === 'create')
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Costing Staff Remarks (Kondisi Awal)</label>
-                                <textarea name="costing_notes" x-model="costing_notes" rows="3" class="w-full rounded-lg border border-stroke bg-transparent py-2 px-4 text-sm outline-none placeholder:text-slate-400" placeholder="Tuliskan catatan kondisi packaging / item saat pertama kali tiba..."></textarea>
-                            @else
-                                <label class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Engineering Remarks (Catatan Verifikasi)</label>
-                                <textarea name="engineering_notes" rows="3" {{ $statusMode === 'approved_by_spv' ? 'readonly' : '' }} class="w-full rounded-lg border border-stroke bg-transparent {{ $statusMode === 'approved_by_spv' ? 'bg-slate-100 dark:bg-slate-800' : '' }} py-2 px-4 text-sm outline-none" placeholder="{{ $statusMode === 'approved_by_spv' ? 'No Engineering staff notes' : 'Tuliskan catatan verifikasi fisik / jika ditemukan ketidaksesuaian...' }}">{{ $isEditMode ? $receiving->engineering_notes : '' }}</textarea>
-                            @endif
+                            <label class="text-xs font-black uppercase text-black tracking-wider">2. NAME</label>
+                            <input type="text" x-model="costing_name" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 3. PR Reference No -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">3. PR REFERENCE NO</label>
+                            <select name="purchase_request_id" x-model="selected_pr_id" @change="updatePrDetails()" required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-slate-900 dark:text-white">
+                                <option value="" class="text-black">-- Pilih No Dokumen PR --</option>
+                                <template x-for="pr in purchaseRequests" :key="pr.id">
+                                    <option :value="pr.id" class="text-black" x-text="pr.no_pr" :selected="pr.id == selected_pr_id"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <!-- 4a. Sparepart ID -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">4. SPAREPART ID</label>
+                            <input type="text" x-model="sparepart_id" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 4b. Part Number -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">PART NUMBER</label>
+                            <input type="text" x-model="part_number" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 4c. SAP Code -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">SAP CODE</label>
+                            <input type="text" x-model="sap_code" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 4d. Category -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">CATEGORY</label>
+                            <input type="text" x-model="category" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 5. Qty PR Req -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">5. QTY PR REQ</label>
+                            <input type="text" x-model="qty_pr_req" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-slate-700 cursor-not-allowed outline-none dark:bg-meta-4/30">
+                        </div>
+
+                        <!-- 6. Qty Actual -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">6. QTY ACTUAL</label>
+                            <input type="number" name="qty_received" x-model="qty_actual" min="1" :max="qty_pr_req" required @input="calculateGap()" class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white">
+                        </div>
+
+                        <!-- 7. Qty Gap + Badge Status Dinamis (OPEN/CLOSED) -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">7. QTY GAP (REMAINING BALANCE)</label>
+                            <div class="w-full rounded-md border py-2 px-3 text-xs font-black outline-none transition shadow-sm flex items-center justify-between"
+                                 :class="qty_gap == 0 ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300'">
+                                <span x-text="qty_gap + ' Pcs'">0 Pcs</span>
+                                <span :class="qty_gap == 0 ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'" 
+                                      class="px-2.5 py-0.5 rounded text-[10px] font-black tracking-wider transition-all" 
+                                      x-text="qty_gap == 0 ? 'CLOSED' : 'OPEN'">
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Remark / Condition -->
+                        <div class="flex flex-col gap-1.5 sm:col-span-2">
+                            <label class="text-xs font-black uppercase text-black tracking-wider">REMARK / CONDITION</label>
+                            <textarea name="remark" x-model="remark" rows="2" placeholder="Tulis catatan kondisi material kedatangan barang..." required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold resize-none text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white"></textarea>
                         </div>
                     </div>
 
-                    {{-- SISI KANAN: PAD TTD WORKFLOW --}}
-                    <div class="flex flex-col gap-4 bg-slate-50 dark:bg-meta-4 p-4 rounded-xl border border-stroke dark:border-strokedark justify-between relative z-0">
+                    <!-- RIGHT SIDE: E-SIGNATURE AUTHORIZATION DISPLAY -->
+                    <div class="flex flex-col justify-between bg-slate-50 dark:bg-slate-900/40 p-4 rounded-md border border-slate-300 dark:border-strokedark relative z-0">
                         <div>
-                            <div class="flex items-center justify-between border-b border-stroke dark:border-strokedark pb-2 mb-3">
-                                <label class="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 tracking-wider">
-                                    @if($statusMode === 'create') Otorisasi Costing Staff
-                                    @elseif($statusMode === 'submitted_by_costing') Otorisasi Engineering Staff
-                                    @else Otorisasi Engineering Supervisor
-                                    @endif
-                                </label>
-                                @if($statusMode === 'create')
-                                <div class="flex gap-1 bg-slate-200 dark:bg-boxdark p-1 rounded-md text-[9px] font-bold">
-                                    <button type="button" @click="activeTab = 'draw'" :class="activeTab === 'draw' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded transition-all">PAD TTD</button>
-                                    <button type="button" @click="activeTab = 'upload'" :class="activeTab === 'upload' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400'" class="px-2.5 py-1 rounded transition-all">UPLOAD STEMPEL</button>
-                                </div>
-                                @endif
+                            <div class="border-b border-slate-300 dark:border-strokedark pb-2 mb-3">
+                                <label class="text-xs font-black uppercase tracking-wider text-black dark:text-gray-200">Prepared By Costing</label>
+                                <p class="text-[10px] text-black font-bold mt-0.5">Otorisasi digital terikat otomatis dengan sistem</p>
                             </div>
 
-                            {{-- CANVAS PAD SIGNATURE --}}
-                            <div x-show="activeTab === 'draw'" class="w-full">
-                                <p class="text-[10px] text-slate-400 mb-1.5">*Goreskan tanda tangan otorisasi simulasi Anda di bawah ini:</p>
-                                <div class="relative w-full h-40 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-inner z-0">
-                                    <canvas x-ref="canvas" @mousedown="startDrawing" @mousemove="draw" @mouseup="stopDrawing" @mouseleave="stopDrawing" @touchstart="startDrawing" @touchmove="draw" @touchend="stopDrawing" class="w-full h-full cursor-crosshair block"></canvas>
-                                    <button type="button" @click="clearCanvas" class="absolute bottom-2 right-2 px-2 py-1 bg-rose-600 text-white rounded text-[9px] font-bold uppercase transition-all shadow z-10 hover:bg-rose-700">Clear</button>
+                            <div class="relative w-full h-28 bg-white dark:bg-slate-950 border border-slate-300 dark:border-gray-800 rounded-md flex items-center justify-center p-2 overflow-hidden shadow-inner">
+                                <div class="absolute inset-0 z-10 flex items-center justify-center p-2" x-show="signatureImg">
+                                    <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
                                 </div>
-                            </div>
-
-                            {{-- UPLOAD STEMPEL COSTING (ONLY ACTIVE ON STEP 1) --}}
-                            @if($statusMode === 'create')
-                            <div x-show="activeTab === 'upload'" class="w-full" x-cloak>
-                                <p class="text-[10px] text-slate-400 mb-1.5">*Unggah stempel departemen Costing (.png):</p>
-                                <div class="relative w-full h-40 bg-white dark:bg-form-input border-2 border-dashed border-stroke dark:border-strokedark hover:border-primary rounded-lg flex flex-col items-center justify-center p-4 transition-all z-0">
-                                    <input type="file" @change="handleFileUpload" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                    <div class="flex flex-col items-center text-center pointer-events-none" x-show="!stampImg">
-                                        <svg class="w-6 h-6 mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                                        <p class="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Berkas Stempel</p>
-                                    </div>
-                                    <div class="flex flex-col items-center justify-center h-full w-full relative" x-show="stampImg" x-cloak>
-                                        <img :src="stampImg" class="max-h-24 object-contain mx-auto mix-blend-multiply">
-                                        <button type="button" @click.stop="clearStamp" class="mt-2 px-2 py-0.5 bg-rose-600 text-white rounded text-[9px] font-bold uppercase z-20 hover:bg-rose-700">Hapus</button>
+                                
+                                <div class="z-30 text-center" x-show="!signatureImg">
+                                    <div class="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] uppercase tracking-wider border border-indigo-200 dark:border-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded-md">
+                                        Secure E-Sign Dynamic<br>
+                                        <span class="text-[8px] text-black font-sans font-bold tracking-normal" x-text="costing_name ? 'Linked to: ' + costing_name : 'Waiting for name...'"></span>
                                     </div>
                                 </div>
                             </div>
-                            @endif
                         </div>
 
-                        <div class="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider pt-2 border-t border-stroke dark:border-strokedark">
-                            <span :class="signatureImg ? 'text-green-600' : 'text-slate-400'">TTD STATUS: <span x-text="signatureImg ? '✓ READY' : 'EMPTY'"></span></span>
-                            @if($statusMode === 'create')
-                            <span :class="stampImg ? 'text-green-600' : 'text-slate-400'">STEMPEL STATUS: <span x-text="stampImg ? '✓ READY' : 'EMPTY'"></span></span>
-                            @endif
+                        <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-wider pt-2 border-t border-slate-300 dark:border-strokedark mt-3">
+                            <span class="text-black dark:text-white">TTD DATA: 
+                                <span :class="signatureImg ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-white'" class="ml-1 px-2.5 py-1 rounded text-[9px] font-black tracking-wide" x-text="signatureImg ? 'ACTIVE' : 'NONE'"></span>
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                {{-- SUBMIT DECISION BUTTONS ALUR BERJENJANG --}}
-                <div class="mt-8 flex flex-col sm:flex-row gap-2.5 sm:justify-end border-t border-stroke dark:border-strokedark pt-5">
-                    @if($statusMode === 'create')
-                        <button type="button" @click="resetAll" class="rounded-lg border border-slate-200 bg-slate-100 text-slate-700 py-2 px-4 text-xs font-bold uppercase tracking-wide hover:bg-slate-200 transition-all">Reset</button>
-                        <button type="submit" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 text-xs font-bold uppercase tracking-wide shadow transition-all">SUBMIT TO ENGINEERING</button>
-                    @elseif($statusMode === 'submitted_by_costing')
-                        {{-- DECISION UTK ENGINEERING STAFF --}}
-                        <button type="submit" @click="actionDecision = 'discrepancy'" class="rounded-lg bg-rose-600 hover:bg-rose-700 text-white py-2 px-4 text-xs font-bold uppercase tracking-wide transition-all">⚠️ REPORT DISCREPANCY</button>
-                        <button type="submit" @click="actionDecision = 'verify'" class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white py-2 px-6 text-xs font-bold uppercase tracking-wide transition-all">✔ VERIFY & ACCEPT GOODS</button>
-                    @elseif($statusMode === 'approved_by_spv')
-                        {{-- DECISION UTK SUPERVISOR --}}
-                        <button type="submit" @click="actionDecision = 'approve'" class="rounded-lg bg-purple-600 hover:bg-purple-700 text-white py-2 px-8 text-xs font-bold uppercase tracking-wide transition-all">🔑 CONFIRM FULL APPROVAL</button>
-                    @endif
+                <!-- CONTAINER ACTION FOOTER BUTTONS -->
+                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-strokedark flex flex-col sm:flex-row justify-end gap-2.5">
+                    <button type="button" @click="resetAll" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-black border-2 border-slate-500 rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer">
+                        Reset Form
+                    </button>
+
+                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 hover:opacity-90 text-white rounded-md px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all active:scale-95 border-none cursor-pointer shadow-md">
+                        Submit MR Document
+                    </button>
                 </div>
             </div>
         </form>
     </div>
-    @endif
 
-    {{-- LIVE PREVIEW DOKUMEN REPORT LENGKAP (SIAP CETAK) --}}
-    <div id="print-target-box">
-        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-2 print:hidden">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            Live Document Tracker (PT SIIX Production Environment)
-        </h3>
-        
-        <div class="bg-white text-black p-8 sm:p-12 border border-slate-300 rounded-xl shadow-sm print:border-none print:shadow-none print:p-0 font-sans">
-            
+    <!-- LIVE PREVIEW FORM AREA -->
+    <div id="print-target-box" class="print:m-0 print:p-0">
+        <div class="bg-white text-black p-8 sm:p-10 border border-slate-300 rounded-md shadow-sm print:border-none print:shadow-none print:p-0 font-nunito">
             <div class="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
-                <div>
-                    <h1 class="text-lg font-black uppercase tracking-tight text-black">PT. SIIX EMS INDONESIA</h1>
-                    <p class="text-[9px] font-bold text-slate-600">INCOMING MATERIAL TRACKING REPORT</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 flex items-center justify-center overflow-hidden">
+                        <img src="/images/logo-siix.png" class="max-h-full max-w-full object-contain" alt="Logo SIIX" onerror="this.style.display='none'">
+                    </div>  
+                    <div>
+                        <h1 class="text-lg font-black uppercase tracking-tight text-black">PT. SIIX EMS KARAWANG</h1>
+                        <p class="text-[10px] font-black text-black tracking-wider uppercase">Electronic Manufacturing Services</p>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide">MATERIAL RECEIVED REPORT</h2>
-                    <p class="text-[8px] text-slate-500 font-mono mt-1" x-text="'PR CODE: ' + (pr_code || 'PR-ENG-XXXXXX')"></p>
+                    <h2 class="text-xs font-black uppercase text-black border border-black px-3 py-1 bg-slate-50 tracking-wide rounded-sm">MATERIAL RECEIVED REPORT</h2>
+                    <p class="text-[9px] text-black font-mono font-bold mt-1" x-text="mr_no ? 'Doc No: ' + mr_no : 'Doc No: MR000001'"></p>
                 </div>
             </div>
 
@@ -212,216 +217,248 @@
                 <table class="w-full border-collapse text-xs border border-black">
                     <tbody>
                         <tr class="border-b border-black">
-                            <td class="w-1/3 py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">PR Code Reference</td>
-                            <td class="py-2.5 px-4 font-mono font-bold text-black uppercase" x-text="pr_code || '-'">-</td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NIK COSTING STAFF</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="costing_nik || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Item Name / Desc</td>
-                            <td class="py-2.5 px-4 font-bold text-black uppercase">{{ $isEditMode ? ($receiving->item_name ?? 'WAITING ENG VERIFICATION') : 'INPUTED BY ENG ON STEP 2' }}</td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">NAME</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="costing_name || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Quantity Received</td>
-                            <td class="py-2.5 px-4 font-bold text-black" x-text="qty_received ? qty_received + ' Pcs' : '-'">-</td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PR REFERENCE NO</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="pr_no_text || ''">-</td>
+                        </tr>
+                        
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SPAREPART ID</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="sparepart_id || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Lot / Serial Number</td>
-                            <td class="py-2.5 px-4 font-mono font-bold text-black uppercase" x-text="lot_no || '-'">-</td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">PART NUMBER</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="part_number || ''">-</td>
                         </tr>
                         <tr class="border-b border-black">
-                            <td class="py-2.5 font-bold uppercase bg-slate-50 px-3 border-r border-black">Supplier Vendor</td>
-                            <td class="py-2.5 px-4 font-bold text-black uppercase">{{ $isEditMode ? ($receiving->supplier_name ?? '-') : '-' }}</td>
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">SAP CODE</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="sap_code || ''">-</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="w-1/3 py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">CATEGORY</td>
+                            <td class="py-2.5 px-4 font-black text-black uppercase" x-text="category || ''">-</td>
+                        </tr>
+                        
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY PR REQ</td>
+                            <td class="py-2.5 px-4 font-black text-black" x-text="qty_pr_req ? qty_pr_req + ' Pcs' : '-'">-</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY ACTUAL</td>
+                            <td class="py-2.5 px-4 font-black text-indigo-600 font-extrabold" x-text="qty_actual ? qty_actual + ' Pcs' : '0 Pcs'">0 Pcs</td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">QTY GAP</td>
+                            <td class="py-2.5 px-4 font-black font-extrabold flex items-center justify-between" :class="qty_gap == 0 ? 'text-emerald-600' : 'text-amber-600'">
+                                <span x-text="qty_gap + ' Pcs'">0 Pcs</span>
+                                <span :class="qty_gap == 0 ? 'border border-emerald-600 bg-emerald-50 text-emerald-700' : 'border border-amber-500 bg-amber-50 text-amber-700'" 
+                                      class="px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase print:inline-block" 
+                                      x-text="qty_gap == 0 ? 'STATUS: CLOSED' : 'STATUS: OPEN'">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-black">
+                            <td class="py-2.5 font-black uppercase bg-slate-50 px-3 border-r border-black text-black">REMARK / CONDITION</td>
+                            <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider" x-text="remark || ''">-</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            {{-- WORKFLOW BOX SIGNATURE (3 KOLOM BERJENJANG AKTIF) --}}
-            <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8">
-                
-                {{-- 1. COSTING COLUMN --}}
-                <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px]">1. Issued By (Costing)</div>
+            <!-- DIGITAL SIGNATURE FOOTER STEP BY STEP -->
+            <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8 rounded-sm overflow-hidden">
+                <!-- 1. Costing (Prepared) -->
+                <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Prepared By (Costing)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
-                        @if($isEditMode && $receiving->costing_signature_path)
-                            <img src="{{ asset($receiving->costing_signature_path) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block">
-                            @if($receiving->costing_stamp_path)
-                                <img src="{{ asset($receiving->costing_stamp_path) }}" class="absolute inset-0 max-h-full max-w-full object-contain mx-auto my-auto block mix-blend-multiply opacity-90">
-                            @endif
-                        @else
-                            <div class="absolute inset-0 flex items-center justify-center p-1" x-show="signatureImg">
-                                <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto block">
+                        <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="signatureImg">
+                            <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
+                        </div>
+                        <div class="z-30 px-2 my-auto" x-show="costing_name && !signatureImg">
+                            <div class="text-green-600 font-mono text-[9px] font-black uppercase tracking-tighter border border-green-300 bg-green-50 py-0.5 rounded mx-auto max-w-[130px]">
+                                VERIFIED
                             </div>
-                            <div class="absolute inset-0 flex items-center justify-center p-0 pointer-events-none" x-show="stampImg">
-                                <img :src="stampImg" class="max-h-full max-w-full object-contain mx-auto block mix-blend-multiply">
-                            </div>
-                        @endif
+                        </div>
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black underline truncate">{{ $isEditMode ? $receiving->created_by_name : auth()->user()->name }}</p>
-                        <p class="text-[7px] text-slate-500 font-bold uppercase mt-0.5">Costing Department</p>
+                        <p class="font-black uppercase text-black tracking-wide truncate" x-text="costing_name || '( _________________ )'"></p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Costing Section</p>
                     </div>
                 </div>
 
-                {{-- 2. ENGINEERING STAFF COLUMN --}}
-                <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px]">2. Checked (Eng Staff)</div>
-                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
-                        @if($isEditMode && $receiving->eng_signature_path)
-                            <img src="{{ asset($receiving->eng_signature_path) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block">
-                        @else
-                            <div class="absolute inset-0 flex items-center justify-center p-1" x-show="signatureImg && statusMode === 'submitted_by_costing'">
-                                <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto block">
-                            </div>
-                            <span class="text-slate-300 italic text-[8px] m-auto" x-show="statusMode === 'create'">( Waiting Step 2 )</span>
-                        @endif
-                    </div>
-                    <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black truncate">{{ $isEditMode && $receiving->eng_signature_path ? 'VERIFIED' : '( Pending Verification )' }}</p>
-                        <p class="text-[7px] text-slate-500 font-bold uppercase mt-0.5">Engineering Staff</p>
-                    </div>
+                <!-- 2. Engineering Staff (Checked) -->
+                <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Eng Staff)</div>
+                    <div class="text-slate-500 text-[9px] font-black my-auto italic">( Pending Stage )</div>
+                    <div class="border-t border-slate-200 py-1.5 px-1 bg-white"><p class="font-black uppercase text-black">( _________________ )</p></div>
                 </div>
 
-                {{-- 3. ENGINEERING SUPERVISOR COLUMN --}}
-                <div class="flex flex-col justify-between h-36 bg-white relative">
-                    <div class="bg-slate-50 font-bold border-b border-black py-1 uppercase tracking-wider text-[9px]">3. Approval (Eng SPV)</div>
-                    <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
-                        @if($isEditMode && $receiving->eng_spv_signature_path)
-                            <img src="{{ asset($receiving->eng_spv_signature_path) }}" class="max-h-full max-w-full object-contain mx-auto my-auto block">
-                        @else
-                            <div class="absolute inset-0 flex items-center justify-center p-1" x-show="signatureImg && statusMode === 'approved_by_spv'">
-                                <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto block">
-                            </div>
-                            <span class="text-slate-300 italic text-[8px] m-auto" x-show="statusMode !== 'approved_by_spv'">( Waiting SPV )</span>
-                        @endif
-                    </div>
-                    <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
-                        <p class="font-bold uppercase text-black truncate">{{ $isEditMode && $receiving->eng_spv_signature_path ? 'APPROVED' : '( Pending Approval )' }}</p>
-                        <p class="text-[7px] text-slate-500 font-bold uppercase mt-0.5">Engineering Supervisor</p>
-                    </div>
+                <!-- 3. Engineering Supervisor (Approved) -->
+                <div class="flex flex-col justify-between h-36 bg-white">
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Eng Spv)</div>
+                    <div class="text-slate-500 text-[9px] font-black my-auto italic">( Pending Stage )</div>
+                    <div class="border-t border-slate-200 py-1.5 px-1 bg-white"><p class="font-black uppercase text-black">( _________________ )</p></div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-function materialSignatureWorkflowHandler() {
-    return {
-        pr_code: '{{ $isEditMode ? $receiving->pr_code : "" }}',
-        qty_received: '{{ $isEditMode ? $receiving->qty_received : "" }}',
-        lot_no: '{{ $isEditMode ? $receiving->lot_no : "" }}',
-        costing_notes: '{{ $isEditMode ? $receiving->costing_notes : "" }}',
+    function materialReceivedFormHandler() {
+        const userNik = "{{ auth()->check() ? auth()->user()->nik : '' }}";
+        const userName = "{{ auth()->check() ? auth()->user()->name : '' }}";
+        const userSignature = "{{ auth()->check() && auth()->user()->signature_path ? auth()->user()->signature_path : '' }}";
         
-        statusMode: '{{ $statusMode }}',
-        actionDecision: 'verify', // Default action untuk step 2
+        const prList = {!! json_encode($purchaseRequests ?? []) !!};
+        const initialPrId = '{{ old('purchase_request_id', $pr_id ?? '') }}';
+        
+        let initialPrNo = '-';
+        let initialSpId = '-';
+        let initialPartNo = '-';
+        let initialSapCode = '-';
+        let initialCategory = '-';
+        let initialQtyPrReq = 0;
 
-        activeTab: 'draw', 
-        isDrawing: false,
-        signatureImg: null, 
-        stampImg: null,     
-        ctx: null,
-
-        init() {
-            this.$nextTick(() => { this.initCanvas(); });
-        },
-
-        initCanvas() {
-            const canvas = this.$refs.canvas;
-            if (canvas) {
-                this.ctx = canvas.getContext('2d');
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-                this.ctx.strokeStyle = '#000000'; 
-                this.ctx.lineWidth = 2.5;         
-                this.ctx.lineCap = 'round';
-            }
-        },
-
-        startDrawing(e) {
-            this.isDrawing = true;
-            const pos = this.getMousePos(e);
-            this.ctx.beginPath();
-            this.ctx.moveTo(pos.x, pos.y);
-        },
-        draw(e) {
-            if (!this.isDrawing) return;
-            e.preventDefault();
-            const pos = this.getMousePos(e);
-            this.ctx.lineTo(pos.x, pos.y);
-            this.ctx.stroke();
-        },
-        stopDrawing() {
-            if (this.isDrawing) {
-                this.isDrawing = false;
-                this.signatureImg = this.$refs.canvas.toDataURL(); 
-            }
-        },
-        getMousePos(e) {
-            const canvas = this.$refs.canvas;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        },
-        clearCanvas() {
-            if(this.$refs.canvas) { this.ctx.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height); }
-            this.signatureImg = null;
-        },
-        clearStamp() { this.stampImg = null; },
-        handleFileUpload(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => { this.stampImg = event.target.result; };
-                reader.readAsDataURL(file);
-            }
-        },
-        resetAll() {
-            this.clearCanvas();
-            this.stampImg = null;
-        },
-
-        submitWorkflowForm(e) {
-            // Validasi Canvas TTD Wajib terisi untuk tombol non-Discrepancy
-            if (!this.signatureImg && this.actionDecision !== 'discrepancy') {
-                Swal.fire({ icon: 'warning', title: 'Tanda Tangan Diperlukan!', text: 'Harap goreskan TTD otorisasi pada pad canvas, bro!', confirmButtonColor: '#2563eb' });
-                return;
-            }
-
-            let confirmTitle = 'Kirim Data ke Engineering?';
-            if (this.actionDecision === 'discrepancy') confirmTitle = 'Laporkan Ketidaksesuaian (Return)?';
-            if (this.actionDecision === 'verify') confirmTitle = 'Sahkan Verifikasi Fisik Barang?';
-            if (this.actionDecision === 'approve') confirmTitle = 'Selesaikan Full Approval Dokumen?';
-
-            Swal.fire({
-                title: confirmTitle,
-                text: "Aksi simulasi ini akan langsung mengubah record status log database.",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#f43f5e',
-                confirmButtonText: 'Ya, Proses!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const formElement = document.getElementById('workflowMaterialForm');
-                    formElement.querySelector('input[name="signature_data"]').value = this.signatureImg;
-                    formElement.submit();
+        if (initialPrId) {
+            const matched = prList.find(item => item.id == initialPrId);
+            if (matched) {
+                initialPrNo = matched.no_pr || '-';
+                if (matched.sparepart) {
+                    initialSpId = matched.sparepart.sparepart_id ? String(matched.sparepart.sparepart_id) : '-';
+                    initialPartNo = matched.sparepart.part_number ? String(matched.sparepart.part_number) : '-';
+                    initialSapCode = matched.sparepart.sap_code ? String(matched.sparepart.sap_code) : '-';
+                    initialCategory = matched.sparepart.category ? String(matched.sparepart.category) : '-';
                 }
-            });
+                initialQtyPrReq = matched.qty_remaining !== undefined ? matched.qty_remaining : 0;
+            }
+        }
+    
+        return {
+            costing_nik: userNik,
+            costing_name: userName,
+            mr_no: '{{ optional($materialReceived ?? null)->no_mr ?? $nextMrNo ?? '' }}',
+            purchaseRequests: prList,
+            selected_pr_id: initialPrId,
+            pr_no_text: initialPrNo,
+            
+            sparepart_id: initialSpId,
+            part_number: initialPartNo,
+            sap_code: initialSapCode,
+            category: initialCategory,
+
+            qty_pr_req: initialQtyPrReq,
+            qty_actual: '{{ old('qty_received', 1) }}',
+            qty_gap: 0,
+            remark: '{{ old('remark', '') }}',
+            signaturePathHidden: userSignature,
+            signatureImg: userSignature ? (userSignature.startsWith('http') ? userSignature : "{{ asset('storage') }}/" + userSignature.replace(/^\/?(storage\/)?/, '')) : null,
+
+            init() {
+                this.calculateGap();
+            },
+
+            updatePrDetails() {
+                const pr = this.purchaseRequests.find(item => item.id == this.selected_pr_id);
+                if (pr) {
+                    this.pr_no_text = pr.no_pr || '-';
+                    if(pr.sparepart) {
+                        this.sparepart_id = pr.sparepart.sparepart_id ? String(pr.sparepart.sparepart_id) : '-';
+                        this.part_number = pr.sparepart.part_number ? String(pr.sparepart.part_number) : '-';
+                        this.sap_code = pr.sparepart.sap_code ? String(pr.sparepart.sap_code) : '-';
+                        this.category = pr.sparepart.category ? String(pr.sparepart.category) : '-';
+                    } else {
+                        this.sparepart_id = '-';
+                        this.part_number = '-';
+                        this.sap_code = '-';
+                        this.category = '-';
+                    }
+                    this.qty_pr_req = pr.qty_remaining !== undefined ? pr.qty_remaining : 0;
+                    
+                    if (parseInt(this.qty_actual) > this.qty_pr_req) {
+                        this.qty_actual = this.qty_pr_req;
+                    }
+                } else {
+                    this.pr_no_text = '-';
+                    this.sparepart_id = '-';
+                    this.part_number = '-';
+                    this.sap_code = '-';
+                    this.category = '-';
+                    this.qty_pr_req = 0;
+                    this.qty_actual = 1;
+                }
+                this.calculateGap();
+            },
+
+            calculateGap() {
+                let req = parseInt(this.qty_pr_req) || 0;
+                let act = parseInt(this.qty_actual) || 0;
+                
+                if (act < 0) {
+                    this.qty_actual = 0;
+                    act = 0;
+                }
+                
+                this.qty_gap = Math.max(0, req - act);
+            },
+    
+            generatePDF() { window.print(); },
+    
+            resetAll() {
+                this.selected_pr_id = '';
+                this.pr_no_text = '-';
+                this.sparepart_id = '-';
+                this.part_number = '-';
+                this.sap_code = '-';
+                this.category = '-';
+                this.qty_pr_req = 0;
+                this.qty_actual = 1;
+                this.qty_gap = 0;
+                this.remark = '';
+            },
+    
+            submitForm() {
+                const form = document.getElementById('materialForm');
+                if (!form.reportValidity()) return;
+
+                let req = parseInt(this.qty_pr_req) || 0;
+                let act = parseInt(this.qty_actual) || 0;
+
+                if (act > req) {
+                    Swal.fire({
+                        title: 'Batas Qty Terlewati!',
+                        text: `QTY ACTUAL (${act} Pcs) tidak boleh melebihi jumlah QTY PR REQ terbuka (${req} Pcs).`,
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Kirim Material Received?',
+                    text: this.qty_gap === 0 ? 
+                        "Status PR ini akan otomatis ditandai CLOSED karena semua kuantitas telah terpenuhi." : 
+                        `Status PR tetap OPEN (Parsial) dengan sisa kekurangan balance sebanyak ${this.qty_gap} Pcs.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#cbd5e1',
+                    confirmButtonText: 'Ya, Kirim MR!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        HTMLFormElement.prototype.submit.call(form);
+                    }
+                });
+            }
         }
     }
-}
 </script>
-
-<style>
-@page { size: portrait; margin: 10mm; }
-@media print {
-    body * { visibility: hidden !important; }
-    #print-target-box, #print-target-box * { visibility: visible !important; }
-    #print-target-box { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; }
-}
-[x-cloak] { display: none !important; }
-</style>
 @endsection
