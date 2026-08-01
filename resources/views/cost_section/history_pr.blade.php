@@ -21,21 +21,34 @@
     }
 </style>
 
-<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+{{-- Inisialisasi Alpine.js state untuk Preview Modal --}}
+<div x-data="{ 
+    showPreview: false,
+    selectedPr: {},
+    initPreview(id) {
+        fetch(`/history-pr/${id}/preview`)
+            .then(res => res.json())
+            .then(data => {
+                this.selectedPr = data;
+                this.showPreview = true;
+            })
+            .catch(err => alert('Gagal mengambil data preview dokumen!'));
+    }
+}" class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
     {{-- Banner Top Alert Status Counter --}}
     <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
         <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
         <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
             <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">SYSTEM RECORD:</span> 
-            Total {{ $pendingPr->total() }} purchase requests waiting for final Costing approval.
+            Total {{ $historyPr->total() }} purchase requests have been archived in history log.
         </p>
     </div>
 
     {{-- Header Section --}}
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
-            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Purchase Request Final Approval</h2>
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Purchase Request History Log</h2>
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS KARAWANG — COSTING AUDIT SECTION</p>
         </div>
     </div>
@@ -49,11 +62,16 @@
             <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
                 <div class="flex items-center gap-1.5">
                     <span>Show</span>
-                    <select class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
-                        <option value="10" class="dark:bg-slate-900">10</option>
-                        <option value="25" class="dark:bg-slate-900">25</option>
-                        <option value="50" class="dark:bg-slate-900">50</option>
-                    </select>
+                    <form action="{{ url()->current() }}" method="GET" id="entriesForm">
+                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                            <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }} class="dark:bg-slate-900">10</option>
+                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }} class="dark:bg-slate-900">25</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }} class="dark:bg-slate-900">50</option>
+                        </select>
+                        @if(request('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                    </form>
                     <span>entries</span>
                 </div>
             </div>
@@ -65,13 +83,16 @@
                     <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
-                    <form action="{{ route('costing.pr.index') }}" method="GET" class="w-full">
-                        <input type="text" name="search" value="{{ $search }}" id="tableSearch" placeholder="Search PR Code / User..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
+                    <form action="{{ route('costing.pr.history') }}" method="GET" class="w-full">
+                        @if(request('per_page'))
+                            <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+                        @endif
+                        <input type="text" name="search" value="{{ $search ?? '' }}" id="tableSearch" placeholder="Search PR Code / User..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
                     </form>
                 </div>
 
                 {{-- TOMBOL EXPORT CSV --}}
-                <button type="button" onclick="exportTableToCSV('costing-approvals.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                <button type="button" onclick="exportTableToCSV('costing-pr-history.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
                     <span class="hidden sm:inline">Export CSV</span>
                     <span class="sm:hidden">CSV</span>
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -81,9 +102,9 @@
             </div>
         </div>
 
-        {{-- AREA SCROLL HORIZONTAL (MIN-W DISESUAIKAN MENJADI 2110PX AGAR STRUKTUR KOLOM BARU LEGA) --}}
+        {{-- AREA SCROLL HORIZONTAL (MIN-W 2110PX TETAP DIJAGA SESUAI STRUKTUR COSTING) --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[2110px]" id="approvalTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[2110px]" id="historyTable">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-orange-600 dark:bg-orange-950/80 text-white dark:text-orange-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">
@@ -94,7 +115,6 @@
                         <th class="px-3 py-3.5 w-[100px] border-l border-orange-500 bg-orange-700/30">NIK</th>
                         <th class="px-3 py-3.5 w-[160px] border-l border-orange-500 bg-orange-700/30">Requester</th>
                         
-                        {{-- DATA MATERIAL SPAREPART (DISESUAIKAN DENGAN STRUKTUR KOLOM DATABASE NYATA) --}}
                         <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[140px]">Sparepart ID</th>
                         <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[160px]">Part Number</th>
                         <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[140px]">SAP Code</th>
@@ -107,15 +127,15 @@
                         <th class="px-4 py-3.5 border-l border-orange-500 bg-orange-700/30 text-center w-[160px]">Remark / Notes</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-orange-500 bg-orange-700/30 text-center">Created At</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-orange-500 bg-orange-700/30 text-center">Updated At</th>
-                        <th class="px-3 py-3.5 w-[180px] border-l border-orange-500 bg-orange-700/30 text-center">Action Decision</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
-                    @forelse($pendingPr as $index => $pr)
+                    @forelse($historyPr as $index => $pr)
                     @php
                         $statusText = 'unknown';
                         $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300';
-                        $rawStatus = strtolower($pr->status);
+                        $rawStatus = strtolower($pr->status ?? 'unknown');
                         
                         if(str_contains($rawStatus, 'pending')) {
                             $statusText = 'pending';
@@ -137,7 +157,7 @@
                         </td>
 
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            {{ $pendingPr->firstItem() + $index }}
+                            {{ $historyPr->firstItem() + $index }}
                         </td>
                         
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap text-left text-indigo-600 dark:text-indigo-400">
@@ -152,7 +172,6 @@
                             {{ optional($pr->user)->name ?? '-' }}
                         </td>
 
-                        {{-- DATA BERDASARKAN RELASI KE TABEL SPAREPARTS --}}
                         <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-nowrap text-slate-900 dark:text-white">
                             {{ optional($pr->sparepart)->sparepart_id ?? '-' }}
                         </td>
@@ -174,7 +193,7 @@
                         </td>
 
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 uppercase whitespace-nowrap">
-                            <span class="{{ $pr->priority == 'urgent' ? 'text-rose-600 font-black animate-pulse' : 'text-slate-600' }}">
+                            <span class="{{ $pr->priority == 'urgent' ? 'text-rose-600 font-black' : 'text-slate-600' }}">
                                 {{ $pr->priority }}
                             </span>
                         </td>
@@ -183,7 +202,7 @@
                             {{ $pr->destination }}
                         </td>
 
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 status-td">
                             <div class="flex justify-center items-center">
                                 <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm status-badge {{ $badgeClass }}">
                                     {{ $statusText }}
@@ -195,46 +214,32 @@
                             {{ $pr->remark ?? '-' }}
                         </td>
 
-                        {{-- TIMESTAMPS: CREATED AT --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
                             <div class="font-bold">{{ $pr->created_at ? $pr->created_at->format('d/m/Y') : '-' }}</div>
                             <div class="text-[10px] mt-0.5 text-slate-500">{{ $pr->created_at ? $pr->created_at->format('H:i') : '-' }} WIB</div>
                         </td>
 
-                        {{-- TIMESTAMPS: UPDATED AT --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
                             <div class="font-bold text-slate-800 dark:text-slate-200">{{ $pr->updated_at ? $pr->updated_at->format('d/m/Y') : '-' }}</div>
                             <div class="text-[10px] mt-0.5 text-slate-500">{{ $pr->updated_at ? $pr->updated_at->format('H:i') : '-' }} WIB</div>
                         </td>
                         
-                        {{-- DECISION ACTION WORKFLOW (REJECT ONSITE & APPROVE REDIRECT TO NEW BLADE FORM) --}}
-                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
-                            <div class="flex items-center justify-center gap-1.5 w-full">
-                                @if(strtolower($pr->status) == 'checked')
-                                    {{-- FORM ACTION REJECT (Tetap Menggunakan Konfirmasi SweetAlert) --}}
-                                    <form action="{{ route('costing.pr.reject', $pr->id) }}" method="POST" class="reject-form inline-block m-0">
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="px-2.5 py-1.5 bg-gradient-to-r from-red-500 to-amber-500 text-white font-black rounded text-[10px] uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer">
-                                            Reject
-                                        </button>
-                                    </form>
-
-                                    {{-- BUTTON APPROVE (Diarahkan ke Blade View Form Baru: cost_section/approve_PrForm.blade.php) --}}
-                                    {{-- Ubah route() di bawah ini sesuai nama route GET penanganan form approve baru Anda nanti --}}
-                                    <a href="{{ route('costing.pr.approveForm', $pr->id) }}" class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-black rounded text-[10px] uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all text-center inline-block cursor-pointer">
-                                        Approve
-                                    </a>
-                                @else
-                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded border border-gray-300 dark:border-slate-700 processed-text">Processed</span>
-                                @endif
+                        {{-- SERAGAM: ICON MATA DENGAN TRIGGERS LIVE ALPINE.JS PREVIEW --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <div class="flex justify-center items-center">
+                                <a href="#" @click.prevent="initPreview({{ $pr->id }})" class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md active:scale-95 cursor-pointer" title="Preview PR Document">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </a>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="17" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
-                            No checked purchase requests waiting in audit queue.
+                            No historical purchase requests found.
                         </td>
                     </tr>
                     @endforelse
@@ -245,10 +250,69 @@
         {{-- FOOTER PAGINATION RESPONSIF --}}
         <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
             <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
-                Showing {{ $pendingPr->firstItem() ?? 0 }} to {{ $pendingPr->lastItem() ?? 0 }} of {{ $pendingPr->total() ?? 0 }} Entries
+                Showing {{ $historyPr->firstItem() ?? 0 }} to {{ $historyPr->lastItem() ?? 0 }} of {{ $historyPr->total() ?? 0 }} Entries
             </p>
             <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black">
-                {{ $pendingPr->appends(['search' => $search])->links() }}
+                {{ $historyPr->appends(['search' => $search ?? ''])->links() }}
+            </div>
+        </div>
+    </div>
+
+    {{-- 🔍 MODAL PREVIEW DETAIL DOKUMEN COSTING --}}
+    <div x-show="showPreview" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition style="display: none;">
+        <div @click.away="showPreview = false" class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 dark:border-slate-800 transition-all font-nunito">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-800">
+                <h3 class="text-sm font-black text-black dark:text-white" x-text="'Document: ' + (selectedPr.no_pr ?? '-')"></h3>
+                <button @click="showPreview = false" class="text-gray-400 hover:text-black dark:hover:text-white font-black text-xl cursor-pointer">&times;</button>
+            </div>
+            
+            <div class="mt-4 space-y-2.5 text-xs text-black dark:text-slate-200 modal-body-data">
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Requester</span>
+                    <span class="col-span-2 font-black text-black dark:text-white" x-text="selectedPr.user ? selectedPr.user.name : '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Sparepart Code</span>
+                    <span class="col-span-2 font-extrabold text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.sparepart_id : '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Part Number</span>
+                    <span class="col-span-2 font-bold text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.part_number : '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">SAP Code</span>
+                    <span class="col-span-2 text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.sap_code : '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Category</span>
+                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.category : '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Quantity</span>
+                    <span class="col-span-2 font-black text-black dark:text-white" x-text="(selectedPr.qty_pr ?? 1) + ' Pcs'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Priority</span>
+                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.priority ?? '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Destination</span>
+                    <span class="col-span-2 font-medium text-black dark:text-white" x-text="selectedPr.destination ?? '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Status</span>
+                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.status ?? '-'"></span>
+                </div>
+                <div class="grid grid-cols-3 py-1.5">
+                    <span class="text-gray-500 font-bold uppercase text-[10px]">Remark Notes</span>
+                    <span class="col-span-2 font-medium italic text-black dark:text-white" x-text="selectedPr.remark ?? '-'"></span>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end border-t border-gray-100 dark:border-slate-800 pt-3">
+                <button @click="showPreview = false" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-black dark:text-white font-black rounded-lg transition-all text-xs cursor-pointer">
+                    Close Document View
+                </button>
             </div>
         </div>
     </div>
@@ -262,7 +326,7 @@
 
     function exportTableToCSV(filename) {
         let csv = [];
-        let rows = document.querySelectorAll("#approvalTable tr");
+        let rows = document.querySelectorAll("#historyTable tr");
         for (let i = 0; i < rows.length; i++) {
             let row = [], cols = rows[i].querySelectorAll("td, th");
             for (let j = 1; j < cols.length; j++) { 
@@ -279,41 +343,17 @@
         document.body.appendChild(downloadLink);
         downloadLink.click();
     }
-
-    // Intercept Reject Form Confirmation
-    document.querySelectorAll('.reject-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            let currentForm = this;
-            Swal.fire({
-                title: 'Reject Purchase Request?',
-                text: "Apakah Anda yakin ingin MENOLAK pengajuan sparepart ini?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Ya, Tolak Request!',
-                customClass: { popup: 'font-nunito bg-white dark:bg-slate-900 max-w-[90%] sm:max-w-md' }
-            }).then((result) => { if (result.isConfirmed) currentForm.submit(); });
-        });
-    });
-
-    @if(session('success'))
-        Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false, customClass: { popup: 'font-nunito' } });
-    @endif
-    @if(session('error'))
-        Swal.fire({ icon: 'error', title: 'Gagal!', text: "{{ session('error') }}", timer: 3500, showConfirmButton: true, customClass: { popup: 'font-nunito' } });
-    @endif
 </script>
 
 <style>
-    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #approvalTable { 
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #historyTable, .modal-body-data span { 
         font-family: 'Nunito', sans-serif !important; 
     }
 
-    .table-body-data tr td, 
-    .table-body-data tr td div,
-    .table-empty-text {
+    .table-body-data tr td:not(.status-td), 
+    .table-body-data tr td:not(.status-td) div,
+    .table-empty-text,
+    .modal-body-data span:last-child {
         color: #000000 !important;
     }
 
@@ -329,7 +369,7 @@
     .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
     .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     
-    #approvalTable td, #approvalTable th {
+    #historyTable td, #historyTable th {
         vertical-align: middle !important;
     }
     .custom-pagination nav svg { width: 14px; height: 14px; display: inline; }

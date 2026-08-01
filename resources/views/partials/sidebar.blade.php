@@ -396,64 +396,95 @@
         </div>
       @endif
 
-   <!-- ================= COSTING MENU ================= -->
-   @if(in_array(auth()->user()->role, ['admin', 'costing',]))
-   <div class="mb-8" x-data="{ openMenuCosting: '{{ request()->routeIs('costing.material.*') ? 'material' : 'none' }}' }">
-     <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-       COSTING
-     </h3>
-     <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">CST</div>
-   
-     <ul class="flex flex-col gap-1.5">
-       @if(in_array(auth()->user()->role, ['admin', 'costing']))
-       <li>
-         <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.overview') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-           <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
-         </a>
-       </li>
-       
-       <li>
-         <a href="{{ route('costing.pr.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-           <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-           <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
-         </a>
-       </li>
-       @endif
-   
-       <li class="relative">
-         <button 
-           type="button"
-           @click.stop="openMenuCosting = (openMenuCosting === 'material' ? 'none' : 'material')" 
-           class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.material.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-         >
-           <div class="flex items-center gap-3">
-             <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-             <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
-           </div>
-           <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'material' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-         </button>
-         
-         <div x-show="openMenuCosting === 'material'" x-collapse class="overflow-hidden">
-           <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
-             <li>
-               <a href="{{ route('costing.material.received') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.received') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                 <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.received') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                 <span>Material Received Form</span>
-               </a>
-             </li>
-             <li>
-               <a href="{{ route('costing.material.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                 <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                 <span>List Material Received</span>
-               </a>
-             </li>
-           </ul>
-         </div>
-       </li>
-     </ul>
-   </div>
-   @endif
+
+        <!-- ================= COSTING MENU ================= -->
+@if(in_array(auth()->user()->role, ['admin', 'costing']))
+<div class="mb-8" x-data="{ openMenuCosting: '{{ request()->routeIs('costing.pr.*') ? 'pr' : (request()->routeIs('costing.material.*') ? 'material' : 'none') }}' }">
+  <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+    COSTING
+  </h3>
+  <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">CST</div>
+
+  <ul class="flex flex-col gap-1.5">
+    
+    {{-- 1. COSTING OVERVIEW (SINGLE LINK) --}}
+    <li>
+      <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.overview') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
+      </a>
+    </li>
+    
+    {{-- 2. APPROVE PR (DROPDOWN MENU) --}}
+    <li class="relative">
+      <button 
+        type="button"
+        @click.stop="openMenuCosting = (openMenuCosting === 'pr' ? 'none' : 'pr')" 
+        class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.pr.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+      >
+        <div class="flex items-center gap-3">
+          <!-- Icon Baru: Clipboard Check (Approval) -->
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
+        </div>
+        <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      
+      <div x-show="openMenuCosting === 'pr'" x-collapse class="overflow-hidden">
+        <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+          <li>
+            <a href="{{ route('costing.pr.index') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+              <span>List Approve PR</span>
+            </a>
+          </li>
+          <li>
+            {{-- Note: Pastikan route costing.pr.history sudah terdaftar di web.php lu --}}
+            <a href="{{ route('costing.pr.history') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+              <span>History PR</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    {{-- 3. MATERIAL RECEIVED (DROPDOWN MENU) --}}
+    <li class="relative">
+      <button 
+        type="button"
+        @click.stop="openMenuCosting = (openMenuCosting === 'material' ? 'none' : 'material')" 
+        class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.material.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+      >
+        <div class="flex items-center gap-3">
+          <!-- Icon Baru: Box 3D / Package (Fisik Material) -->
+          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
+        </div>
+        <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'material' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      
+      <div x-show="openMenuCosting === 'material'" x-collapse class="overflow-hidden">
+        <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+          <li>
+            <a href="{{ route('costing.material.received') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.received') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.received') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+              <span>Material Received Form</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('costing.material.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+              <span>List Material Received</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+    
+  </ul>
+</div>
+@endif
 
     </nav>
   </div>
