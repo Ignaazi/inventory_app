@@ -8,7 +8,7 @@ use App\Models\StockEng;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StockOutEngineeringController extends Controller
 {
@@ -25,7 +25,8 @@ class StockOutEngineeringController extends Controller
         $stocks = StockEng::with(['sparepart', 'rak'])
             ->get()
             ->sortBy(function ($stock) {
-                return $stock->sparepart->name ?? '';
+                // Menyelaraskan sorting berdasarkan entitas sparepart_id asli (ex: 148)
+                return $stock->sparepart->sparepart_id ?? $stock->sparepart->part_number ?? '';
             })
             ->values();
 
@@ -34,7 +35,8 @@ class StockOutEngineeringController extends Controller
                 'id'            => $item->id,
                 'barcode_id'    => trim($item->barcode_id),    
                 'final_content' => trim($item->final_content), 
-                'is_used'       => in_array($item->id, $usedBarcodeIds),
+                // Barcode dianggap tidak bisa dipakai jika sudah ada di log OUT atau lifecycle-nya sudah bukan AVAILABLE
+                'is_used'       => in_array($item->id, $usedBarcodeIds) || $item->current_lifecycle !== 'AVAILABLE',
                 'stock_eng_id'  => $item->stock_eng_id
             ];
         });
@@ -45,7 +47,7 @@ class StockOutEngineeringController extends Controller
     }
 
     /**
-     * 🚀 METHOD STORE: Full Validasi Pintar Server-Side untuk Kamera & File Upload
+     * 🚀 METHOD STORE: Pemotongan Stok Akurat & Sinkron dengan Validasi Lifecycle Master
      */
     public function store(Request $request)
     {
@@ -56,18 +58,18 @@ class StockOutEngineeringController extends Controller
             ], 400);
         }
 
-        // SANITASI BACKEND: Hapus paksa space hantu, newlines, dan carriage returns dari SQL query
+        // SANITASI BACKEND: Bersihkan space atau enter tak terlihat dari mesin scanner
         $scannedInput = trim($request->barcode_scan);
         $scannedInput = str_replace(["\r", "\n", "\t"], '', $scannedInput);
 
         DB::beginTransaction();
         try {
-            // 1. Pencarian akurat menggunakan TRIM di SQL level agar case-insensitive & space-immune
+            // 1. Pencarian akurat menggunakan TRIM di SQL level
             $barcodeDb = \App\Models\DbBarcode::whereRaw('TRIM(final_content) = ?', [$scannedInput])
                 ->orWhereRaw('TRIM(barcode_id) = ?', [$scannedInput])
                 ->first();
 
-            // Fallback: Jika QR Code berisi link/teks dinamis tambahan, cari yang mengandung nilai tersebut
+            // Fallback: Pencarian parsial jika barcode mengandung link eksternal tambahan
             if (!$barcodeDb) {
                 $barcodeDb = \App\Models\DbBarcode::where('final_content', 'LIKE', '%' . $scannedInput . '%')
                     ->orWhere('barcode_id', 'LIKE', '%' . $scannedInput . '%')
@@ -81,12 +83,20 @@ class StockOutEngineeringController extends Controller
                 ], 404);
             }
 
-            // 2. Proteksi Duplikat: Barcode yang sudah dipakai TIDAK BISA digunakan lagi
+            // 2. Proteksi Siklus Hidup Barcode: Wajib AVAILABLE
+            if ($barcodeDb->current_lifecycle !== 'AVAILABLE') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' tidak dapat digunakan karena statusnya sudah: ' . $barcodeDb->current_lifecycle
+                ], 422);
+            }
+
+            // Proteksi Duplikat Log Transaksi
             $isBarcodeUsed = StockOutEng::where('barcode_id', $barcodeDb->id)->exists();
             if ($isBarcodeUsed) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' (' . $barcodeDb->final_content . ') sudah pernah di-scan keluar sebelumnya.'
+                    'message' => 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' sudah pernah tercatat keluar sebelumnya.'
                 ], 422);
             }
 
@@ -94,7 +104,7 @@ class StockOutEngineeringController extends Controller
             if (!$barcodeDb->stock_eng_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal! Barcode ini belum dipetakan ke target barang logistik mana pun (Nilai stock_eng_id masih NULL di database).'
+                    'message' => 'Gagal! Barcode ini belum dipetakan ke target barang logistik mana pun (Nilai stock_eng_id NULL).'
                 ], 422);
             }
 
@@ -106,20 +116,23 @@ class StockOutEngineeringController extends Controller
                 ], 404);
             }
 
-            // PROTEKSI RAK: Dilarang keluar jika belum pernah diletakkan di rak di master data
+            // Ambil kode Sparepart ID asli (Contoh: 148) untuk pesan notifikasi
+            $sparepartCode = $stock->sparepart->sparepart_id ?? $stock->sparepart->part_number ?? 'Barang';
+
+            // PROTEKSI RAK: Dilarang keluar jika lokasi belum didefinisikan
             if (empty($stock->rak_id)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal! Item [' . ($stock->sparepart->name ?? 'Barang') . '] ditolak karena belum diletakkan di lokasi rak mana pun pada master data.'
+                    'message' => 'Gagal! Item [' . $sparepartCode . '] ditolak karena belum diletakkan di lokasi rak pada master data.'
                 ], 422);
             }
 
-            // 4. Validasi kecukupan jumlah kuantitas stok
-            $qtyKeluar = $request->input('qty_out', 1); 
+            // 4. Validasi kuantitas kecukupan stok fisik di Rak terkait
+            $qtyKeluar = (int) $request->input('qty_out', 1); 
             if ($stock->qty <= 0 || $stock->qty < $qtyKeluar) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal! Sisa stok untuk ' . ($stock->sparepart->name ?? 'Barang') . ' saat ini tidak mencukupi. (Sisa: ' . $stock->qty . ')'
+                    'message' => 'Gagal! Sisa stok untuk Sparepart ID ' . $sparepartCode . ' saat ini tidak mencukupi. (Sisa di Rak: ' . $stock->qty . ' Pcs)'
                 ], 400);
             }
 
@@ -130,16 +143,16 @@ class StockOutEngineeringController extends Controller
                 $fotoPath = $file->store('stock_outs', 'public');
             }
 
-            // 6. Auto generate Transaction ID
+            // 6. Auto-generate Transaction ID khusus manual Scan Out
             $latestTx = StockOutEng::where('transaction_out_id', 'LIKE', 'ENGOUT%')->orderBy('id', 'desc')->first();
             $nextId = !$latestTx ? 'ENGOUT001' : 'ENGOUT' . str_pad(((int) filter_var($latestTx->transaction_out_id, FILTER_SANITIZE_NUMBER_INT)) + 1, 3, '0', STR_PAD_LEFT);
 
-            $finalComment = $request->input('comment', 'Auto Scan Out via Camera');
+            $finalComment = $request->input('comment', 'Manual Scan Out via Camera');
             if ($fotoPath) {
                 $finalComment .= ' | Photo: ' . $fotoPath;
             }
 
-            // 7. Simpan log transaksi pengeluaran barang
+            // 7. Simpan log transaksi pengeluaran barang (Tabel Stock Out Eng)
             StockOutEng::create([
                 'transaction_out_id'   => $nextId,
                 'nik'                  => Auth::user()->nik ?? Auth::user()->nim ?? '9999',
@@ -153,10 +166,27 @@ class StockOutEngineeringController extends Controller
                 'comment'              => $finalComment,
             ]);
             
-            // 8. Kurangi kuantitas stok di gudang utama engineering
+            // 8. KUNCI UTAMA: Kurangi nominal kuantitas stok di gudang utama engineering secara akurat
             $stock->decrement('qty', $qtyKeluar);
 
-            // 9. Update lifecycle state di db_barcodes
+            // 9. SINKRONISASI BUKU KORAN MUTASI: Masukkan data ke tabel stock_eng_transactions
+            $txUuid = 'TX-OUT-M*' . strtoupper(Str::random(4)) . '-' . time();
+            DB::table('stock_eng_transactions')->insert([
+                'tx_id'                 => $txUuid,
+                'users_id'              => Auth::id(),
+                'stock_engs_id'         => $stock->id,
+                'db_barcodes_id'        => $barcodeDb->id,
+                'production_request_id' => null, // Manual scan tidak terikat dokumen production request langsung
+                'tx_type'               => 'out',
+                'qty_transaction'       => $qtyKeluar,
+                'process_type'          => 'scan', // 🚀 FIX: Diubah ke 'scan' agar sesuai dengan ENUM('scan', 'manual') database kamu
+                'status'                => 'success',
+                'remark'                => 'Manual scan out identification for Sparepart: ' . $sparepartCode,
+                'created_at'            => now(),
+                'updated_at'            => now(),
+            ]);
+
+            // 10. Kunci status barcode di master data menjadi USED_OUT agar tidak bisa dipakai ulang
             DB::table('db_barcodes')->where('id', $barcodeDb->id)->update([
                 'current_lifecycle' => 'USED_OUT',
                 'updated_at'        => now()
@@ -166,9 +196,9 @@ class StockOutEngineeringController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi ' . $nextId . ' Berhasil! Stok ' . ($stock->sparepart->name ?? '') . ' berkurang ' . $qtyKeluar . ' Pcs.',
+                'message' => 'Transaksi ' . $nextId . ' Berhasil! Stok untuk Sparepart ID [' . $sparepartCode . '] resmi berkurang ' . $qtyKeluar . ' Pcs.',
                 'data'    => [
-                    'part_name'  => $stock->sparepart->name ?? 'Unknown Part',
+                    'part_name'  => $sparepartCode,
                     'barcode_id' => $barcodeDb->barcode_id,
                     'remaining'  => $stock->qty 
                 ]
@@ -178,7 +208,7 @@ class StockOutEngineeringController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kegagalan system server: ' . $e->getMessage()
+                'message' => 'Terjadi kegagalan sistem server: ' . $e->getMessage()
             ], 500);
         }
     }

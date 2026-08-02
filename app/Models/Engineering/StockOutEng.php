@@ -30,57 +30,36 @@ class StockOutEng extends Model
         'comment'
     ];
 
-    /**
-     * Relasi ke Master Stock Engineering
-     */
     public function stockEng()
     {
         return $this->belongsTo(StockEng::class, 'stock_eng_id', 'id');
     }
 
-    /**
-     * Relasi Langsung ke Master Rak
-     */
     public function rak()
     {
         return $this->belongsTo(Rak::class, 'rak_id', 'id');
     }
 
-    /**
-     * Relasi ke Master DB Barcode jika log menyimpan ID Angka (Integer)
-     */
     public function dbBarcode()
     {
         return $this->belongsTo(DbBarcode::class, 'barcode_id', 'id');
     }
 
-    /**
-     * Relasi ke Master DB Barcode jika log menyimpan STRING CODE (Misal: SIIXENG002)
-     */
     public function dbBarcodeByCode()
     {
         return $this->belongsTo(DbBarcode::class, 'barcode_id', 'barcode_id');
     }
 
-    /**
-     * Relasi ke Barcode Parsing jika log menyimpan ID Angka langsung
-     */
     public function barcodeParsing()
     {
         return $this->belongsTo(BarcodeParsing::class, 'barcode_id', 'id');
     }
 
-    /**
-     * Relasi Langsung ke Production Request (Menggunakan String request_no)
-     */
     public function productionRequest()
     {
         return $this->belongsTo(RequestProd::class, 'request_sparepart_id', 'request_no');
     }
 
-    /**
-     * Alias untuk requestProd agar tidak merusak view lama
-     */
     public function requestProd()
     {
         return $this->productionRequest();
@@ -88,37 +67,31 @@ class StockOutEng extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESSOR PINTAR (JEMBATAN DATA OTOMATIS)
+    | ACCESSOR PINTAR (SINKRONISASI BATCH PARSING BARU)
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Accessor untuk melacak REQ SPAREPART ID secara otomatis dari segala jalur
-     * Panggil di Blade cukup dengan: $log->auto_request_no
-     */
     public function getAutoRequestNoAttribute()
     {
-        // Jalur 1: Jika field request_sparepart_id di log langsung ada isinya
         if (!empty($this->request_sparepart_id) && $this->request_sparepart_id !== '-') {
             return $this->request_sparepart_id;
         }
 
-        // Jalur 2: Cek lewat relasi direct productionRequest
         if ($this->productionRequest) {
             return $this->productionRequest->request_no;
         }
 
-        // Jalur 3: Lacak dari String Barcode (SIIXENG002) -> db_barcodes -> barcode_parsings -> production_request
+        // SINKRONISASI BARU: Lacak menggunakan barcode_out_id atau barcode_in_id
         if ($this->dbBarcodeByCode) {
-            // Memanggil relasi barcodeParsing dari model DbBarcode (Pastikan relasi ini terdefinisi di model DbBarcode)
-            $parsing = $this->dbBarcodeByCode->barcodeParsing ?? BarcodeParsing::where('barcode_db_id', $this->dbBarcodeByCode->id)->first();
+            $parsing = BarcodeParsing::where('barcode_out_id', $this->dbBarcodeByCode->id)
+                                     ->orWhere('barcode_in_id', $this->dbBarcodeByCode->id)
+                                     ->first();
             
             if ($parsing && $parsing->productionRequest) {
                 return $parsing->productionRequest->request_no ?? '-';
             }
         }
 
-        // Jalur 4: Lacak jika barcode_id di log ternyata adalah ID Integer dari tabel barcode_parsings
         if ($this->barcodeParsing && $this->barcodeParsing->productionRequest) {
             return $this->barcodeParsing->productionRequest->request_no ?? '-';
         }
@@ -126,25 +99,21 @@ class StockOutEng extends Model
         return '-';
     }
 
-    /**
-     * Accessor untuk melacak NO NOZZLE secara otomatis dari segala jalur
-     * Panggil di Blade cukup dengan: $log->auto_no_nozzle
-     */
     public function getAutoNoNozzleAttribute()
     {
-        // Jalur 1: Jika field no_nozzle di log langsung ada isinya
         if (!empty($this->no_nozzle) && $this->no_nozzle !== '-') {
             return $this->no_nozzle;
         }
 
-        // Jalur 2: Ambil dari master stock engineering
         if ($this->stockEng && !empty($this->stockEng->no_nozzle)) {
             return $this->stockEng->no_nozzle;
         }
 
-        // Jalur 3: Ambil dari data request produksi via jembatan barcode parsing string
+        // SINKRONISASI BARU: Lacak nozzle dari relasi parsing out/in yang valid
         if ($this->dbBarcodeByCode) {
-            $parsing = $this->dbBarcodeByCode->barcodeParsing ?? BarcodeParsing::where('barcode_db_id', $this->dbBarcodeByCode->id)->first();
+            $parsing = BarcodeParsing::where('barcode_out_id', $this->dbBarcodeByCode->id)
+                                     ->orWhere('barcode_in_id', $this->dbBarcodeByCode->id)
+                                     ->first();
             
             if ($parsing && $parsing->productionRequest) {
                 return $parsing->productionRequest->no_nozzle ?? '-';
