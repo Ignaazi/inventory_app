@@ -8,10 +8,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-    /* Styling Dasar TailAdmin-like */
     .tail-admin-ui { font-family: 'Inter', sans-serif; }
     
-    /* Box Dashboard Profesional */
     .panel-box {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -19,15 +17,14 @@
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
     .dark .panel-box {
-        background-color: #1e293b; /* slate-800 */
-        border-color: #334155; /* slate-700 */
+        background-color: #1e293b;
+        border-color: #334155;
     }
 
-    /* Area Kamera (Industrial Scanner Look) */
     .scanner-viewport {
         position: relative;
         overflow: hidden;
-        background-color: #020617; /* slate-950 */
+        background-color: #020617;
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -36,7 +33,6 @@
         border: 1px solid #334155;
     }
 
-    /* Efek Garis Laser Scanner */
     .laser-line {
         position: absolute;
         width: 100%;
@@ -56,10 +52,8 @@
         100% { top: 95%; opacity: 0; }
     }
 
-    /* Kustomisasi Library html5-qrcode agar pas kotak */
     #reader { width: 100%; height: 100%; }
     #reader video { object-fit: cover !important; border-radius: 8px; }
-    #reader__dashboard_section_csr span { color: white !important; }
 </style>
 
 <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 tail-admin-ui text-slate-800 dark:text-slate-200">
@@ -68,59 +62,56 @@
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                <i class="fa-solid fa-barcode text-indigo-600 dark:text-indigo-400 mr-2"></i> Terminal Stock Out
+                <i class="fa-solid fa-barcode text-indigo-600 dark:text-indigo-400 mr-2"></i> Terminal Stock Out Otomatis
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sistem deteksi QR/Barcode gudang engineering terintegrasi.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">1 Barcode scan langsung memotong 1 stock gudang & otomatis mengikat Production Request ID terkait.</p>
         </div>
-        <a href="{{ route('eng.out') }}" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
-            <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar
+        <a href="#" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all no-underline">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
         </a>
     </div>
 
-    <!-- GRID LAYOUT 12 KOLOM (TAILADMIN STYLE) -->
+    <!-- GRID LAYOUT -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- KOLOM KIRI (LEBAR 8/12): MAIN SCANNER MODULE -->
+        <!-- MODULE UTAMA: SCANNER KAMERA -->
         <div class="lg:col-span-8 panel-box flex flex-col">
             <div class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 rounded-t-xl">
-                <h3 class="font-semibold text-slate-800 dark:text-white text-sm">Hardware Interface</h3>
-                <span id="badge_method" class="px-2.5 py-1 text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50 rounded flex items-center gap-1.5 uppercase tracking-wider">
+                <h3 class="font-semibold text-slate-800 dark:text-white text-sm">Hardware Lensa Live</h3>
+                <span id="badge_method" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 rounded flex items-center gap-1.5 uppercase tracking-wider">
                     <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY
                 </span>
             </div>
             
             <div class="p-6 flex-1 flex flex-col">
-                <!-- VIEWPORT KAMERA -->
                 <div class="scanner-viewport shadow-inner">
                     <div id="reader"></div>
                     <div id="scan-laser-line" class="laser-line"></div>
                     
-                    <!-- PLACEHOLDER SEBELUM KAMERA NYALA -->
                     <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-0">
                         <i class="fa-solid fa-camera-retro text-5xl text-slate-700 mb-3"></i>
-                        <span class="text-slate-500 text-xs font-mono">MODUL KAMERA OFFLINE</span>
+                        <span class="text-slate-500 text-xs font-mono">LENSA OFFLINE</span>
                     </div>
                 </div>
 
-                <!-- CONTROLLER TOMBOL -->
                 <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all uppercase tracking-wide">
+                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all uppercase tracking-wide cursor-pointer">
                         <i class="fa-solid fa-video"></i> Aktifkan Lensa
                     </button>
-                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 transition-all uppercase tracking-wide hidden">
+                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 transition-all uppercase tracking-wide hidden cursor-pointer">
                         <i class="fa-solid fa-power-off"></i> Matikan Lensa
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- KOLOM KANAN (LEBAR 4/12): STATUS LOG & UPLOAD -->
+        <!-- PANEL DIAGNOSTIC & FAILSAFE -->
         <div class="lg:col-span-4 flex flex-col gap-6">
             
-            <!-- PANEL 1: DIAGNOSTIC LOG -->
+            <!-- PANEL SYSTEM LOG -->
             <div id="status-container" class="panel-box overflow-hidden transition-colors duration-300">
                 <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
-                    <h3 class="font-semibold text-slate-800 dark:text-white text-sm">System Log</h3>
+                    <h3 class="font-semibold text-slate-800 dark:text-white text-sm">Log Terminal Realtime</h3>
                 </div>
                 <div class="p-5">
                     <div class="flex items-start gap-4">
@@ -128,39 +119,41 @@
                             <i class="fa-solid fa-microchip text-lg" id="main-status-icon"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-slate-900 dark:text-white" id="status-title">Mesin Siap</h4>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-white" id="status-title">Mesin Ready</h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" id="status-desc">
-                                Klik tombol aktifkan lensa untuk memulai sesi pemindaian stok.
+                                Jalankan lensa kamera atau gunakan input manual untuk mengeksekusi pengeluaran barang.
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PANEL 2: FAILSAFE / SANDBOX (UPLOAD GAMBAR) -->
-            <div class="panel-box h-full flex flex-col">
+            <!-- MANUAL KEYBOARD MODE & FAILSAFE -->
+            <div class="panel-box flex flex-col">
                 <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
                     <h3 class="font-semibold text-slate-800 dark:text-white text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-folder-open text-amber-500"></i> Failsafe Method
+                        <i class="fa-solid fa-keyboard text-amber-500"></i> Mode Input Manual / Keyboard
                     </h3>
                 </div>
-                <div class="p-5 flex-1 flex flex-col justify-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 text-center">
-                        Gunakan mode ini jika kamera perangkat terblokir oleh browser.
-                    </p>
-                    
-                    <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all group">
-                        <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-cloud-arrow-up text-indigo-600 dark:text-indigo-400"></i>
+                <div class="p-5 flex flex-col gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ketik / Tembak Barcode ID</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="manual_barcode" placeholder="Contoh: TXENGRAK03LINE011480002" class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-950 dark:text-white focus:outline-none focus:border-indigo-500">
+                            <button type="button" id="btn_manual_submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all cursor-pointer">
+                                Kirim
+                            </button>
                         </div>
-                        <span class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 text-center" id="label-upload-status">
-                            Telusuri Gambar
-                        </span>
-                        <span class="text-[10px] text-slate-400 mt-1 text-center font-mono" id="sublabel-upload-status">
-                            PNG, JPG, JPEG
-                        </span>
-                        <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
-                    </label>
+                    </div>
+
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-3">
+                        <p class="text-[10px] text-slate-400 mb-2">Alternatif: Deteksi via upload berkas gambar QR</p>
+                        <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 cursor-pointer transition-all group">
+                            <i class="fa-solid fa-cloud-arrow-up text-indigo-500 mb-1"></i>
+                            <span class="text-xs font-medium text-indigo-600" id="label-upload-status">Browse Image</span>
+                            <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -181,42 +174,39 @@
     const stopCamBtn = document.getElementById('stop-cam');
     const laserLine = document.getElementById('scan-laser-line');
     const camPlaceholder = document.getElementById('camera-placeholder');
+    const manualInput = document.getElementById('manual_barcode');
+    const btnManual = document.getElementById('btn_manual_submit');
 
     const scanConfig = {
-        fps: 15,
+        fps: 20, 
         qrbox: function(width, height) {
             const minEdge = Math.min(width, height);
-            return { width: Math.floor(minEdge * 0.7), height: Math.floor(minEdge * 0.7) };
+            return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
         },
-        aspectRatio: 1.0 // Membuat kotak pembacaan di dalam lebih proporsional
+        aspectRatio: 1.0
     };
 
-    async function processAjaxStockOut(rawCode) {
+    // FUNGSI INTI AJAX SUBMIT SCAN OUT
+    async function processAjaxStockOut(rawCode, mode = 'scan') {
         const cleanCode = rawCode.replace(/[\n\r\t]/g, "").trim();
         if (!cleanCode || isProcessing) return;
+        
         isProcessing = true; 
+        changeUIStatus('PROCESSING', 'MEMBACA...', `Mengirim data: ${cleanCode}`);
 
-        changeUIStatus('PROCESSING', 'MENYINKRONKAN...', `Memverifikasi data: ${cleanCode}`);
-
-        // Custom SweetAlert untuk tampilan industri
         Swal.fire({
-            title: 'Memproses Transaksi',
-            html: '<span class="text-sm text-slate-500">Mencari item logistik di database...</span>',
+            title: 'Memotong Stok Rak...',
+            html: `<div class="text-xs font-mono text-indigo-600 break-all">${cleanCode}</div>`,
             allowOutsideClick: false,
             showConfirmButton: false,
-            width: '380px',
-            padding: '2rem',
+            width: '320px',
             didOpen: () => { Swal.showLoading(); }
         });
 
         const formData = new FormData();
-        formData.append('barcode_scan', cleanCode);
-        formData.append('qty_out', '1');
-        formData.append('comment', 'Transaksi Terminal POS Engine');
-
-        if (photoInput.files.length > 0) {
-            formData.append('test_photo', photoInput.files[0]);
-        }
+        formData.append('barcode_scan', cleanCode); // Dikirim ke Controller
+        formData.append('process_type', mode);       // Mengindikasikan tipe scan/manual[cite: 5, 6]
+        formData.append('comment', `Automated Stock OUT via scan. Rak`);
 
         try {
             const response = await fetch("{{ route('eng.out.store') }}", {
@@ -228,165 +218,146 @@
             const result = await response.json();
 
             if (response.ok && result.success) {
-                changeUIStatus('VALID', 'TRANSAKSI SUKSES', 'Sistem berhasil memotong stok.');
+                changeUIStatus('VALID', 'BERHASIL DIKURANGI', result.message);
+                
                 Swal.fire({
                     icon: 'success',
-                    title: 'Berhasil',
+                    title: 'Stok Terpotong (-1)',
                     text: result.message,
-                    timer: 2000,
+                    timer: 1500,
                     showConfirmButton: false,
-                    width: '380px'
-                }).then(() => resetSystemState());
-
+                    width: '350px'
+                });
             } else {
-                changeUIStatus('INVALID', 'TRANSAKSI GAGAL', result.message || 'Data ditolak oleh server.');
+                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message);
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Ditolak Sistem',
-                    width: '440px',
-                    confirmButtonColor: '#4f46e5',
-                    html: `<div class="text-left bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg text-rose-700 dark:text-rose-400 mb-3 text-xs font-mono border border-rose-200 dark:border-rose-800">
-                            <strong>Feedback Server:</strong><br>${result.message}
-                           </div>
-                           <div class="text-left bg-slate-900 p-3 rounded-lg text-xs font-mono text-slate-300">
-                            <strong>Konten Terbaca:</strong><br><span class="text-amber-400 break-all">"${cleanCode}"</span>
-                           </div>`
-                }).then(() => resetSystemState());
+                    icon: 'error',
+                    title: 'Gagal Scan Out',
+                    text: result.message,
+                    confirmButtonColor: '#ef4444'
+                });
             }
         } catch (error) {
-            changeUIStatus('INVALID', 'KONEKSI TERPUTUS', 'Gagal menghubungkan terminal ke server lokal.');
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Network Error', 
-                text: 'Koneksi database localhost bermasalah.',
-                confirmButtonColor: '#ef4444' 
-            }).then(() => resetSystemState());
+            changeUIStatus('INVALID', 'KONEKSI LOSS', 'Koneksi ke database lokal terputus.');
+            Swal.fire({ icon: 'error', title: 'Network Error', text: 'Periksa server localhost Anda.' });
+        } finally {
+            setTimeout(() => {
+                resetSystemState();
+            }, 1000);
         }
     }
 
-    // MANAJEMEN UI DASHBOARD PANEL KANAN
+    // INTERFACE DYNAMIC CONTROLLER
     function changeUIStatus(status, labelText, descText) {
         const badge = document.getElementById('badge_method');
         const statusContainer = document.getElementById('status-container');
         const iconBox = document.getElementById('status-icon-box');
         const mainIcon = document.getElementById('main-status-icon');
-        const statusTitle = document.getElementById('status-title');
-        const statusDesc = document.getElementById('status-desc');
+        
+        document.getElementById('status-title').innerText = labelText;
+        document.getElementById('status-desc').innerText = descText;
 
-        statusTitle.innerText = labelText;
-        statusDesc.innerText = descText;
-
-        // Reset class badge
         badge.className = "px-2.5 py-1 text-[10px] font-bold rounded flex items-center gap-1.5 uppercase tracking-wider ";
         iconBox.className = "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ";
 
         if (status === 'VALID') {
-            badge.innerHTML = `<i class="fa-solid fa-check"></i> ${labelText}`;
+            badge.innerHTML = `<i class="fa-solid fa-check"></i> OK`;
             badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-200');
-            statusContainer.className = "panel-box overflow-hidden transition-colors duration-300 border-emerald-300 bg-emerald-50/50";
+            statusContainer.className = "panel-box overflow-hidden border-emerald-400 bg-emerald-50/30";
             iconBox.classList.add('bg-emerald-100', 'text-emerald-600');
-            mainIcon.className = "fa-solid fa-check-double text-lg";
+            mainIcon.className = "fa-solid fa-square-check text-lg";
         } else if (status === 'PROCESSING') {
-            badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> PROSES`;
-            badge.classList.add('bg-amber-100', 'text-amber-700', 'border', 'border-amber-200');
-            statusContainer.className = "panel-box overflow-hidden transition-colors duration-300 border-amber-300 bg-amber-50/50";
-            iconBox.classList.add('bg-amber-100', 'text-amber-600');
-            mainIcon.className = "fa-solid fa-arrows-rotate fa-spin text-lg";
+            badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SYNC`;
+            badge.classList.add('bg-indigo-100', 'text-indigo-700', 'border', 'border-indigo-200');
+            statusContainer.className = "panel-box overflow-hidden border-indigo-400 bg-indigo-50/30";
+            iconBox.classList.add('bg-indigo-100', 'text-indigo-600');
+            mainIcon.className = "fa-solid fa-rotate fa-spin text-lg";
         } else {
-            badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> GAGAL`;
+            badge.innerHTML = `<i class="fa-solid fa-xmark"></i> DITOLAK`;
             badge.classList.add('bg-rose-100', 'text-rose-700', 'border', 'border-rose-200');
-            statusContainer.className = "panel-box overflow-hidden transition-colors duration-300 border-rose-300 bg-rose-50/50";
+            statusContainer.className = "panel-box overflow-hidden border-rose-400 bg-rose-50/30";
             iconBox.classList.add('bg-rose-100', 'text-rose-600');
-            mainIcon.className = "fa-solid fa-circle-xmark text-lg";
+            mainIcon.className = "fa-solid fa-triangle-exclamation text-lg";
         }
     }
 
     function resetSystemState() {
         isProcessing = false;
         photoInput.value = "";
-        document.getElementById('label-upload-status').innerText = "Telusuri Gambar";
-        document.getElementById('sublabel-upload-status').innerText = "PNG, JPG, JPEG";
+        manualInput.value = "";
+        document.getElementById('label-upload-status').innerText = "Browse Image";
         
-        const isCam = isCameraRunning;
-        changeUIStatus(
-            isCam ? 'PROCESSING' : 'STANDBY', 
-            isCam ? 'AKSES KAMERA AKTIF' : 'Mesin Siap', 
-            isCam ? 'Arahkan QR Code ke area pindaian lensa.' : 'Klik tombol aktifkan lensa untuk memulai sesi pemindaian stok.'
-        );
-        
-        // Kembalikan kotak status ke default jika standby
-        if(!isCam) {
-            document.getElementById('status-container').className = "panel-box overflow-hidden transition-colors duration-300";
+        if(!isCameraRunning) {
+            document.getElementById('status-container').className = "panel-box overflow-hidden";
             document.getElementById('status-icon-box').className = "flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500";
             document.getElementById('main-status-icon').className = "fa-solid fa-microchip text-lg";
             document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY`;
             document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 rounded flex items-center gap-1.5 uppercase tracking-wider";
             laserLine.style.display = 'none';
         } else {
-            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-video text-[10px] animate-pulse"></i> LIVE STREAM`;
-            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded flex items-center gap-1.5 uppercase tracking-wider";
+            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-video text-[10px] animate-pulse"></i> LIVE SCANNING`;
+            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-indigo-600 text-white rounded flex items-center gap-1.5 uppercase tracking-wider";
             laserLine.style.display = 'block';
         }
     }
 
-    // TRIGGER KAMERA
+    // ACTIONS EVENT
     startCamBtn.addEventListener('click', () => {
         if (!isCameraRunning) {
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 scanConfig, 
-                (decodedText) => { if (!isProcessing) processAjaxStockOut(decodedText.trim()); }
+                (decodedText) => { 
+                    if (!isProcessing) processAjaxStockOut(decodedText.trim(), 'scan'); 
+                }
             )
             .then(() => { 
                 isCameraRunning = true; 
                 startCamBtn.classList.add('hidden');
                 stopCamBtn.classList.remove('hidden');
-                camPlaceholder.classList.add('hidden'); // Hilangkan placeholder logo kamera
+                camPlaceholder.classList.add('hidden');
                 resetSystemState();
             })
             .catch(err => {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Izin Peramban Dibutuhkan',
-                    text: 'Pastikan Anda menggunakan localhost atau URL https:// untuk membuka modul lensa hardware.',
-                    confirmButtonColor: '#4f46e5'
-                });
+                Swal.fire({ icon: 'warning', title: 'Izin Kamera Blokir', text: 'Gunakan protokol HTTPS atau jalankan via localhost.' });
             });
         }
     });
 
-    stopCamBtn.addEventListener('click', () => { stopScanner(); });
-    
-    function stopScanner() {
+    stopCamBtn.addEventListener('click', () => {
         if (isCameraRunning) {
             html5QrCode.stop().then(() => { 
                 isCameraRunning = false; 
                 startCamBtn.classList.remove('hidden');
                 stopCamBtn.classList.add('hidden');
-                camPlaceholder.classList.remove('hidden'); // Tampilkan logo kamera lagi
+                camPlaceholder.classList.remove('hidden');
                 resetSystemState();
-            }).catch(err => console.error(err));
+            });
         }
-    }
+    });
 
-    // TRIGGER BROWSE IMAGE
+    // KIRIM MANUAL BY KEYBOARD / USB GUN SCANNER
+    btnManual.addEventListener('click', () => {
+        const val = manualInput.value.trim();
+        if(val) processAjaxStockOut(val, 'manual');
+    });
+
+    manualInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            btnManual.click();
+        }
+    });
+
+    // DEKRIPSI FILE GAMBAR
     photoInput.addEventListener('change', function(e) {
         if (e.target.files.length === 0) return;
-        stopScanner();
-        
         const file = e.target.files[0];
-        document.getElementById('label-upload-status').innerText = "Berkas Masuk!";
-        document.getElementById('sublabel-upload-status').innerText = file.name.substring(0, 20);
+        document.getElementById('label-upload-status').innerText = "File terunggah";
 
         html5QrCode.scanFile(file, true)
-            .then(decodedText => { processAjaxStockOut(decodedText.trim()); })
+            .then(decodedText => { processAjaxStockOut(decodedText.trim(), 'scan'); })
             .catch(err => { 
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: 'Gagal Dekripsi', 
-                    text: 'Bentuk QR/Barcode di dalam foto tidak dapat dipetakan oleh mesin.',
-                    confirmButtonColor: '#ef4444' 
-                }); 
+                Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR di dalam foto tidak jelas atau salah.' }); 
                 resetSystemState();
             });
     });

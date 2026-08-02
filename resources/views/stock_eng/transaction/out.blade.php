@@ -41,12 +41,12 @@
         <div class="flex items-center gap-2 w-full sm:w-auto">
             <a href="{{ route('eng.out.scan') }}" 
                class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
-                Scan OUT
+                <i class="fa-solid fa-barcode mr-1"></i> Scan OUT
             </a>
             
-            <a href="{{ route('eng.out.manual') }}" 
+            <a href="{{ route('eng.out.scan') }}?mode=manual" 
                class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
-                Manual OUT
+                <i class="fa-solid fa-keyboard mr-1"></i> Manual OUT
             </a>
         </div>
     </div>
@@ -58,19 +58,19 @@
             <!-- Filter Buttons -->
             <div class="flex items-center order-2 sm:order-1">
                 <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-inner">
-                    <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-black rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
+                    <button type="button" data-filter="all" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-black rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
                         All
                     </button>
-                    <button type="button" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+                    <button type="button" data-filter="success" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
                         Success
                     </button>
-                    <button type="button" onclick="filterTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+                    <button type="button" data-filter="pending" onclick="filterTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
                         Pending
                     </button>
-                    <button type="button" onclick="filterTable('manual out', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+                    <button type="button" data-filter="manual" onclick="filterTable('manual', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
                         Manual Out
                     </button>
-                    <button type="button" onclick="filterTable('scan out', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
+                    <button type="button" data-filter="scan" onclick="filterTable('scan', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
                         Scan Out
                     </button>
                 </div>
@@ -93,68 +93,21 @@
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Transaction Out ID</th>
-                        <th class="px-3 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">NIK</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Req Sparepart ID</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
-                        <th class="px-2 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">No Nozzle</th>
-                        <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">No Rak</th>
+                        <th class="px-3 py-3.5 w-[200px] border-l border-blue-500 dark:border-blue-900/50">Transaction Out ID</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Operator</th>
+                        <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 dark:border-blue-900/50">Req Production No</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
+                        <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Sparepart ID</th>
+                        <th class="px-2 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">Rak ID</th>
                         <th class="px-2 py-3.5 w-[85px] border-l border-blue-500 dark:border-blue-900/50">Qty Out</th>
                         <th class="px-2 py-3.5 w-[105px] border-l border-blue-500 dark:border-blue-900/50">Status</th>
-                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Remark</th>
-                        <th class="px-3 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[130px]">Process Type</th>
-                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
-                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Remark</th>
+                        <th class="px-3 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[120px]">Process Type</th>
+                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Timestamp</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-black dark:text-slate-200 font-nunito bg-transparent">
                     @forelse($history as $index => $log)
-                    @php
-                        $reqSparepartNo = '-';
-                        $noNozzleText = '-';
-                        $namaRakText = '-';
-
-                        if (!empty($log->barcode_id)) {
-                            $dbBarcodeRow = \DB::table('db_barcodes')->where('id', $log->barcode_id)->first();
-                            if (!$dbBarcodeRow) {
-                                $dbBarcodeRow = \DB::table('db_barcodes')->where('barcode_id', $log->barcode_id)->first();
-                            }
-                            
-                            if ($dbBarcodeRow) {
-                                $parsingRow = \DB::table('barcode_parsings')->where('barcode_db_id', $dbBarcodeRow->id)->first();
-                                if ($parsingRow) {
-                                    $prodRequestRow = \DB::table('production_requests')->where('id', $parsingRow->production_request_id)->first();
-                                    if ($prodRequestRow) {
-                                        $reqSparepartNo = $prodRequestRow->request_no ?? '-';
-                                        $noNozzleText = $prodRequestRow->no_nozzle ?? '-';
-                                    }
-                                }
-
-                                if (!empty($dbBarcodeRow->rak_id)) {
-                                    $rakRow = \DB::table('raks')->where('id', $dbBarcodeRow->rak_id)->value('nama_rak');
-                                    if($rakRow) $namaRakText = $rakRow;
-                                }
-                            }
-
-                            if ($reqSparepartNo === '-') {
-                                $parsingFallback = \DB::table('barcode_parsings')->where('barcode_db_id', $log->barcode_id)->first();
-                                if ($parsingFallback) {
-                                    $prodRequestRow = \DB::table('production_requests')->where('id', $parsingFallback->production_request_id)->first();
-                                    if ($prodRequestRow) {
-                                        $reqSparepartNo = $prodRequestRow->request_no ?? '-';
-                                        $noNozzleText = $prodRequestRow->no_nozzle ?? '-';
-                                    }
-                                }
-                            }
-                        }
-
-                        if ($noNozzleText === '-') {
-                            $noNozzleText = $log->no_nozzle ?? ($log->stockEng->no_nozzle ?? '-');
-                        }
-                        if ($namaRakText === '-') {
-                            $namaRakText = $log->rak->nama_rak ?? ($log->stockEng->rak->nama_rak ?? '-');
-                        }
-                    @endphp
                     <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
                         <!-- NO -->
                         <td class="px-2 py-3.5 text-slate-500">
@@ -162,39 +115,44 @@
                         </td>
                         
                         <!-- TRANSACTION OUT ID -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center whitespace-nowrap">
-                            {{ $log->transaction_out_id }}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center whitespace-nowrap text-slate-900 dark:text-slate-100">
+                            {{ $log->tx_id }}
                         </td>
                         
-                        <!-- NIK -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->nik ?? '-' }}
+                        <!-- OPERATOR -->
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center text-[12px]">
+                            <div class="font-extrabold text-slate-900 dark:text-white">
+                                {{ $log->operator_name ?? 'Unknown' }}
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-mono">
+                                NIK: {{ $log->operator_nik ?? '-' }}
+                            </div>
                         </td>
                         
-                        <!-- REQ SPAREPART ID -->
+                        <!-- REQ PRODUCTION NO -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide text-center whitespace-nowrap leading-normal text-blue-600 dark:text-blue-400">
-                            {{ $reqSparepartNo }}
+                            {{ $log->production_req_no ?? '-' }}
                         </td>
                         
                         <!-- BARCODE ID -->
-                        <td class="px-3 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
+                        <td class="px-3 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-amber-600 dark:text-amber-400 text-center">
                             {{ $log->barcode_id ?? '-' }}
                         </td>
                         
-                        <!-- NO NOZZLE -->
+                        <!-- SPAREPART ID -->
                         <td class="px-2 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                            {{ $noNozzleText }}
+                            {{ $log->sparepart_id ?? '-' }}
                         </td>
                         
-                        <!-- NO RAK -->
-                        <td class="px-2 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $namaRakText }}
+                        <!-- RAK ID -->
+                        <td class="px-2 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap text-purple-600 dark:text-purple-400">
+                            {{ $log->rak_id ?? '-' }}
                         </td>
                         
                         <!-- QTY OUT -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20 shadow-sm">
-                                -{{ $log->qty_out }}
+                                -{{ $log->qty_transaction }}
                             </span>
                         </td>
                         
@@ -205,66 +163,40 @@
                                     @if(strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800
                                     @elseif(strtolower($log->status) == 'pending') bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-800
                                     @else bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-800 @endif">
-                                    {{ $log->status ?? 'SUCCESS' }}
+                                    {{ $log->status }}
                                 </span>
                             </div>
                         </td>
                         
                         <!-- REMARK -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            @php
-                                $remarkText = $log->remark ?? '';
-                                $remarkLower = strtolower($remarkText);
-                                $isManual = str_contains($remarkLower, 'manual');
-                                $isScan = str_contains($remarkLower, 'scan');
-                            @endphp
-                            <div class="flex justify-center items-center">
-                                <span class="remark-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border shadow-sm
-                                    @if($isManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
-                                    @elseif($isScan) bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
-                                    @else bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
-                                    {{ $remarkText ? $log->remark : '-' }} 
-                                </span>
-                            </div>
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left truncate max-w-[160px]" title="{{ $log->remark }}">
+                            {{ $log->remark ?? '-' }}
                         </td>
                         
                         <!-- PROCESS TYPE -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center w-[130px]">
-                            @php
-                                $procType = $log->process_type ?? 'Manual';
-                                $isProcManual = strtolower($procType) === 'manual';
-                            @endphp
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center w-[120px]">
+                            @php $isProcManual = strtolower($log->process_type) === 'manual'; @endphp
                             <div class="flex justify-center items-center">
                                 <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border shadow-sm truncate max-w-full
                                     @if($isProcManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
-                                    @else bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 @endif" title="{{ $procType }}">
-                                    {{ $procType }}
+                                    @else bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 @endif" title="{{ $log->process_type }}">
+                                    {{ $log->process_type }} Out
                                 </span>
                             </div>
                         </td>
                         
-                        <!-- CREATED AT -->
+                        <!-- TIMESTAMP -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
                             <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ $log->created_at ? $log->created_at->format('d/m/Y') : '-' }}
+                                {{ $log->created_at ? \Carbon\Carbon::parse($log->created_at)->format('d/m/Y') : '-' }}
                             </div>
                             <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ $log->created_at ? $log->created_at->format('H:i') : '' }}
-                            </div>
-                        </td>
-
-                        <!-- UPDATED AT -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
-                            <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ $log->updated_at ? $log->updated_at->format('d/m/Y') : '-' }}
-                            </div>
-                            <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ $log->updated_at ? $log->updated_at->format('H:i') : '' }}
+                                {{ $log->created_at ? \Carbon\Carbon::parse($log->created_at)->format('H:i') : '' }}
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="13" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
+                    <tr><td colspan="12" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -297,9 +229,22 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         let urlParams = new URLSearchParams(window.location.search);
+        
         if(urlParams.has('search')){
             document.getElementById('tableSearch').value = urlParams.get('search');
             document.getElementById('tableSearch').focus();
+        }
+        
+        if(urlParams.has('filter')){
+            let activeFilter = urlParams.get('filter').toLowerCase().trim();
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                let targetFilter = btn.getAttribute('data-filter').toLowerCase().trim();
+                if(targetFilter === activeFilter){
+                    btn.className = "filter-btn px-3 py-1 text-xs font-black rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white";
+                } else {
+                    btn.className = "filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white";
+                }
+            });
         }
     });
 

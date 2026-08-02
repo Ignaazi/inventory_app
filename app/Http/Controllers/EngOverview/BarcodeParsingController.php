@@ -136,26 +136,13 @@ class BarcodeParsingController extends Controller
                         'updated_at'            => now(),
                     ]);
 
-                    $txUuid = 'TX-IN-' . strtoupper(Str::random(4)) . '-' . time();
-                    DB::table('stock_eng_transactions')->insert([
-                        'tx_id'           => $txUuid,
-                        'users_id'        => $currentUserId,
-                        'stock_engs_id'   => $stockEngId,
-                        'tx_type'         => 'in',
-                        'qty_transaction' => 1,
-                        'process_type'    => 'manual', // 🎯 Tetap manual karena ini proses cetak sistem awal
-                        'status'          => 'success',
-                        'remark'          => 'Automated Batch IN from Doc MR: ' . ($mrDoc->no_mr ?? $sourceId),
-                        'created_at'      => now(),
-                        'updated_at'      => now(),
-                    ]);
+                    // 🛑 KODE TRANSAKSI & INCREMENT QTY MAKSAL SUDAH DIHAPUS DARI SINI
                 }
 
-                DB::table('stock_engs')->where('id', $stockEngId)->increment('qty', $qty);
                 DB::commit();
                 return response()->json([
                     'success' => true,
-                    'message' => "Sukses memproses Batch IN! Berhasil mendaftarkan {$qty} barcode baru ke Rak pilihan dan tercatat di riwayat."
+                    'message' => "Sukses memproses Batch IN! Berhasil mendaftarkan {$qty} data barcode baru ke sistem."
                 ]);
 
             } else {
@@ -169,6 +156,7 @@ class BarcodeParsingController extends Controller
 
                 $qty = (int) $prDoc->qty_req;
                 
+                // Pengecekan kuantitas fisik sebelum barcode dicetak (opsional, tetap dipertahankan untuk validasi kuota)
                 if ($stockEngRecord->qty < $qty) {
                     return response()->json([
                         'success' => false, 
@@ -236,29 +224,13 @@ class BarcodeParsingController extends Controller
                         'updated_at'            => now(),
                     ]);
 
-                    $txUuid = 'TX-OUT-' . strtoupper(Str::random(4)) . '-' . time();
-                    DB::table('stock_eng_transactions')->insert([
-                        'tx_id'                 => $txUuid,
-                        'users_id'              => $currentUserId,
-                        'stock_engs_id'         => $stockEngId,
-                        'db_barcodes_id'        => $barcodeOutId,
-                        'production_request_id' => $sourceId,
-                        'tx_type'               => 'out',
-                        'qty_transaction'       => 1,
-                        'process_type'          => 'manual', // 🎯 Tetap manual karena ini proses pembuatan massal
-                        'status'                => 'success',
-                        'remark'                => 'Automated batch OUT generation for Line: ' . $lineStr,
-                        'created_at'            => now(),
-                        'updated_at'            => now(),
-                    ]);
+                    // 🛑 KODE TRANSAKSI & DECREMENT QTY MAKSAL SUDAH DIHAPUS DARI SINI
                 }
-
-                DB::table('stock_engs')->where('id', $stockEngId)->decrement('qty', $qty);
 
                 DB::commit();
                 return response()->json([
                     'success' => true,
-                    'message' => "Sukses memproses Batch OUT! Berhasil menerbitkan {$qty} barcode OUT baru untuk Lini {$lineStr}."
+                    'message' => "Sukses memproses Batch OUT! Berhasil menerbitkan {$qty} data barcode baru untuk Lini {$lineStr}."
                 ]);
             }
 
