@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Auth;
 
 class BarcodeParsingController extends Controller
 {
-    // Menampilkan halaman utama barcode builder
+    /**
+     * Menampilkan halaman utama barcode builder
+     */
     public function index()
     {
         // 1. Ambil data request produksi untuk dropdown select di view
@@ -17,23 +19,27 @@ class BarcodeParsingController extends Controller
                                 ->orderBy('id', 'desc')
                                 ->get();
 
-        // 2. Ambil data stok engineering (Kolom no_nozzle sudah DIBUANG agar tidak error)
+        // 2. Ambil data stok engineering (FIX: Menggunakan struktur database baru tanpa spareparts.name)
         $stockEngineering = DB::table('stock_engs')
                                 ->join('spareparts', 'stock_engs.sparepart_id', '=', 'spareparts.id')
                                 ->join('raks', 'stock_engs.rak_id', '=', 'raks.id')
                                 ->select(
                                     'stock_engs.id as stock_id',
-                                    'spareparts.name as part_name',
+                                    'spareparts.sparepart_id as part_name', // 💡 Di-alias agar tetap 'part_name' supaya view Blade lo ga error/patah
+                                    'spareparts.part_number',              // Ditambahkan secara opsional jika nanti view butuh detail tambahan
+                                    'spareparts.sap_code',                 // Ditambahkan secara opsional jika nanti view butuh detail tambahan
                                     'raks.nama_rak as rak_name'
                                 )
-                                ->orderBy('spareparts.name', 'asc')
+                                ->orderBy('spareparts.sparepart_id', 'asc')
                                 ->get();
 
         // Pastikan variabel stockEngineering ikut dilempar ke compact
         return view('eng_overview.barcode_parsing', compact('productionRequests', 'stockEngineering'));
     }
 
-    // Menyimpan data terintegrasi ke db_barcodes, barcode_parsings, dan type_barcodes
+    /**
+     * Menyimpan data terintegrasi ke db_barcodes, barcode_parsings, dan type_barcodes
+     */
     public function store(Request $request)
     {
         // Validasi input dasar dari request
@@ -127,7 +133,9 @@ class BarcodeParsingController extends Controller
         }
     }
 
-    // Mengambil riwayat konfigurasi struktur untuk fitur Import
+    /**
+     * Mengambil riwayat konfigurasi struktur untuk fitur Import
+     */
     public function getConfigs()
     {
         $configs = DB::table('type_barcodes')

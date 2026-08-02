@@ -12,20 +12,26 @@ class BarcodeParsing extends Model
 
     protected $table = 'barcode_parsings';
 
+    /**
+     * Properti yang bisa diisi secara massal (Mass Assignable)
+     * Sudah disesuaikan dengan kolom fisik tabel terbaru
+     */
     protected $fillable = [
-        'barcode_db_id',
+        'users_id',
         'production_request_id',
-        'nik',
+        'barcode_in_id',
+        'barcode_out_id',
         'qty_parsed',
-        'description'
+        'status',
+        'remark'
     ];
 
     /**
-     * Relasi ke Master DB Barcode
+     * Relasi ke tabel Users (Operator Penanggung Jawab)
      */
-    public function dbBarcode()
+    public function user()
     {
-        return $this->belongsTo(DbBarcode::class, 'barcode_db_id', 'id');
+        return $this->belongsTo(User::class, 'users_id', 'id');
     }
 
     /**
@@ -36,9 +42,27 @@ class BarcodeParsing extends Model
         return $this->belongsTo(RequestProd::class, 'production_request_id', 'id');
     }
 
-    
+    /**
+     * Alias Relasi ke Production Request (Tetap dipertahankan bawaan lo)
+     */
     public function requestProd()
     {
         return $this->productionRequest();
+    }
+
+    /**
+     * Relasi ke DB Barcode untuk Barcode IN (Stiker Gudang Engineering)
+     */
+    public function barcodeIn()
+    {
+        return $this->belongsTo(DbBarcode::class, 'barcode_in_id', 'id');
+    }
+
+    /**
+     * Relasi ke DB Barcode untuk Barcode OUT (Stiker Baru Khusus Line Produksi)
+     */
+    public function barcodeOut()
+    {
+        return $this->belongsTo(DbBarcode::class, 'barcode_out_id', 'id');
     }
 }
