@@ -114,8 +114,7 @@ class PurchaseRequestEngController extends Controller
                     $q->where('no_pr', 'like', "%{$search}%")
                       ->orWhereHas('user', function ($qUser) use ($search) {
                           $qUser->where('name', 'like', "%{$search}%")
-                                ->orWhere('nik', 'like', "%{$search}%")
-                                ->orWhere('nim', 'like', "%{$search}%");
+                                ->orWhere('nik', 'like', "%{$search}%");
                       })
                       ->orWhereHas('sparepart', function ($qPart) use ($search) {
                           $qPart->where('sparepart_id', 'like', "%{$search}%")

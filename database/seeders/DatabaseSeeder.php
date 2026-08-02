@@ -16,25 +16,25 @@ class DatabaseSeeder extends Seeder
         // Menggunakan updateOrCreate agar tidak error Duplicate Entry NIM
         $users = [
             [
-                'nim'      => '123456',
+                'nik'      => '123456',
                 'name'     => 'Administrator',
                 'password' => Hash::make('password123'),
                 'role'     => 'admin',
             ],
             [
-                'nim'      => '654321',
+                'nik'      => '654321',
                 'name'     => 'Engineering User',
                 'password' => Hash::make('password123'),
                 'role'     => 'engineering',
             ],
             [
-                'nim'      => '112233',
+                'nik'      => '112233',
                 'name'     => 'Costing User',
                 'password' => Hash::make('password123'),
                 'role'     => 'costing',
             ],
             [
-                'nim'      => '445566',
+                'nik'      => '445566',
                 'name'     => 'Production User',
                 'password' => Hash::make('password123'),
                 'role'     => 'production',
@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            User::updateOrCreate(['nim' => $userData['nim']], $userData);
+            User::updateOrCreate(['nik' => $userData['nik']], $userData);
         }
 
         // --- 2. DATA ENGINEERING OVERVIEW ---

@@ -111,7 +111,7 @@ class BarcodeParsingController extends Controller
                     $globalCounter++;
                     $generatedBarcodeId = 'TXENGIN' . $dateStr . str_pad($globalCounter, 5, '0', STR_PAD_LEFT);
 
-                    DB::table('db_barcodes')->insert([
+                    $barcodeInId = DB::table('db_barcodes')->insertGetId([
                         'barcode_id'        => $generatedBarcodeId,
                         'users_id'          => $currentUserId,
                         'barcode_type'      => $request->barcode_type,
@@ -123,6 +123,19 @@ class BarcodeParsingController extends Controller
                         'updated_at'        => now(),
                     ]);
 
+                    DB::table('barcode_parsings')->insert([
+                        'users_id'              => $currentUserId,
+                        'production_request_id' => null,               
+                        'material_received_id'  => $sourceId,           
+                        'barcode_in_id'         => $barcodeInId,       
+                        'barcode_out_id'        => null,               
+                        'qty_parsed'            => 1,
+                        'status'                => 'success',
+                        'remark'                => 'Automated Batch IN from Doc MR: ' . ($mrDoc->no_mr ?? $sourceId),
+                        'created_at'            => now(),
+                        'updated_at'            => now(),
+                    ]);
+
                     $txUuid = 'TX-IN-' . strtoupper(Str::random(4)) . '-' . time();
                     DB::table('stock_eng_transactions')->insert([
                         'tx_id'           => $txUuid,
@@ -130,7 +143,7 @@ class BarcodeParsingController extends Controller
                         'stock_engs_id'   => $stockEngId,
                         'tx_type'         => 'in',
                         'qty_transaction' => 1,
-                        'process_type'    => 'manual',
+                        'process_type'    => 'manual', // 🎯 Tetap manual karena ini proses cetak sistem awal
                         'status'          => 'success',
                         'remark'          => 'Automated Batch IN from Doc MR: ' . ($mrDoc->no_mr ?? $sourceId),
                         'created_at'      => now(),
@@ -142,7 +155,7 @@ class BarcodeParsingController extends Controller
                 DB::commit();
                 return response()->json([
                     'success' => true,
-                    'message' => "Sukses memproses Batch IN! Berhasil mendaftarkan {$qty} barcode baru ke Rak pilihan."
+                    'message' => "Sukses memproses Batch IN! Berhasil mendaftarkan {$qty} barcode baru ke Rak pilihan dan tercatat di riwayat."
                 ]);
 
             } else {
@@ -156,7 +169,6 @@ class BarcodeParsingController extends Controller
 
                 $qty = (int) $prDoc->qty_req;
                 
-                // Validasi kecukupan nominal angka stok di Rak master
                 if ($stockEngRecord->qty < $qty) {
                     return response()->json([
                         'success' => false, 
@@ -167,7 +179,6 @@ class BarcodeParsingController extends Controller
                 $lineRaw = $prDoc->list_line_production_id ?? '01';
                 $lineStr = str_pad($lineRaw, 2, '0', STR_PAD_LEFT); 
                 
-                // Ambil Nama Rak asli untuk format prefix barcode
                 $rakRecord = DB::table('stock_engs')
                                 ->join('raks', 'stock_engs.rak_id', '=', 'raks.id')
                                 ->where('stock_engs.id', $stockEngId)
@@ -178,14 +189,12 @@ class BarcodeParsingController extends Controller
                 $cleanRakName = trim(str_replace(['[', ']'], '', $rawRakName));
                 $formattedRakCode = str_starts_with(strtoupper($cleanRakName), 'RAK') ? strtoupper($cleanRakName) : 'RAK' . str_pad($cleanRakName, 2, '0', STR_PAD_LEFT);
 
-                // Ambil kode Sparepart ID asli (ex: 148)
                 $sparepartRecord = DB::table('spareparts')->where('id', $prDoc->sparepart_id)->first();
                 $partCode = '00';
                 if ($sparepartRecord) {
                     $partCode = $sparepartRecord->sparepart_id ?? '00'; 
                 }
 
-                // Gabungkan susunan Prefix Barcode OUT khusus Lini
                 $barcodePrefix = "TXENG{$formattedRakCode}LINE{$lineStr}{$partCode}";
 
                 $latestOut = DB::table('db_barcodes')
@@ -198,12 +207,10 @@ class BarcodeParsingController extends Controller
                     $localCounter = (int) substr($latestOut->barcode_id, -4);
                 }
 
-                // Loop eksekusi: HANYA MEMBUAT DATA BARCODE OUT BARU
                 for ($i = 0; $i < $qty; $i++) {
                     $localCounter++;
                     $generatedBarcodeId = $barcodePrefix . str_pad($localCounter, 4, '0', STR_PAD_LEFT);
 
-                    // 1. Simpan Barcode OUT baru ke db_barcodes dengan status AVAILABLE (agar bisa dilacak/di-scan lini)
                     $barcodeOutId = DB::table('db_barcodes')->insertGetId([
                         'barcode_id'        => $generatedBarcodeId,
                         'users_id'          => $currentUserId,
@@ -216,12 +223,12 @@ class BarcodeParsingController extends Controller
                         'updated_at'        => now(),
                     ]);
 
-                    // 2. Dokumentasikan ke barcode_parsings (barcode_in_id dikosongkan/null karena pure cetak baru)
                     DB::table('barcode_parsings')->insert([
                         'users_id'              => $currentUserId,
-                        'production_request_id' => $sourceId,
-                        'barcode_in_id'         => null, 
-                        'barcode_out_id'        => $barcodeOutId,
+                        'production_request_id' => $sourceId,           
+                        'material_received_id'  => null,                
+                        'barcode_in_id'         => null,                
+                        'barcode_out_id'        => $barcodeOutId,       
                         'qty_parsed'            => 1,
                         'status'                => 'success',
                         'remark'                => 'Automated pure barcode OUT generation for Line ' . $lineStr,
@@ -229,7 +236,6 @@ class BarcodeParsingController extends Controller
                         'updated_at'            => now(),
                     ]);
 
-                    // 3. Catat ke Buku Koran Mutasi Stok
                     $txUuid = 'TX-OUT-' . strtoupper(Str::random(4)) . '-' . time();
                     DB::table('stock_eng_transactions')->insert([
                         'tx_id'                 => $txUuid,
@@ -239,7 +245,7 @@ class BarcodeParsingController extends Controller
                         'production_request_id' => $sourceId,
                         'tx_type'               => 'out',
                         'qty_transaction'       => 1,
-                        'process_type'          => 'manual',
+                        'process_type'          => 'manual', // 🎯 Tetap manual karena ini proses pembuatan massal
                         'status'                => 'success',
                         'remark'                => 'Automated batch OUT generation for Line: ' . $lineStr,
                         'created_at'            => now(),
@@ -247,7 +253,6 @@ class BarcodeParsingController extends Controller
                     ]);
                 }
 
-                // Tetap kurangi saldo kuantitas aktual di master stok karena barang fisik keluar dari rak gudang
                 DB::table('stock_engs')->where('id', $stockEngId)->decrement('qty', $qty);
 
                 DB::commit();
@@ -276,5 +281,51 @@ class BarcodeParsingController extends Controller
                      ->get();
 
         return response()->json($configs);
+    }
+
+    /**
+     * Halaman Khusus Barcode Parsing IN
+     */
+    public function indexIn()
+    {
+        $productionRequests = DB::table('production_requests')
+                                ->leftJoin('spareparts', 'production_requests.sparepart_id', '=', 'spareparts.id')
+                                ->where('production_requests.status', 'Approved')
+                                ->select(
+                                    'production_requests.*',
+                                    'spareparts.sparepart_id as custom_sparepart_code',
+                                    'spareparts.part_number',
+                                    'spareparts.sap_code'
+                                )
+                                ->orderBy('production_requests.id', 'desc')
+                                ->get()
+                                ->map(function ($pr) {
+                                    $pr->sparepart = (object) [
+                                        'id'        => $pr->sparepart_id, 
+                                        'part_no'   => $pr->custom_sparepart_code, 
+                                        'part_name' => $pr->custom_sparepart_code
+                                    ];
+                                    return $pr;
+                                });
+
+        $materialReceived = DB::table('material_received')
+                                ->orderBy('id', 'desc')
+                                ->get();
+
+        $stockEngineering = DB::table('stock_engs')
+                                ->join('spareparts', 'stock_engs.sparepart_id', '=', 'spareparts.id')
+                                ->join('raks', 'stock_engs.rak_id', '=', 'raks.id')
+                                ->select(
+                                    'stock_engs.id as stock_id',
+                                    'stock_engs.sparepart_id as sparepart_id', 
+                                    'spareparts.sparepart_id as part_name', 
+                                    'spareparts.part_number',              
+                                    'spareparts.sap_code',                 
+                                    'raks.nama_rak as rak_name'
+                                )
+                                ->orderBy('spareparts.sparepart_id', 'asc')
+                                ->get();
+
+        return view('eng_overview.barcode_parsing_in', compact('productionRequests', 'stockEngineering', 'materialReceived'));
     }
 }

@@ -61,8 +61,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
             
             // UPDATE: Cukup gunakan Resource Route ini saja.
-            // Secara otomatis menyediakan rute URL /eng/list-sparepart dan /eng/list-sparepart/create 
-            // dengan name route: list-sparepart.index & list-sparepart.create
             Route::resource('list-sparepart', ListSparepartEngController::class);
         });
 
@@ -71,11 +69,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
         Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
         
-                // =========================================================================
+        // =========================================================================
         // 🚀 ROUTE PURCHASE REQUEST & FLOW VERIFIKASI (UPDATED WITHOUT COSTING MODULE)
         // =========================================================================
 
-        // Opsi 1: Nama alias diganti jadi 'purchase.request.index' agar sinkron dengan blade
         Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('purchase.request.index');
         Route::post('/eng/purchase-request', [PurchaseRequestEngController::class, 'store'])->name('purchase.request.store'); 
 
@@ -99,8 +96,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
         Route::prefix('eng-overview')->group(function () {
+            // Barcode OUT (Halaman Utama Overview)
             Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
+            
+            // Rute Barcode IN
+            Route::get('/barcode-parsing-in', [BarcodeParsingController::class, 'indexIn'])->name('barcode.parsing.in');
+            
+            // 🛠️ FIX DISINI: Izinkan POST langsung ke /barcode-parsing
+            Route::post('/barcode-parsing', [BarcodeParsingController::class, 'store'])->name('barcode.parsing.store');
+            
+            // Ini tetap dipertahankan jaga-jaga kalau ada form lain yang mengarah ke /store
             Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
+            
             Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
             Route::get('/db-barcode', [DbBarcodeController::class, 'index'])->name('barcode.db');
             Route::delete('/db-barcode/{id}', [DbBarcodeController::class, 'destroy'])->name('barcode.db.delete');
@@ -133,7 +140,6 @@ Route::middleware('auth')->group(function () {
     // --- GRUP PRODUCTION ---
     Route::middleware('role:admin,production')->group(function () {
         
-        // Bungkus rute request ke dalam satu grup biar konsisten
         Route::prefix('prod/request')->group(function () {
             Route::get('/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
             Route::get('/create', [RequestProdController::class, 'create'])->name('prod.request.create');
@@ -146,7 +152,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
         });
 
-        // Duplikat grup di atas khusus pakai kata 'production' buat jaga-jaga kalau sistem lu nge-redirect paksa ke kata lengkap
         Route::prefix('production/request')->group(function () {
             Route::post('/store', [RequestProdController::class, 'store']);
         });

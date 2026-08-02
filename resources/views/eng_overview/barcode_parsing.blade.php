@@ -41,13 +41,17 @@
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <a href="#" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline opacity-50">
+            <!-- Tombol Barcode IN — Mengarah ke Named Route 'barcode.parsing.in' dengan warna solid cerah -->
+            <a href="{{ route('barcode.parsing.in') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
                 Barcode IN
             </a>
-            <a href="#" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center no-underline ring-2 ring-blue-400 ring-offset-2 dark:ring-offset-slate-950">
+            
+            <!-- Tombol Barcode OUT — Mengarah ke Named Route 'barcode.parsing' -->
+            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center  dark:ring-offset-slate-950">
                 Barcode OUT
             </a>
         </div>
+
     </div>
 
     <!-- MAIN CONFIGURATOR CONTAINER -->
