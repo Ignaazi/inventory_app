@@ -34,24 +34,27 @@ Route::middleware(['web', 'auth', 'role:admin,costing,engineering'])->group(func
     // ⚙️ SISI ENGINEERING (MONITORING & VERIFIKASI TTD)
     // =========================================================================
     
-    // 1. Halaman Utama List Monitoring Material Eng
+    // 1. Halaman Utama List Monitoring Material Eng (Hanya status pending & checked)
     Route::get('/eng/material-receiving', [MaterialReceivedController::class, 'engIndex'])
         ->name('eng.material.receiving.index');
 
-    // 2. Halaman Form Confirm / Checked (Tempat Input TTD Staff)
-    Route::get('/eng/material-receiving/confirm/{id}', [MaterialReceivedController::class, 'engConfirm'])
-        ->name('eng.material.receiving.create'); // Sesuai dengan name bawaan sistem awal lo
+    // 🌟 2. HALAMAN HISTORY MATERIAL RECEIVED (Hanya status approved / closed)
+    Route::get('/eng/material-receiving-history', [MaterialReceivedController::class, 'engHistory'])
+        ->name('eng.material.receiving.history');
 
-    // 3. TAHAP 2: Proses Verifikasi & TTD Staff (POST/PUT dari form Staff)
+    // 3. Halaman Form Confirm / Checked (Tempat Input TTD Staff)
+    Route::get('/eng/material-receiving/confirm/{id}', [MaterialReceivedController::class, 'engConfirm'])
+        ->name('eng.material.receiving.create'); 
+
+    // 4. TAHAP 2: Proses Verifikasi & TTD Staff (POST/PUT dari form Staff)
     Route::put('/eng/material-receiving/update/{id}', [MaterialReceivedController::class, 'signEngineeringStaff'])
         ->name('eng.material.receiving.update');
 
-    // 4. TAHAP 3A: Halaman Form Approval Akhir Supervisor Engineering (GET)
+    // 5. TAHAP 3A: Halaman Form Approval Akhir Supervisor Engineering (GET)
     Route::get('/eng/material-receiving/approve/{id}', [MaterialReceivedController::class, 'engApprove'])
         ->name('eng.material.receiving.approve');
 
-    // 5. TAHAP 3B: Proses Submit Approval Akhir Supervisor Engineering (POST)
-    // 💡 URL diseragamkan menjadi '/eng/material-receiving/spv-approve/{id}' agar konsisten dengan prefix '/eng/' lainnya
+    // 6. TAHAP 3B: Proses Submit Approval Akhir Supervisor Engineering (POST)
     Route::post('/eng/material-receiving/spv-approve/{id}', [MaterialReceivedController::class, 'approveEngineeringSpv'])
         ->name('engineering.spv.approve');
 

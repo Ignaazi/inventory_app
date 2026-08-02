@@ -9,8 +9,8 @@ Route::middleware(['web', 'auth'])->prefix('eng/material-receiving')->name('eng.
     // Halaman List Utama Monitor untuk Engineering (Menembak engIndex)
     Route::get('/', [MaterialReceivedController::class, 'engIndex'])->name('index');
     
-    // Halaman History
-    Route::get('/history', function() { return "Halaman History Material Received (Coming Soon)"; })->name('history');
+    // FIX: Halaman History sekarang sudah menembak method engHistory di Controller 🚀
+    Route::get('/history', [MaterialReceivedController::class, 'engHistory'])->name('history');
     
     // Halaman Form Tanda Tangan Digital Engineering (Menembak engConfirm dengan parameter ID)
     Route::get('/confirm/{id}', [MaterialReceivedController::class, 'engConfirm'])->name('create');
@@ -26,10 +26,4 @@ Route::middleware(['web', 'auth'])->prefix('eng/material-receiving')->name('eng.
     
     // Hapus Laporan (Menembak destroy)
     Route::delete('/{id}/delete', [MaterialReceivedController::class, 'destroy'])->name('destroy');
-});
-
-// Group Alias tetap aman terarah ke method engIndex
-Route::middleware(['web', 'auth'])->prefix('eng/material-receiving-alias')->name('eng.material.receipt.')->group(function () {
-    Route::get('/', [MaterialReceivedController::class, 'engIndex'])->name('index');
-    Route::get('/history', function() { return "Halaman History Material Received (Coming Soon)"; })->name('history');
 });

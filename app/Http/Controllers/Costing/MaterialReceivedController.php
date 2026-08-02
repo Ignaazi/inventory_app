@@ -136,6 +136,7 @@ class MaterialReceivedController extends Controller
 
     /**
      * 5. HALAMAN UTAMA LIST MONITORING MATERIAL (SISI ENGINEERING)
+     * FIX: Hanya menampilkan status 'pending' dan 'checked' agar list bersih saat selesai
      */
     public function engIndex(Request $request)
     {
@@ -143,6 +144,7 @@ class MaterialReceivedController extends Controller
         $perPage = $request->get('per_page', 10); 
         
         $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
+            ->whereIn('status', ['pending', 'checked']) // 💡 Data 'approved' otomatis sembunyi dari list utama
             ->when($search, function ($query) use ($search) {
                 $query->where('no_mr', 'LIKE', "%{$search}%")
                       ->orWhereHas('purchaseRequest', function ($q) use ($search) {
@@ -157,6 +159,33 @@ class MaterialReceivedController extends Controller
             ->paginate($perPage);
 
         return view('stock_eng.material_received.eng_list_material_received', compact('receivings', 'search'));
+    }
+
+    /**
+     * 🌟 BARU: 5B. HALAMAN HISTORY MATERIAL RECEIVED (SISI ENGINEERING)
+     * Menampilkan rekaman data yang sudah FULLY APPROVED
+     */
+    public function engHistory(Request $request)
+    {
+        $search = $request->get('search');
+        $perPage = $request->get('per_page', 10); 
+        
+        $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
+            ->where('status', 'approved') // 💡 Hanya menarik data yang sudah disetujui
+            ->when($search, function ($query) use ($search) {
+                $query->where('no_mr', 'LIKE', "%{$search}%")
+                      ->orWhereHas('purchaseRequest', function ($q) use ($search) {
+                          $q->where('no_pr', 'LIKE', "%{$search}%");
+                      })
+                      ->orWhereHas('user', function ($q) use ($search) {
+                          $q->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('nik', 'LIKE', "%{$search}%");
+                      });
+            })
+            ->orderBy('updated_at', 'desc') // Diurutkan berdasarkan approval paling baru
+            ->paginate($perPage);
+
+        return view('stock_eng.material_received.history_mr', compact('receivings', 'search'));
     }
 
     /**
@@ -243,15 +272,13 @@ class MaterialReceivedController extends Controller
 
         // Update record MR sesuai konfigurasi ENUM dari struktur database yang dikirim
         $mr->update([
-            'status'             => 'approved', // Menjadi Approved sesuai enum data
-            'qty_status'         => 'closed',   // Menjadi Closed sesuai enum data
+            'status'             => 'approved', // Menjadi Approved sesuai enum data[cite: 2]
+            'qty_status'         => 'closed',   // Menjadi Closed sesuai enum data[cite: 2]
             'approved_signature' => $signaturePath,
             'remark'             => $updatedRemark
         ]);
 
-        // KODE PENGUBAH STATUS DI TABEL PURCHASE REQUEST SEKARANG TELAH DIHAPUS TOTAL
-
-        return redirect()->route('eng.material.receiving.index')->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED!');
+        return redirect()->route('eng.material.receiving.index')->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED dan dipindahkan ke History!');
     }
 
     /**
