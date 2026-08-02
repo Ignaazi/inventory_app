@@ -6,135 +6,248 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class BarcodeParsingController extends Controller
 {
     /**
-     * Menampilkan halaman utama barcode builder
+     * Menampilkan halaman utama barcode builder / parsing (Automated Version)
      */
     public function index()
     {
-        // 1. Ambil data request produksi untuk dropdown select di view
+        // 1. Ambil data request produksi untuk dropdown select OUT (Hanya yang sudah Approved)
         $productionRequests = DB::table('production_requests')
+                                ->where('status', 'Approved')
                                 ->orderBy('id', 'desc')
                                 ->get();
 
-        // 2. Ambil data stok engineering (FIX: Menggunakan struktur database baru tanpa spareparts.name)
+        // 2. Ambil data material received untuk dropdown select IN
+        $materialReceived = DB::table('material_received')
+                                ->orderBy('id', 'desc')
+                                ->get();
+
+        // 3. Data master stok engineering (Disinkronkan agar mempermudah filtering di JavaScript Frontend)
         $stockEngineering = DB::table('stock_engs')
                                 ->join('spareparts', 'stock_engs.sparepart_id', '=', 'spareparts.id')
                                 ->join('raks', 'stock_engs.rak_id', '=', 'raks.id')
                                 ->select(
                                     'stock_engs.id as stock_id',
-                                    'spareparts.sparepart_id as part_name', // 💡 Di-alias agar tetap 'part_name' supaya view Blade lo ga error/patah
-                                    'spareparts.part_number',              // Ditambahkan secara opsional jika nanti view butuh detail tambahan
-                                    'spareparts.sap_code',                 // Ditambahkan secara opsional jika nanti view butuh detail tambahan
+                                    'stock_engs.sparepart_id as sparepart_id', // Helper ID untuk relasi filter UI
+                                    'spareparts.sparepart_id as part_name', 
+                                    'spareparts.part_number',              
+                                    'spareparts.sap_code',                 
                                     'raks.nama_rak as rak_name'
                                 )
                                 ->orderBy('spareparts.sparepart_id', 'asc')
                                 ->get();
 
-        // Pastikan variabel stockEngineering ikut dilempar ke compact
-        return view('eng_overview.barcode_parsing', compact('productionRequests', 'stockEngineering'));
+        return view('eng_overview.barcode_parsing', compact('productionRequests', 'stockEngineering', 'materialReceived'));
     }
 
     /**
-     * Menyimpan data terintegrasi ke db_barcodes, barcode_parsings, dan type_barcodes
+     * Menyimpan data secara Otomatis & Massal (Batching Engine) berdasarkan Dokumen Asal & Lokasi Rak
      */
     public function store(Request $request)
     {
-        // Validasi input dasar dari request
-        if (!$request->final_content || empty($request->final_content)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Konten barcode tidak boleh kosong!'
-            ], 400);
-        }
-
-        // 🚀 PROTEKSI ANTI-DUPLIKAT: Cek apakah string composite ini sudah pernah terdaftar sebelumnya
-        $isDuplicate = DB::table('db_barcodes')
-                         ->where('final_content', trim($request->final_content))
-                         ->exists();
-
-        if ($isDuplicate) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal! Barcode dengan kombinasi tulisan/konten "' . $request->final_content . '" sudah terdaftar di sistem dan tidak boleh double data!'
-            ], 422); // HTTP Status 422 Unprocessable Entity
-        }
+        // Validasi payload terupdate: stock_eng_id sekarang WAJIB dikirim dari UI
+        $request->validate([
+            'mode'         => 'required|in:IN,OUT',
+            'source_id'    => 'required|integer',
+            'barcode_type' => 'required|string',
+            'barcode_size' => 'required|string',
+            'stock_eng_id' => 'required|integer', // Mengunci kepastian lokasi Rak asal/tujuan
+        ]);
 
         try {
             DB::beginTransaction();
 
-            // 1. LOGIKA OTOMATIS GENERATE KODE UNIK (SIIXENG001, SIIXENG002, dst.)
-            $latestBarcode = DB::table('db_barcodes')->orderBy('id', 'desc')->first();
-            
-            if (!$latestBarcode) {
-                $nextBarcodeId = 'SIIXENG001';
-            } else {
-                $number = (int) substr($latestBarcode->barcode_id, 7);
-                $nextBarcodeId = 'SIIXENG' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+            $currentUserId = Auth::id();
+            $mode = $request->mode;
+            $sourceId = $request->source_id;
+            $stockEngId = $request->stock_eng_id;
+
+            // Validasi keandalan data kombinasi Rak & Sparepart di database
+            $stockEngRecord = DB::table('stock_engs')->where('id', $stockEngId)->first();
+            if (!$stockEngRecord) {
+                return response()->json(['success' => false, 'message' => 'Lokasi Rak atau Data Stok Engineering tidak ditemukan!'], 404);
             }
+            
+            if ($mode === 'IN') {
+                // ==========================================
+                // LOGIKA OTOMASI MODE IN (Barang Masuk Gudang)
+                // ==========================================
+                
+                // Ambil data dokumen Material Received
+                $mrDoc = DB::table('material_received')->where('id', $sourceId)->first();
+                if (!$mrDoc) {
+                    return response()->json(['success' => false, 'message' => 'Dokumen Material Received tidak valid!'], 404);
+                }
 
-            // 2. AMBIL NIK/NIM BAWAAN DARI AKUN LOGIN SEKARANG
-            $currentCreatorNim = Auth::user()->nik ?? Auth::user()->nim ?? '123456';
+                $qty = (int) $mrDoc->qty_received;
+                $dateStr = date('dmy'); // 6 Digit format tanggal ddmmyy
 
-            // 3. Simpan ke Tabel db_barcodes 
-            $barcodeDbId = DB::table('db_barcodes')->insertGetId([
-                'barcode_id'        => $nextBarcodeId, 
-                'barcode_type'      => $request->barcode_type,
-                'barcode_size'      => $request->barcode_size,
-                'final_content'     => trim($request->final_content),
-                'stock_eng_id'      => $request->stock_eng_id, 
-                'creator_nik'       => $currentCreatorNim, 
-                'current_lifecycle' => 'USED_IN', 
-                'created_at'        => now(),
-                'updated_at'        => now(),
-            ]);
+                // Ambil Counter Global Terakhir untuk prefix 'TXENGIN'
+                $latestIn = DB::table('db_barcodes')
+                                ->where('barcode_id', 'LIKE', 'TXENGIN%')
+                                ->orderBy('id', 'desc')
+                                ->first();
+                                
+                $globalCounter = 0;
+                if ($latestIn) {
+                    $globalCounter = (int) substr($latestIn->barcode_id, -5);
+                }
 
-            // 4. Hubungkan langsung ke tabel Barcode Parsing
-            DB::table('barcode_parsings')->insert([
-                'barcode_db_id'         => $barcodeDbId,
-                'production_request_id' => $request->production_request_id, 
-                'nik'                   => $currentCreatorNim, 
-                'qty_parsed'            => 1,
-                'description'           => 'Barcode generated and locked for production request ID: ' . $request->production_request_id,
-                'created_at'            => now(),
-                'updated_at'            => now(),
-            ]);
+                // Lakukan looping massal pembuatan nomor seri
+                for ($i = 1; $i <= $qty; $i++) {
+                    $globalCounter++;
+                    $generatedBarcodeId = 'TXENGIN' . $dateStr . str_pad($globalCounter, 5, '0', STR_PAD_LEFT);
 
-            // 5. Simpan setiap komponen di list struktur ke Halaman/Tabel Type Barcode
-            if ($request->has('components') && is_array($request->components)) {
-                foreach ($request->components as $component) {
-                    DB::table('type_barcodes')->insert([
-                        'char_type'       => $component['type'],
-                        'char_length'     => $component['length'],
-                        'char_value'      => $component['value'],
-                        'components_json' => json_encode($request->components), 
+                    // 1. Masukkan ke database master barcode (Terkunci ke Rak Pilihan)
+                    DB::table('db_barcodes')->insert([
+                        'barcode_id'        => $generatedBarcodeId,
+                        'users_id'          => $currentUserId,
+                        'barcode_type'      => $request->barcode_type,
+                        'barcode_size'      => $request->barcode_size,
+                        'final_content'     => $generatedBarcodeId,
+                        'stock_eng_id'      => $stockEngId, // Rak yang dipilih operator di UI
+                        'current_lifecycle' => 'AVAILABLE', 
+                        'created_at'        => now(),
+                        'updated_at'        => now(),
+                    ]);
+
+                    // 2. Buku Koran Mutasi Stok (Pemasukan)
+                    $txUuid = 'TX-IN-' . strtoupper(Str::random(4)) . '-' . time();
+                    DB::table('stock_eng_transactions')->insert([
+                        'tx_id'           => $txUuid,
+                        'users_id'        => $currentUserId,
+                        'stock_engs_id'   => $stockEngId,
+                        'tx_type'         => 'in',
+                        'qty_transaction' => 1,
+                        'process_type'    => 'system_batch',
+                        'status'          => 'success',
+                        'remark'          => 'Automated Batch IN from Doc MR: ' . ($mrDoc->no_mr ?? $sourceId),
                         'created_at'      => now(),
                         'updated_at'      => now(),
                     ]);
                 }
-            }
 
-            DB::commit();
-            
-            return response()->json([
-                'success'    => true,
-                'barcode_id' => $nextBarcodeId, 
-                'message'    => 'Barcode ' . $nextBarcodeId . ' berhasil disimpan dan dikunci untuk Request Produksi!'
-            ]);
+                // 3. Update nominal saldo quantity aktual di tabel master stock_engs
+                DB::table('stock_engs')->where('id', $stockEngId)->increment('qty', $qty);
+
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => "Sukses memproses Batch IN! Berhasil mendaftarkan {$qty} barcode baru ke Rak pilihan Anda."
+                ]);
+
+            } else {
+                // ==========================================
+                // LOGIKA OTOMASI MODE OUT (Distribusi ke Lini)
+                // ==========================================
+                
+                // Ambil data dokumen Production Request
+                $prDoc = DB::table('production_requests')->where('id', $sourceId)->first();
+                if (!$prDoc) {
+                    return response()->json(['success' => false, 'message' => 'Dokumen Production Request tidak valid!'], 404);
+                }
+
+                // Validasi tambahan: Pastikan stok di rak tersebut cukup sebelum dikurangi
+                $qty = (int) $prDoc->qty_req;
+                if ($stockEngRecord->qty < $qty) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => "Stok di Rak ini tidak mencukupi! Sisa stok saat ini: {$stockEngRecord->qty} pcs, sedangkan permintaan: {$qty} pcs."
+                    ], 400);
+                }
+
+                $lineRaw = $prDoc->no_line ?? '01';
+                $lineStr = str_pad($lineRaw, 2, '0', STR_PAD_LEFT); 
+                
+                // Anti-Crash Properti: Cari kecocokan penamaan sparepart ID pada tabel production_requests
+                $partId = $prDoc->sparepart_id ?? $prDoc->part_id ?? $prDoc->spareparts_id ?? $prDoc->id_sparepart ?? '00';
+
+                // Cari historical counter terakhir berdasarkan prefix Line Lini Produksi
+                $latestOutLine = DB::table('db_barcodes')
+                                    ->where('barcode_id', 'LIKE', "TXENGLINE{$lineStr}%")
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+
+                $localCounter = 0;
+                if ($latestOutLine) {
+                    $localCounter = (int) substr($latestOutLine->barcode_id, -5);
+                }
+
+                // Eksekusi pembuatan batch barcode lini produksi secara sekuensial
+                for ($i = 1; $i <= $qty; $i++) {
+                    $localCounter++;
+                    // Pola Barcode OUT: TXENGLINE + Lini (2 digit) + Code Sparepart + 5 Digit Counter Lokal
+                    $generatedBarcodeId = "TXENGLINE{$lineStr}{$partId}" . str_pad($localCounter, 5, '0', STR_PAD_LEFT);
+
+                    // 1. Registrasi ke master barcode
+                    $barcodeOutId = DB::table('db_barcodes')->insertGetId([
+                        'barcode_id'        => $generatedBarcodeId,
+                        'users_id'          => $currentUserId,
+                        'barcode_type'      => $request->barcode_type,
+                        'barcode_size'      => $request->barcode_size,
+                        'final_content'     => $generatedBarcodeId,
+                        'stock_eng_id'      => $stockEngId, // Sumber rak pengambilan barang
+                        'current_lifecycle' => 'USED_IN', 
+                        'created_at'        => now(),
+                        'updated_at'        => now(),
+                    ]);
+
+                    // 2. Dokumentasikan relasi distribusi di tabel barcode_parsings
+                    DB::table('barcode_parsings')->insert([
+                        'users_id'              => $currentUserId,
+                        'production_request_id' => $sourceId,
+                        'barcode_in_id'         => null,
+                        'barcode_out_id'        => $barcodeOutId,
+                        'qty_parsed'            => 1,
+                        'status'                => 'success',
+                        'remark'                => 'Automated parsed output for Line ' . $lineStr,
+                        'created_at'            => now(),
+                        'updated_at'            => now(),
+                    ]);
+
+                    // 3. Buku Koran Mutasi Stok (Pengeluaran)
+                    $txUuid = 'TX-OUT-' . strtoupper(Str::random(4)) . '-' . time();
+                    DB::table('stock_eng_transactions')->insert([
+                        'tx_id'                 => $txUuid,
+                        'users_id'              => $currentUserId,
+                        'stock_engs_id'         => $stockEngId,
+                        'db_barcodes_id'        => $barcodeOutId,
+                        'production_request_id' => $sourceId,
+                        'tx_type'               => 'out',
+                        'qty_transaction'       => 1,
+                        'process_type'          => 'system_batch',
+                        'status'                => 'success',
+                        'remark'                => 'Automated batch parsing deduction for Line: ' . $lineStr,
+                        'created_at'            => now(),
+                        'updated_at'            => now(),
+                    ]);
+                }
+
+                // 4. Kurangi nominal saldo quantity aktual di tabel master stock_engs
+                DB::table('stock_engs')->where('id', $stockEngId)->decrement('qty', $qty);
+
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => "Sukses memproses Batch OUT! Berhasil mendistribusikan {$qty} barcode khusus dari Rak asal ke Lini {$lineStr}."
+                ]);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'success' => false, 
-                'message' => 'Gagal simpan ke DB: ' . $e->getMessage()
+                'success' => false,
+                'message' => 'Terjadi kegagalan sistem database internal: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Mengambil riwayat konfigurasi struktur untuk fitur Import
+     * Mengambil riwayat konfigurasi struktur
      */
     public function getConfigs()
     {
