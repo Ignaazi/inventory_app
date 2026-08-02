@@ -37,6 +37,6 @@ class ListLineProduction extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id', 'nim');
+        return $this->belongsTo(\App\Models\User::class, 'user_id', 'nik');
     }
 }

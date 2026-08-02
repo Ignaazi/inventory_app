@@ -41,7 +41,7 @@ class ListLineProductionController extends Controller
         $autoLineId = 'SIIXSMTLINE' . $formattedNumber;
 
         ListLineProduction::create([
-            'user_id'      => Auth::user()->nim ?? null, // Sekarang aman masuk database karena sudah ada di $fillable model
+            'user_id'      => Auth::user()->nik ?? null, // 🔥 FIXED: Menggunakan nik, bukan nim[cite: 5]
             'line_id'      => $autoLineId,
             'no_line'      => $request->no_line,
             'name_machine' => $request->name_machine,
@@ -59,7 +59,7 @@ class ListLineProductionController extends Controller
         ]);
 
         $line->update([
-            'user_id'      => Auth::user()->nim ?? null, // Mencatat NIM user yang terakhir kali melakukan update
+            'user_id'      => Auth::user()->nik ?? null, // 🔥 FIXED: Menggunakan nik, bukan nim[cite: 5]
             'no_line'      => $request->no_line,
             'name_machine' => $request->name_machine,
         ]);

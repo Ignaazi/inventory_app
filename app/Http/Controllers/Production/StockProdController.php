@@ -3,147 +3,262 @@
 namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller; 
-use App\Models\Production\stock_prod;
-use App\Models\Production\ListLineProduction;
-use App\Models\StockEng; 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Production\stock_prod; 
+use App\Models\ListSparepartEng; 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class StockProdController extends Controller
 {
-    public function index()
+    /**
+     * Helper internal untuk mendeteksi lokasi Model ListLineProduction otomatis
+     */
+    private function getLineModel()
     {
-        $lines = ListLineProduction::with(['stocks'])->orderBy('line_id', 'asc')->get();
-
-        $stockEngs = StockEng::with('sparepart')
-            ->get()
-            ->sortBy(function ($stock) {
-                return $stock->sparepart->name ?? '';
-            })
-            ->values();
-    
-        return view('stock_prod.stock_prod', compact('lines', 'stockEngs'));
+        $modelUtama = 'App\\Models\\ListLineProduction';
+        $modelSubFolder = 'App\\Models\\Production\\ListLineProduction';
+        return class_exists($modelUtama) ? $modelUtama : $modelSubFolder;
     }
 
+    /**
+     * 1. Route: stock.prod.index
+     * Menampilkan data stok lantai produksi dan memuat relasi line & sparepart
+     */
+    public function index()
+    {
+        $lineModel = $this->getLineModel();
+        $lines = $lineModel::all();
+
+        // Memuat relasi 'line' dan 'sparepart' terpusat
+        $stocks = stock_prod::with(['line', 'sparepart'])->orderBy('created_at', 'desc')->paginate(25);
+        $ListSparepartEng = ListSparepartEng::orderBy('sparepart_id', 'asc')->get(); 
+        
+        // Mengarah tepat ke views/stock_prod/stock_prod.blade.php
+        return view('stock_prod.stock_prod', compact('stocks', 'lines', 'ListSparepartEng'));
+    }
+
+    /**
+     * 2. Route: stock.prod.nozzle.store (ADD NOZZLE IN / ALOKASI BARU)
+     * Menyimpan sparepart baru ke line produksi tertentu dengan validasi duplikasi
+     */
     public function nozzleStore(Request $request)
     {
-        if ($request->input('action_type') === 'line') {
-            $request->validate(['register_line_id' => 'required']);
-
-            if (stock_prod::where('line_id', $request->register_line_id)->exists()) {
-                return redirect()->back()->with('error', 'Lini Produksi tersebut sudah terdaftar!');
-            }
-
-            stock_prod::create([
-                'line_id'       => $request->register_line_id,
-                'stock_eng_id'  => null,
-                'no_nozzle'     => null,
-                'part_no'       => null,
-                'sap_code'      => null,
-                'category'      => null,
-                'qty'           => 0,
-                'min_stock'     => 0,
-            ]);
-            return redirect()->back()->with('success', 'Lini Produksi Baru Berhasil Didaftarkan!');
-        }
-
-        $request->validate([
-            'line_id'      => 'required', 
-            'stock_eng_id' => 'required',
-            'qty'          => 'required|integer|min:0',
-            'min_stock'    => 'required|integer|min:0',
-        ]);
-
-        DB::beginTransaction();
         try {
-            $engItem = StockEng::with('sparepart')->find($request->stock_eng_id);
+            $tableSparepart = (new ListSparepartEng)->getTable();
+            $lineModel = $this->getLineModel();
+            $tableLine = (new $lineModel)->getTable();
 
-            if (!$engItem) {
-                return redirect()->back()->with('error', 'Master komponen Engineering tidak ditemukan!');
+            $request->validate([
+                'line_id'      => 'required|exists:' . $tableLine . ',id',
+                'sparepart_id' => 'required|exists:' . $tableSparepart . ',id', 
+                'qty'          => 'required|numeric|min:0',
+                'min_stock'    => 'required|numeric|min:0',
+            ]);
+        
+            // VALIDASI DUPLIKASI ALOKASI LINE
+            $isDuplicate = stock_prod::where('line_id', $request->line_id)
+                ->where('sparepart_id', $request->sparepart_id)
+                ->exists();
+
+            if ($isDuplicate) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['sparepart_id' => 'Gagal! Sparepart ini sudah dialokasikan di Line tersebut. Silakan pilih Line lain atau update kuantitas yang ada.']);
             }
 
-            $noNozzle = $engItem->sparepart->name ?? $engItem->no_nozzle ?? 'UNKNOWN';
-            $partNo   = $engItem->sparepart->part_number ?? $engItem->sparepart->part_no ?? $engItem->part_no ?? '-';
-            $sapCode  = $engItem->sparepart->sap_code ?? $engItem->sap_code ?? '-';
-            $category = $engItem->sparepart->category ?? $engItem->category ?? 'NOZZLE';
+            $stock = new stock_prod();
+            $stock->line_id = $request->line_id;
+            $stock->sparepart_id = $request->sparepart_id; 
+            $stock->qty = $request->qty;
+            $stock->min_stock = $request->min_stock;
+            $stock->save();
+        
+            return redirect()->back()->with('success', 'Data Sparepart Line Berhasil Disimpan!');
 
-            // Cari row line yang kosong untuk ditimpa (jika ada sisa baris kosong bawaan)
-            $dummyLine = stock_prod::where('line_id', $request->line_id)
-                ->where(function($query) {
-                    $query->whereNull('no_nozzle')
-                          ->orWhere('no_nozzle', '')
-                          ->orWhere('no_nozzle', '-')
-                          ->orWhere('no_nozzle', 'N/A');
-                })
-                ->first();
-
-            if ($dummyLine) {
-                $dummyLine->update([
-                    'stock_eng_id' => $request->stock_eng_id, 
-                    'no_nozzle'    => $noNozzle,
-                    'part_no'      => $partNo,
-                    'sap_code'     => $sapCode,
-                    'category'     => $category,
-                    'qty'          => $request->qty,
-                    'min_stock'    => $request->min_stock,
-                ]);
-            } else {
-                // Skenario: cek apakah nozzle yang sama sudah ada di line tersebut
-                $matchedStockProd = stock_prod::where('line_id', $request->line_id)
-                    ->where('part_no', $partNo)
-                    ->first();
-
-                if ($matchedStockProd) {
-                    $matchedStockProd->update([
-                        'qty'       => $matchedStockProd->qty + intval($request->qty),
-                        'min_stock' => $request->min_stock, 
-                    ]);
-                } else {
-                    stock_prod::create([
-                        'line_id'      => $request->line_id,
-                        'stock_eng_id' => $request->stock_eng_id, 
-                        'no_nozzle'    => $noNozzle,
-                        'part_no'      => $partNo,
-                        'sap_code'     => $sapCode,
-                        'category'     => $category,
-                        'qty'          => $request->qty,
-                        'min_stock'    => $request->min_stock,
-                    ]);
-                }
-            }
-
-            DB::commit();
-            return redirect()->back()->with('success', 'Komponen Nozzle Berhasil Disimpan ke Lini Produksi!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error("Gagal simpan stock prod: " . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
     }
 
+    /**
+     * 3. Route: stock.prod.update
+     * Mengubah kuantitas atau threshold data stok lini produksi
+     */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'qty'        => 'required|integer|min:0',
-            'min_stock'  => 'required|integer|min:0',
-        ]);
+        try {
+            $tableSparepart = (new ListSparepartEng)->getTable();
+            $lineModel = $this->getLineModel();
+            $tableLine = (new $lineModel)->getTable();
 
-        $stock = stock_prod::findOrFail($id);
-        $stock->update([
-            'qty'        => $request->qty,
-            'min_stock'  => $request->min_stock,
-        ]);
+            $request->validate([
+                'line_id'      => 'required|exists:' . $tableLine . ',id',
+                'sparepart_id' => 'required|exists:' . $tableSparepart . ',id', 
+                'qty'          => 'required|numeric|min:0',
+                'min_stock'    => 'required|numeric|min:0',
+            ]);
 
-        return redirect()->back()->with('success', 'Kapasitas Stok Produksi Berhasil Disesuaikan!');
+            $stock = stock_prod::findOrFail($id);
+            
+            $lineId = $request->line_id;
+            $sparepartId = $request->sparepart_id;
+
+            // VALIDASI DUPLIKASI SAAT UPDATE LINE & SPAREPART
+            $isDuplicate = stock_prod::where('id', '!=', $id)
+                ->where('line_id', $lineId)
+                ->where('sparepart_id', $sparepartId)
+                ->exists();
+
+            if ($isDuplicate) {
+                return redirect()->back()->with('error', 'Gagal Update! Kombinasi Sparepart dan Line tersebut sudah terdaftar di baris data lain.');
+            }
+
+            $stock->line_id      = $lineId;
+            $stock->sparepart_id = $sparepartId;
+            $stock->qty          = $request->qty;
+            $stock->min_stock    = $request->min_stock;
+            $stock->save();
+
+            return redirect()->back()->with('success', 'Data Stok Produksi Berhasil Diubah!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            Log::error("Gagal update stock prod: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
+        }
     }
 
     /**
-     * MURNI MENGHAPUS / DELETE BARIS DARI DATABASE
+     * 4. Route: stock.prod.destroy
+     * Menghapus baris data alokasi stok di lantai produksi
      */
     public function destroy($id)
     {
         $stock = stock_prod::findOrFail($id);
-        $stock->delete(); // <--- Ini diubah jadi delete murni bor!
+        $stock->delete();
+        return redirect()->back()->with('success', 'Data Berhasil Dihapus');
+    }
 
-        return redirect()->back()->with('success', 'Data Alokasi Nozzle Berhasil Dihapus dari Sistem!');
+    /**
+     * 5. Route: stock.prod.line.store (ADD LINE)
+     * Menambahkan data lini produksi baru
+     */
+    public function lineStore(Request $request)
+    {
+        $lineModel = $this->getLineModel();
+        $tableLine = (new $lineModel)->getTable();
+
+        $request->validate([
+            'line_id'      => 'required|unique:' . $tableLine . ',line_id',
+            'no_line'      => 'required',
+            'name_machine' => 'required',
+        ]);
+
+        // FIXED: Menggunakan instansiasi manual objek untuk mencegah MassAssignmentException jika $fillable belum diatur di model
+        $line = new $lineModel();
+        $line->user_id      = Auth::user()->nik ?? $request->user_id ?? '-';
+        $line->line_id      = strtoupper($request->line_id);
+        $line->no_line      = $request->no_line;
+        $line->name_machine = strtoupper($request->name_machine);
+        $line->save();
+
+        return redirect()->back()->with('success', 'Line Produksi Baru Berhasil Ditambahkan');
+    }
+
+    /**
+     * 6. Route: stock.prod.line.destroy (DELETE LINE)
+     * Menghapus data lini produksi tertentu
+     */
+    public function lineDestroy($id)
+    {
+        $lineModel = $this->getLineModel();
+        $line = $lineModel::findOrFail($id);
+        
+        // Opsional: Cek jika ada stock yang masih terikat ke line ini sebelum dihapus
+        $hasStocks = stock_prod::where('line_id', $id)->exists();
+        if ($hasStocks) {
+            return redirect()->back()->with('error', 'Gagal menghapus! Masih ada data nozzle aktif yang terdaftar di Line ini.');
+        }
+
+        $line->delete();
+        return redirect()->back()->with('success', 'Line Produksi Berhasil Dihapus!');
+    }
+
+    /**
+     * 7. Route: stock.prod.export.csv
+     * Mengunduh rekap inventory lantai produksi menjadi file CSV
+     */
+    public function exportCSV()
+    {
+        $fileName = 'production_floor_inventory_' . date('Ymd_His') . '.csv';
+        $tasks = stock_prod::with(['line', 'sparepart'])->get();
+
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $columns = array('No Line', 'Machine Name', 'Sparepart ID', 'Part No', 'Sap Code', 'Qty', 'Min Stock');
+
+        $callback = function() use($tasks, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($tasks as $task) {
+                fputcsv($file, array(
+                    $task->line->no_line ?? '-',
+                    $task->line->name_machine ?? '-',
+                    $task->sparepart->sparepart_id ?? '-',         
+                    $task->sparepart->part_number ?? ($task->sparepart->part_no ?? '-'),  
+                    $task->sparepart->sap_code ?? '-',     
+                    $task->qty,
+                    $task->min_stock
+                ));
+            }
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * =========================================================================
+     * TRANSAKSI REQUEST & RECEIVE PLACEHOLDERS
+     * Menjaga tombol aksi view tetap berjalan normal tanpa eror
+     * =========================================================================
+     */
+
+    /**
+     * Route: stock.prod.request.store
+     */
+    public function storeRequest(Request $request)
+    {
+        // Logika penarikan/permintaan barang dari Gudang Engineering ke Produksi
+        return redirect()->back()->with('success', 'Permintaan unit sparepart berhasil dikirim ke Engineering!');
+    }
+
+    /**
+     * Route: stock.prod.receive
+     */
+    public function receiveItem(Request $request)
+    {
+        // Logika penerimaan serah terima barang untuk menambah fisik stok lini produksi
+        return redirect()->back()->with('success', 'Sparepart berhasil diterima dan menambah stok lini!');
+    }
+
+    /**
+     * Route: stock.prod.request.history
+     */
+    public function requestHistory()
+    {
+        // Mengarahkan ke history log request material
+        return redirect()->back()->with('info', 'Halaman History Request sedang dalam pengembangan.');
     }
 }

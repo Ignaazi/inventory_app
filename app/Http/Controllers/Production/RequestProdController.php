@@ -56,8 +56,11 @@ class RequestProdController extends Controller
         }
 
         $spareparts = ListSparepartEng::all();
+        
+        // FIX: Ambil seluruh data master line untuk disuplai ke dropdown Blade
+        $productionLines = ListLineProduction::all();
 
-        return view('stock_prod.process_req.requestProd', compact('activeLine', 'spareparts'));
+        return view('stock_prod.process_req.requestProd', compact('activeLine', 'spareparts', 'productionLines'));
     }
 
     public function store(Request $request)
@@ -80,12 +83,15 @@ class RequestProdController extends Controller
             return dd("Data Sparepart TIDAK DITEMUKAN di database.");
         }
 
-        // Mengambil line otomatis berdasarkan user nik
-        $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
-        if (!$activeLine && $user->role === 'admin') {
-            $activeLine = ListLineProduction::first();
+        // FIX DROPDOWN CAPTURE: Tangkap ID Line dari pilihan dropdown form, jika kosong baru cari otomatis
+        $lineId = $request->input('list_line_production_id');
+        if (!$lineId) {
+            $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
+            if (!$activeLine && $user->role === 'admin') {
+                $activeLine = ListLineProduction::first();
+            }
+            $lineId = $activeLine ? $activeLine->id : null;
         }
-        $lineId = $activeLine ? $activeLine->id : null;
 
         // ====================================================
         // GENERATE NUMBER: REQPROD001 TILL REQPROD999999
@@ -148,8 +154,11 @@ class RequestProdController extends Controller
         }
 
         $spareparts = ListSparepartEng::all();
+        
+        // FIX: Ambil seluruh data master line untuk disuplai ke dropdown Blade saat Edit Draft
+        $productionLines = ListLineProduction::all();
 
-        return view('stock_prod.process_req.requestProd', compact('requestData', 'activeLine', 'spareparts'));
+        return view('stock_prod.process_req.requestProd', compact('requestData', 'activeLine', 'spareparts', 'productionLines'));
     }
 
     public function updateDraft(Request $request, $id)
@@ -173,11 +182,15 @@ class RequestProdController extends Controller
             return dd("Draft Update Gagal: Data sparepart tidak ditemukan di DB.");
         }
 
-        $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
-        if (!$activeLine && $user->role === 'admin') {
-            $activeLine = ListLineProduction::first();
+        // FIX DROPDOWN CAPTURE: Tangkap ID Line dari pilihan dropdown form saat update draft
+        $lineId = $request->input('list_line_production_id');
+        if (!$lineId) {
+            $activeLine = ListLineProduction::where('user_id', $user->nik)->first();
+            if (!$activeLine && $user->role === 'admin') {
+                $activeLine = ListLineProduction::first();
+            }
+            $lineId = $activeLine ? $activeLine->id : null;
         }
-        $lineId = $activeLine ? $activeLine->id : null;
 
         // FIX STATUS: Disinkronkan ke 'Draft Submit'
         $statusAkhir = ($actionType === 'draft') ? 'Draft Submit' : 'Pending';

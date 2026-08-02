@@ -65,7 +65,6 @@
             <input type="hidden" name="action_type" x-model="actionType">
             <input type="hidden" name="draft_id" x-model="draft_id">
             <input type="hidden" name="signature_data" x-bind:value="signatureImg">
-            <input type="hidden" name="list_line_production_id" value="{{ $activeLine->id ?? '' }}">
 
             <div class="p-5 sm:p-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -85,13 +84,18 @@
                             <input type="text" x-model="requestor_name" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
                         </div>
 
-                        <!-- 3. Line (DIPISAH) -->
+                        <!-- 3. Line (SEKARANG DROPDOWN DINAMIS BERDASARKAN MASTER DATA LINE) -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Line</label>
-                            <input type="text" x-model="line_no" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
+                            <select name="list_line_production_id" x-model="selected_line_id" @change="updateLineDetails()" required class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold text-black outline-none transition focus:border-indigo-600 dark:bg-slate-900 dark:text-white">
+                                <option value="" class="text-black">-- Pilih Line Production --</option>
+                                @foreach($productionLines as $line)
+                                    <option value="{{ $line->id }}" class="text-black">{{ $line->no_line }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
-                        <!-- 4. Machine Name (DIPISAH) -->
+                        <!-- 4. Machine Name (OTOMATIS TERISI READ-ONLY SAAT LINE DIPILIH) -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-black uppercase text-black tracking-wider">Machine Name</label>
                             <input type="text" x-model="machine_name" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold text-black cursor-not-allowed outline-none dark:bg-meta-4/30">
@@ -282,9 +286,22 @@
         const userNik = "{{ optional($requestData ?? null)->user ? $requestData->user->nik : (auth()->check() ? auth()->user()->nik : '') }}";
         const userName = "{{ optional($requestData ?? null)->user ? $requestData->user->name : (auth()->check() ? auth()->user()->name : '') }}";
         
-        // Data Line & Machine dipisah secara presisi
-        const lineNoData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->no_line : ($activeLine ? $activeLine->no_line : '-') }}";
-        const machineNameData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->name_machine : ($activeLine ? $activeLine->name_machine : 'ADMINISTRATOR AREA') }}";
+        // Data Master List Line Integrasi Alpine
+        const productionLinesList = {!! json_encode($productionLines ?? []) !!};
+        const initialLineId = '{{ old('list_line_production_id', optional($requestData ?? null)->list_line_production_id ?? ($activeLine ? $activeLine->id : '')) }}';
+
+        // Set default text awal
+        let lineNoData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->no_line : ($activeLine ? $activeLine->no_line : '-') }}";
+        let machineNameData = "{{ optional($requestData ?? null)->lineProduction ? $requestData->lineProduction->name_machine : ($activeLine ? $activeLine->name_machine : '-') }}";
+
+        // Sinkronisasi data awal jika ID line ditemukan
+        if (initialLineId) {
+            const matchedLine = productionLinesList.find(item => item.id == initialLineId);
+            if (matchedLine) {
+                lineNoData = matchedLine.no_line;
+                machineNameData = matchedLine.name_machine;
+            }
+        }
 
         const userSignature = "{{ auth()->check() && auth()->user()->signature_path ? auth()->user()->signature_path : '' }}";
         const requestSignature = "{{ optional($requestData ?? null)->production_signature ?? '' }}";
@@ -309,6 +326,8 @@
         return {
             requestor_nik: userNik,
             requestor_name: userName,
+            selected_line_id: initialLineId,
+            linesList: productionLinesList,
             line_no: lineNoData,
             machine_name: machineNameData,
             selected_id: initialId,
@@ -321,6 +340,18 @@
             request_no: '{{ optional($requestData ?? null)->request_no ?? '' }}',
             signatureImg: activeSignaturePath ? (activeSignaturePath.startsWith('http') ? activeSignaturePath : "{{ asset('storage') }}/" + activeSignaturePath.replace(/^\/?(storage\/)?/, '')) : null,
             actionType: 'submit',
+
+            // Fungsi update data Line & Nama Mesin secara dinamis otomatis
+            updateLineDetails() {
+                const line = this.linesList.find(item => item.id == this.selected_line_id);
+                if (line) {
+                    this.line_no = line.no_line;
+                    this.machine_name = line.name_machine;
+                } else {
+                    this.line_no = '-';
+                    this.machine_name = '-';
+                }
+            },
 
             updateSparepartDetails() {
                 const part = sparepartsList.find(item => item.id == this.selected_id);
@@ -345,6 +376,7 @@
             resetAll() {
                 this.selected_id = ''; this.sparepart_id_text = '-'; this.sap_code = '-';
                 this.part_number = '-'; this.remark = ''; this.qty_req = 1;
+                this.selected_line_id = ''; this.line_no = '-'; this.machine_name = '-';
             },
     
             submitAs(type) {
