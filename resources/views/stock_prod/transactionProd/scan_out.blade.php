@@ -1,7 +1,7 @@
 @extends('admin')
 
 @section('content')
-<!-- Import Font Profesional ala Dashboard -->
+<!-- Import Font & Icons Profesional -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,8 +37,8 @@
         position: absolute;
         width: 100%;
         height: 3px;
-        background: rgba(239, 68, 68, 0.8);
-        box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.6);
+        background: rgba(244, 63, 94, 0.9);
+        box-shadow: 0 0 15px 2px rgba(244, 63, 94, 0.7);
         left: 0;
         top: 0;
         z-index: 10;
@@ -62,11 +62,11 @@
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                <i class="fa-solid fa-barcode text-emerald-600 dark:text-emerald-400 mr-2"></i> Terminal Stock In Produksi
+                <i class="fa-solid fa-qrcode text-rose-600 dark:text-rose-400 mr-2"></i> Terminal Stock Out Produksi
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">1 Barcode scan langsung menambah 1 item ke stok masuk lini produksi (Production In) secara realtime.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">1 Barcode scan langsung memotong stok item terkait di lantai produksi (Production Out) secara realtime.</p>
         </div>
-        <a href="{{ route('prod.transaction.in') }}" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all no-underline">
+        <a href="{{ route('prod.transaction.out') }}" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all no-underline">
             <i class="fa-solid fa-arrow-left"></i> Kembali ke Riwayat
         </a>
     </div>
@@ -95,19 +95,36 @@
                 </div>
 
                 <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 transition-all uppercase tracking-wide cursor-pointer">
+                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 transition-all uppercase tracking-wide cursor-pointer">
                         <i class="fa-solid fa-video"></i> Aktifkan Lensa
                     </button>
-                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 transition-all uppercase tracking-wide hidden cursor-pointer">
+                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-slate-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 transition-all uppercase tracking-wide hidden cursor-pointer">
                         <i class="fa-solid fa-power-off"></i> Matikan Lensa
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- PANEL DIAGNOSTIC & FAILSAFE -->
+        <!-- PANEL CONFIGURATION & DIAGNOSTIC -->
         <div class="lg:col-span-4 flex flex-col gap-6">
             
+            <!-- PARAMETER CONFIG: REASON/CATEGORY -->
+            <div class="panel-box flex flex-col">
+                <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
+                    <h3 class="font-semibold text-slate-800 dark:text-white text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-rose-500"></i> Parameter Scan Out
+                    </h3>
+                </div>
+                <div class="p-5">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Kategori Alasan Pengeluaran</label>
+                    <select id="out_category" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-950 dark:text-white focus:outline-none focus:border-rose-500 font-semibold cursor-pointer">
+                        <option value="broken">BROKEN (Barang Rusak / Reject)</option>
+                        <option value="lost">LOST (Barang Hilang / Selisih)</option>
+                        <option value="other" selected>OTHER (Kebutuhan Lini Produksi)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- PANEL SYSTEM LOG -->
             <div id="status-container" class="panel-box overflow-hidden transition-colors duration-300">
                 <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
@@ -121,7 +138,7 @@
                         <div>
                             <h4 class="text-sm font-bold text-slate-900 dark:text-white" id="status-title">Mesin Ready</h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" id="status-desc">
-                                Jalankan lensa kamera atau gunakan input manual untuk mengeksekusi penerimaan barang masuk produksi.
+                                Jalankan lensa kamera atau gunakan input manual keyboard untuk memotong ketersediaan stok komponen.
                             </p>
                         </div>
                     </div>
@@ -139,8 +156,8 @@
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ketik / Tembak Barcode ID</label>
                         <div class="flex gap-2">
-                            <input type="text" id="manual_barcode" placeholder="Contoh: TXENGRAK03LINE011480002" class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-950 dark:text-white focus:outline-none focus:border-emerald-500">
-                            <button type="button" id="btn_manual_submit" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all cursor-pointer">
+                            <input type="text" id="manual_barcode" placeholder="Contoh: TXENGRAK03LINE011480002" class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-950 dark:text-white focus:outline-none focus:border-rose-500">
+                            <button type="button" id="btn_manual_submit" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all cursor-pointer">
                                 Kirim
                             </button>
                         </div>
@@ -149,8 +166,8 @@
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-3">
                         <p class="text-[10px] text-slate-400 mb-2">Alternatif: Deteksi via upload berkas gambar QR</p>
                         <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 cursor-pointer transition-all group">
-                            <i class="fa-solid fa-cloud-arrow-up text-emerald-500 mb-1"></i>
-                            <span class="text-xs font-medium text-emerald-600" id="label-upload-status">Browse Image</span>
+                            <i class="fa-solid fa-cloud-arrow-up text-rose-500 mb-1"></i>
+                            <span class="text-xs font-medium text-rose-600" id="label-upload-status">Browse Image</span>
                             <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
                         </label>
                     </div>
@@ -176,6 +193,7 @@
     const camPlaceholder = document.getElementById('camera-placeholder');
     const manualInput = document.getElementById('manual_barcode');
     const btnManual = document.getElementById('btn_manual_submit');
+    const outCategorySelect = document.getElementById('out_category');
 
     const scanConfig = {
         fps: 20, 
@@ -186,17 +204,17 @@
         aspectRatio: 1.0
     };
 
-    // FUNGSI INTI AJAX SUBMIT SCAN IN PRODUCTION
-    async function processAjaxStockIn(rawCode, mode = 'scan') {
+    // FUNGSI INTI AJAX SUBMIT SCAN OUT PRODUCTION
+    async function processAjaxStockOut(rawCode, mode = 'scan') {
         const cleanCode = rawCode.replace(/[\n\r\t]/g, "").trim();
         if (!cleanCode || isProcessing) return;
         
         isProcessing = true; 
-        changeUIStatus('PROCESSING', 'MEMBACA...', `Mengirim data: ${cleanCode}`);
+        changeUIStatus('PROCESSING', 'MEMBACA...', `Memproses pemotongan: ${cleanCode}`);
 
         Swal.fire({
-            title: 'Menambah Stok Produksi...',
-            html: `<div class="text-xs font-mono text-emerald-600 break-all">${cleanCode}</div>`,
+            title: 'Memotong Stok Produksi...',
+            html: `<div class="text-xs font-mono text-rose-600 break-all">${cleanCode}</div>`,
             allowOutsideClick: false,
             showConfirmButton: false,
             width: '320px',
@@ -204,12 +222,14 @@
         });
 
         const formData = new FormData();
-        formData.append('barcode_scan', cleanCode); 
+        formData.append('barcode_scan', cleanCode);
         formData.append('process_type', mode);       
-        formData.append('comment', `Automated Stock IN via Scanner Terminal.`);
+        formData.append('out_category', outCategorySelect.value);       
+        formData.append('remark', `Automated Stock OUT via Scanner Terminal [${outCategorySelect.value.toUpperCase()}].`);
 
         try {
-            const response = await fetch("{{ route('prod.transaction.in.store_scan') }}", {
+            // Ditujukan ke route POST milik storeScanOut di Controller terpadu baru
+            const response = await fetch("{{ route('prod.transaction.out.store_scan') }}", {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
                 body: formData
@@ -218,37 +238,23 @@
             const result = await response.json();
 
             if (response.ok && result.success) {
-                changeUIStatus('VALID', 'BERHASIL DITAMBAH', result.message);
+                changeUIStatus('VALID', 'BERHASIL KELUAR', result.message);
                 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Stok Bertambah (+1)',
+                    title: 'Stok Terpotong (-1)',
                     text: result.message,
                     timer: 1500,
                     showConfirmButton: false,
                     width: '350px'
                 });
             } else {
-                // Intersepsi Error khusus Mismatch / Nozzle belum diregistrasikan ke Lini tersebut
-                let alertTitle = 'Gagal Scan In';
-                let alertIcon = 'error';
-                let alertText = result.message;
-                let btnColor = '#ef4444';
-
-                if (response.status === 422 || (result.message && result.message.includes('Mismatch'))) {
-                    alertTitle = 'Nozzle Belum Terdaftar!';
-                    alertIcon = 'warning';
-                    alertText = 'Tipe nozzle tidak ditemukan di Lini ini. Silakan registrasikan alokasi nozzle di Master Lini terlebih dahulu.';
-                    btnColor = '#f59e0b'; // Amber/Orange warning color
-                }
-
-                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', alertText);
-                
+                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message);
                 Swal.fire({
-                    icon: alertIcon,
-                    title: alertTitle,
-                    text: alertText,
-                    confirmButtonColor: btnColor
+                    icon: 'error',
+                    title: 'Gagal Scan Out',
+                    text: result.message,
+                    confirmButtonColor: '#ef4444'
                 });
             }
         } catch (error) {
@@ -261,7 +267,7 @@
         }
     }
 
-    // INTERFACE DYNAMIC CONTROLLER
+    // INTERFACE DYNAMIC CONTROLLER UI
     function changeUIStatus(status, labelText, descText) {
         const badge = document.getElementById('badge_method');
         const statusContainer = document.getElementById('status-container');
@@ -282,9 +288,9 @@
             mainIcon.className = "fa-solid fa-square-check text-lg";
         } else if (status === 'PROCESSING') {
             badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SYNC`;
-            badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-200');
-            statusContainer.className = "panel-box overflow-hidden border-emerald-400 bg-emerald-50/30";
-            iconBox.classList.add('bg-emerald-100', 'text-emerald-600');
+            badge.classList.add('bg-rose-100', 'text-rose-700', 'border', 'border-rose-200');
+            statusContainer.className = "panel-box overflow-hidden border-rose-400 bg-rose-50/30";
+            iconBox.classList.add('bg-rose-100', 'text-rose-600');
             mainIcon.className = "fa-solid fa-rotate fa-spin text-lg";
         } else {
             badge.innerHTML = `<i class="fa-solid fa-xmark"></i> DITOLAK`;
@@ -310,19 +316,19 @@
             laserLine.style.display = 'none';
         } else {
             document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-video text-[10px] animate-pulse"></i> LIVE SCANNING`;
-            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-emerald-600 text-white rounded flex items-center gap-1.5 uppercase tracking-wider";
+            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-rose-600 text-white rounded flex items-center gap-1.5 uppercase tracking-wider";
             laserLine.style.display = 'block';
         }
     }
 
-    // ACTIONS EVENT
+    // ACTIONS EVENT CAM CONTROL
     startCamBtn.addEventListener('click', () => {
         if (!isCameraRunning) {
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 scanConfig, 
                 (decodedText) => { 
-                    if (!isProcessing) processAjaxStockIn(decodedText.trim(), 'scan'); 
+                    if (!isProcessing) processAjaxStockOut(decodedText.trim(), 'scan'); 
                 }
             )
             .then(() => { 
@@ -350,10 +356,10 @@
         }
     });
 
-    // KIRIM MANUAL BY KEYBOARD / USB GUN SCANNER
+    // ACTION: SUBMIT MANUAL VIA KEYBOARD / USB BARCODE GUN
     btnManual.addEventListener('click', () => {
         const val = manualInput.value.trim();
-        if(val) processAjaxStockIn(val, 'manual');
+        if(val) processAjaxStockOut(val, 'manual');
     });
 
     manualInput.addEventListener('keypress', (e) => {
@@ -362,14 +368,14 @@
         }
     });
 
-    // DEKRIPSI FILE GAMBAR
+    // ACTION: UPLOAD BERKAS GAMBAR QR/BARCODE
     photoInput.addEventListener('change', function(e) {
         if (e.target.files.length === 0) return;
         const file = e.target.files[0];
         document.getElementById('label-upload-status').innerText = "File terunggah";
 
         html5QrCode.scanFile(file, true)
-            .then(decodedText => { processAjaxStockIn(decodedText.trim(), 'scan'); })
+            .then(decodedText => { processAjaxStockOut(decodedText.trim(), 'scan'); })
             .catch(err => { 
                 Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR di dalam foto tidak jelas atau salah.' }); 
                 resetSystemState();

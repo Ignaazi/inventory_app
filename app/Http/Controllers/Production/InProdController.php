@@ -12,7 +12,7 @@ use App\Models\Production\stock_prod;
 class InProdController extends Controller
 {
     /**
-     * Helper internal untuk mendeteksi Model Line secara dinamis (Sesuai StockProdController)
+     * Helper internal untuk mendeteksi Model Line secara dinamis
      */
     private function getLineModel()
     {
@@ -91,7 +91,7 @@ class InProdController extends Controller
     }
 
     /**
-     * CORE ENGINE: Eksekusi Scan IN & Manual IN
+     * CORE ENGINE: Eksekusi Scan IN & Manual IN (ANTI-CRASH EDITION)
      */
     public function store(Request $request)
     {
@@ -141,26 +141,22 @@ class InProdController extends Controller
                 return $this->buildResponse($isAjax, false, 'Gagal! Riwayat pengeluaran dari Gudang Engineering tidak ditemukan.', 404);
             }
 
-            // 4. 🔥 FIXED ENGINE: 2-DIGIT BOUNDED LINE RESOLVER (Memotong Teks Tipe Nozzle 120)
-            $targetLineId = $request->input('line_id'); // Opsi 1: Pilihan Dropdown Manual
+            // 4. FIXED ENGINE: 2-DIGIT BOUNDED LINE RESOLVER
+            $targetLineId = $request->input('line_id'); 
             $tableLine = $this->getLineTableName();
             $allLines = DB::table($tableLine)->get();
 
             if (!$targetLineId) {
-                // Opsi 2: Kunci Regex hanya mengambil 2 digit tepat setelah kata LINE (e.g., LINE03)
                 if (preg_match('/LINE(\d{2})/i', $scannedInput, $matches)) {
-                    $lineNoClean = (int)$matches[1]; // Mengubah string "03" menjadi integer 3
+                    $lineNoClean = (int)$matches[1]; 
                     
                     foreach ($allLines as $lineItem) {
-                        // Pencocokan A: Cek angka murni di dalam kolom `no_line` (e.g., "LINE 3" dipotong ambil 3)
                         preg_match('/\d+/', $lineItem->no_line, $dbLineMatches);
                         if (isset($dbLineMatches[0]) && (int)$dbLineMatches[0] === $lineNoClean) {
                             $targetLineId = $lineItem->id;
                             break;
                         }
-
-                        // Pencocokan B: Cek dengan kode auto-generate `line_id` (e.g., "SIIXSMTLINE003")
-                        $paddedTarget = str_pad($lineNoClean, 3, '0', STR_PAD_LEFT); // Hasil: "003"
+                        $paddedTarget = str_pad($lineNoClean, 3, '0', STR_PAD_LEFT); 
                         if (str_contains($lineItem->line_id, $paddedTarget)) {
                             $targetLineId = $lineItem->id;
                             break;
@@ -169,7 +165,6 @@ class InProdController extends Controller
                 }
             }
 
-            // Opsi 3: Deteksi Lini Cadangan dari Dokumen Request Hulu
             if (!$targetLineId && $engTx->production_request_id) {
                 $productionRequest = DB::table('production_requests')->where('id', $engTx->production_request_id)->first();
                 if ($productionRequest) {
@@ -188,7 +183,6 @@ class InProdController extends Controller
                 }
             }
 
-            // Validasi Mutlak Penyelamat System
             if (!$targetLineId) {
                 return $this->buildResponse(
                     $isAjax, 
@@ -205,21 +199,42 @@ class InProdController extends Controller
             }
             $sparepartId = $stockEng->sparepart_id;
 
-            // 6. SINKRONISASI STOK UTAMA (Menggunakan cara instansiasi objek seperti StockProdController)
+            // 6. 🛡️ SINKRONISASI & PROTEKSI MISMATCH ALOKASI (FIX UTAMA)
             $stockProd = stock_prod::where('line_id', $targetLineId)
                 ->where('sparepart_id', $sparepartId)
                 ->first();
 
-            if ($stockProd) {
-                $stockProd->increment('qty', $qtyMasuk);
-            } else {
-                $stockProd = new stock_prod();
-                $stockProd->line_id      = $targetLineId;
-                $stockProd->sparepart_id = $sparepartId;
-                $stockProd->qty          = $qtyMasuk;
-                $stockProd->min_stock    = 0;
-                $stockProd->save();
+            // 🛑 JIKA ALOKASI TIDAK ADA DI MASTER PRODUKSI, CEGAH CRASH & TOLAK RAMAH
+            if (!$stockProd) {
+                $tableSparepart = (new ListSparepartEng)->getTable();
+                $itemName = DB::table($tableSparepart)->where('id', $sparepartId)->value('sparepart_id') ?? 'Sparepart';
+                
+                $lineName = DB::table($tableLine)->where('id', $targetLineId)->value('no_line') ?? 'Lini Terkait';
+
+                return $this->buildResponse(
+                    $isAjax, 
+                    false, 
+                    "🚨 Mismatch Lini! Sparepart [{$itemName}] tidak terdaftar/dialokasikan untuk {$lineName}. (Lini ini hanya mendukung alokasi komponen tipe tertentu).", 
+                    422
+                );
+
+                /* 
+                 * NOTE JIKA INGIN AUTO-CREATE (Alternatif tanpa blokir):
+                 * Jika di kemudian hari aturan pabrik berubah dan membolehkan bikin otomatis tanpa crash, 
+                 * hapus kode return di atas dan aktifkan blok di bawah ini dengan menyesuaikan kolom database lu:
+                 * 
+                 * $stockProd = new stock_prod();
+                 * $stockProd->line_id      = $targetLineId;
+                 * $stockProd->sparepart_id = $sparepartId;
+                 * $stockProd->qty          = $qtyMasuk;
+                 * $stockProd->min_stock    = 0;
+                 * // Tambahkan kolom wajib lainnya disini jika ada agar tidak memicu error 500
+                 * $stockProd->save();
+                 */
             }
+
+            // Jika relasi valid dan aman, jalankan penambahan stok
+            $stockProd->increment('qty', $qtyMasuk);
 
             // 7. PENCATATAN LOG TRANSAKSI BARU (stock_prod_transactions)
             $datePrefix = 'TXPRODIN' . date('dmy');

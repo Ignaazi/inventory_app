@@ -96,7 +96,7 @@
                         <th class="px-3 py-3.5 w-[200px] border-l border-blue-500 dark:border-blue-900/50">Transaction Out ID</th>
                         <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Operator</th>
                         <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 dark:border-blue-900/50">Req Production No</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
+                        <th class="px-3 py-3.5 w-[200px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
                         <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Sparepart ID</th>
                         <th class="px-2 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">Rak ID</th>
                         <th class="px-2 py-3.5 w-[85px] border-l border-blue-500 dark:border-blue-900/50">Qty Out</th>

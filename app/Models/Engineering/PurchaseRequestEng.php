@@ -23,8 +23,6 @@ class PurchaseRequestEng extends Model
         'destination',
         'remark',
         'status',
-        
-        // Tambahan kolom untuk tracking tanda tangan berjenjang (3-Step Workflow)
         'prepared_signature',  // Step 1: Role Engineering (Requester)
         'checked_signature',   // Step 2: Role Admin Engineering (Checker)
         'approved_signature',  // Step 3: Role Costing & Procurement (Approver)

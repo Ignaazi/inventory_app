@@ -6,163 +6,155 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class OutProdController extends Controller
 {
     /**
-     * 1. Menampilkan Halaman Utama History Stock OUT Production (Tabel Utama)
+     * 1. Halaman Utama Riwayat Stock OUT Production (Khusus Hasil Scan)
      */
     public function stockOut()
     {
-        // Menarik data logs keluar dengan join ke nama line produksi
-        $history = DB::table('outProd_logs')
-            ->leftJoin('list_line_productions', 'outProd_logs.line_id', '=', 'list_line_productions.id')
-            ->select(
-                'outProd_logs.*', 
-                'list_line_productions.no_line', 
-                'list_line_productions.name_machine'
-            )
-            ->orderBy('outProd_logs.created_at', 'desc')
+        $history = DB::table('stock_prod_transactions')
+            ->where('tx_type', 'out')
+            ->where('process_type', 'scan')
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // ✅ Sesuai VS Code lu: folder 'transactionProd' dan file 'outProd'
         return view('stock_prod.transactionProd.outProd', compact('history'));
     }
 
     /**
-     * 2. Menampilkan Form Pembuatan Manual OUT Production
+     * 2. Menampilkan Halaman Terminal Live Scan QR-Code / Barcode OUT
      */
-    public function manualOut()
+    public function scanOut()
     {
-        // Ambil data dari history IN murni (inProd_logs) yang dikawinkan dengan live stock saat ini (stock_prods)
-        // Kita hanya munculkan barang yang live stock-nya di lantai produksi masih di atas 0 (> 0)
-        $availableIns = DB::table('inProd_logs')
-            ->join('stock_prods', 'inProd_logs.stock_prod_id', '=', 'stock_prods.id')
-            ->leftJoin('list_line_productions', 'inProd_logs.line_id', '=', 'list_line_productions.id')
-            ->where('stock_prods.qty', '>', 0)
-            ->select(
-                'inProd_logs.inproduction_id',
-                'inProd_logs.no_nozzle',
-                'inProd_logs.stock_prod_id',
-                'inProd_logs.line_id as numeric_line_id',
-                'stock_prods.qty as current_stock_qty',
-                'list_line_productions.line_id as string_line_code',
-                'list_line_productions.no_line',
-                'list_line_productions.name_machine'
-            )
-            ->orderBy('inProd_logs.created_at', 'desc')
-            ->get();
-
-        // ✅ Sesuai VS Code lu: folder 'transactionProd' dan file 'manual_out'
-        return view('stock_prod.transactionProd.manual_out', compact('availableIns'));
+        return view('stock_prod.transactionProd.scan_out');
     }
 
     /**
-     * 3. API Pendukung AJAX (Fetch) untuk ditarik secara live oleh Form Blade
+     * 3. CORE ENGINE: Memproses Eksekusi Scan OUT via AJAX Gun Scanner
      */
-    public function getInProductionDetail($id)
+    public function storeScanOut(Request $request)
     {
-        try {
-            // Tarik detail data IN berdasarkan inproduction_id pilihan user
-            $inData = DB::table('inProd_logs')
-                ->join('stock_prods', 'inProd_logs.stock_prod_id', '=', 'stock_prods.id')
-                ->leftJoin('list_line_productions', 'inProd_logs.line_id', '=', 'list_line_productions.id')
-                ->where('inProd_logs.inproduction_id', $id)
-                ->select(
-                    'inProd_logs.*',
-                    'stock_prods.qty as current_live_qty',
-                    'list_line_productions.line_id as string_line_code',
-                    'list_line_productions.no_line',
-                    'list_line_productions.name_machine'
-                )
-                ->first();
-
-            if (!$inData) {
-                return response()->json(['success' => false, 'message' => 'Data IN tidak ditemukan!'], 404);
-            }
-
-            return response()->json([
-                'success'           => true,
-                'no_nozzle'         => $inData->no_nozzle,
-                'string_line_code'  => $inData->string_line_code,
-                'line_display'      => 'Line ' . $inData->no_line . ' (' . $inData->name_machine . ')',
-                'barcode_id'        => $inData->barcode_id,
-                'request_no'        => $inData->request_no ?? 'N/A',
-                'stock_prod_id'     => $inData->stock_prod_id,
-                'max_available'     => $inData->current_live_qty // Batasi input out maksimal senilai sisa stock murni
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * 4. Memproses Penyimpanan Form Manual OUT (Potong Stok & Ikat inproduction_id)
-     */
-    public function storeManualOut(Request $request)
-    {
-        // Validasi input
+        // Validasi parameter request scanner
         $request->validate([
-            'inproduction_id' => 'required|numeric',
-            'qty_out'         => 'required|numeric|min:1',
+            'barcode_scan' => 'required|string',
+            'process_type' => 'required|string|in:scan',
+            'out_category' => 'required|string|in:broken,lost,other', 
+            'remark'       => 'nullable|string'
         ]);
 
         DB::beginTransaction();
         try {
-            // Ambil data referensi logs IN murni
-            $inLog = DB::table('inProd_logs')->where('inproduction_id', $request->inproduction_id)->first();
-            if (!$inLog) {
-                return redirect()->back()->with('error', 'Referensi data IN Production tidak valid!')->withInput();
+            // Bersihkan string spasi atau baris baru hasil ketikan gun scanner
+            $targetCode = trim($request->barcode_scan);
+            $targetCode = str_replace(["\r", "\n", "\t"], '', $targetCode);
+
+            // 🔍 SINKRONISASI PENCATATAN BALIK: Melacak history IN berdasarkan barcode_id atau final_content
+            $historyIn = DB::table('stock_prod_transactions')
+                ->leftJoin('db_barcodes', 'stock_prod_transactions.db_barcodes_id', '=', 'db_barcodes.id')
+                ->leftJoin('stock_eng_transactions', 'stock_prod_transactions.stock_eng_tx_id', '=', 'stock_eng_transactions.id')
+                ->where('stock_prod_transactions.tx_type', 'in')
+                ->where(function($query) use ($targetCode) {
+                    $query->where('db_barcodes.barcode_id', $targetCode)
+                          ->orWhere('db_barcodes.final_content', $targetCode)
+                          ->orWhere('stock_eng_transactions.tx_id', $targetCode); // Fallback tracking
+                })
+                ->select([
+                    'stock_prod_transactions.stock_prods_id',
+                    'stock_prod_transactions.db_barcodes_id',
+                    'stock_prod_transactions.production_request_id',
+                    'stock_prod_transactions.stock_eng_tx_id'
+                ])
+                ->first();
+
+            // Proteksi 1: Jika barcode tidak terdaftar di riwayat transaksi masuk lantai produksi
+            if (!$historyIn) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Gagal Scan! Kode QR/Barcode (' . $targetCode . ') tidak ditemukan atau belum pernah di-Stock IN ke produksi.'
+                ], 422);
             }
 
-            // Cek ketersediaan sisa stock live di tabel stock_prods
-            $liveStock = DB::table('stock_prods')->where('id', $inLog->stock_prod_id)->first();
-            if (!$liveStock || $liveStock->qty < $request->qty_out) {
-                return redirect()->back()->with('error', 'Gagal! Jumlah pengeluaran melebihi sisa live stock yang tersedia di lantai produksi (Sisa saat ini: ' . ($liveStock->qty ?? 0) . ').')->withInput();
+            // Proteksi 2: Cek sisa stock fisik barang tersebut di tabel live stock produksi (stock_prods)
+            $liveStock = DB::table('stock_prods')
+                ->where('id', $historyIn->stock_prods_id)
+                ->where('qty', '>', 0)
+                ->first();
+
+            if (!$liveStock) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Gagal Scan! Item terdeteksi, namun sisa live stock untuk komponen ini di lini terkait sudah habis (0).'
+                ], 422);
             }
 
-            // Generate Otomatis TRANSACTION OUT ID Khusus Produksi (ex: TRXP-OUT-20260707-0001)
+            // Penomoran Otomatis Kode Transaksi Baru (TRXP-OUT-YYYYMMDD-XXXX)
             $datePrefix = 'TRXP-OUT-' . date('Ymd');
-            $lastTrx = DB::table('outProd_logs')->where('transaction_out_id', 'LIKE', $datePrefix . '%')->orderBy('outproduction_id', 'desc')->first();
+            $lastTrx = DB::table('stock_prod_transactions')
+                ->where('tx_id', 'LIKE', $datePrefix . '%')
+                ->orderBy('id', 'desc')
+                ->first();
             
             if ($lastTrx) {
-                $lastNum = (int) substr($lastTrx->transaction_out_id, -4);
+                $lastNum = (int) substr($lastTrx->tx_id, -4);
                 $nextNum = str_pad($lastNum + 1, 4, '0', STR_PAD_LEFT);
             } else {
                 $nextNum = '0001';
             }
-            $transactionOutId = $datePrefix . '-' . $nextNum;
+            $txId = $datePrefix . '-' . $nextNum;
 
-            // INSERT DATA BARU KE outProd_logs (inproduction_id tercatat aman!)
-            DB::table('outProd_logs')->insert([
-                'inproduction_id'    => $request->inproduction_id, // Bukti fisik pelacakan buat dosen
-                'nik'                => Auth::user()->nik ?? Auth::user()->id ?? '123456',
-                'line_id'            => $inLog->line_id,
-                'no_nozzle'          => $inLog->no_nozzle,
-                'transaction_out_id' => $transactionOutId,
-                'request_no'         => $inLog->request_no,
-                'barcode_id'         => $inLog->barcode_id,
-                'stock_prod_id'      => $inLog->stock_prod_id,
-                'qty_out'            => $request->qty_out,
-                'status'             => 'success',
-                'remark'             => 'Manual Out',
-                'comment'            => $request->comment ?? 'Barang dikeluarkan dari lini produksi secara manual',
-                'created_at'         => now(),
-                'updated_at'         => now()
+            // Jembatan Penyelamat ENUM: Jika dropdown memilih 'other', amankan menjadi NULL
+            $finalCategory = in_array($request->out_category, ['broken', 'lost']) ? $request->out_category : null;
+
+            // 1. TULIS LOG TRANSAKSI BARU (stock_prod_transactions)[cite: 3]
+            DB::table('stock_prod_transactions')->insert([
+                'tx_id'                 => $txId,
+                'users_id'              => Auth::id() ?? 1, // Mengunci regulasi NOT NULL DB[cite: 3]
+                'stock_prods_id'        => $liveStock->id,
+                'stock_eng_tx_id'       => $historyIn->stock_eng_tx_id,
+                'db_barcodes_id'        => $historyIn->db_barcodes_id,
+                'production_request_id' => $historyIn->production_request_id,
+                'nik_karyawan'          => Auth::user()->nik ?? '123456',
+                'tx_type'               => 'out',
+                'out_category'          => $finalCategory,
+                'qty_transaction'       => 1, // Pengurangan 1 unit per scan
+                'process_type'          => 'scan',
+                'status'                => 'success',
+                'remark'                => $request->remark ?? 'Scan Out via Terminal Produksi',
+                'created_at'            => now(),
+                'updated_at'            => now()
             ]);
 
-            // DECREMENT LIVE STOK: Kurangi jumlah kuantitas unit di tabel stock_prods
+            // 2. POTONG LIVE STOK UTAMA DI LANTAI PRODUKSI (stock_prods)
             DB::table('stock_prods')
-                ->where('id', $inLog->stock_prod_id)
-                ->decrement('qty', $request->qty_out);
+                ->where('id', $liveStock->id)
+                ->decrement('qty', 1);
+
+            // 3. UPDATE LOG SIKLUS HIDUP BARCODE (Opsional, agar sinkron kembali)
+            if ($historyIn->db_barcodes_id) {
+                DB::table('db_barcodes')
+                    ->where('id', $historyIn->db_barcodes_id)
+                    ->update([
+                        'current_lifecycle' => 'AVAILABLE', // Kembalikan status atau tandai keluar
+                        'updated_at'        => now()
+                    ]);
+            }
 
             DB::commit();
-            return redirect()->route('prod.transaction.out')->with('success', 'Transaksi Manual OUT Berhasil! Jejak data IN terikat sempurna dan stok lantai produksi berkurang.');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Sukses! Barcode ' . $targetCode . ' berhasil di-Scan OUT dan memotong stok lini produksi.'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('error', 'Gagal memproses transaksi out: ' . $e->getMessage())->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem internal: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

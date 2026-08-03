@@ -7,7 +7,7 @@ use App\Http\Controllers\EngineeringOverviewController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StockEngineeringController;
-use App\Http\Controllers\StockInEngineeringController;
+use App\Http\Controllers\Engineering\StockInEngineeringController;
 use App\Http\Controllers\EngOverview\BarcodeParsingController;
 use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
@@ -17,6 +17,10 @@ use App\Http\Controllers\Engineering\StockOutEngineeringController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 use App\Http\Controllers\Engineering\TransactionController;
+
+// 🎯 SPLIT ARCHITECTURE CONTROLLER DISPOSAL
+use App\Http\Controllers\Engineering\TransactionDisposalController;
+use App\Http\Controllers\Engineering\DisposalEngineeringController;
 
 // 1. Redirect Halaman Utama
 Route::get('/', function () {
@@ -33,9 +37,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     
     // Dashboard Utama (Admin)
-Route::get('/admin', function () {
-    return view('admin'); 
-})->name('dashboard');
+    Route::get('/admin', function () {
+        return view('admin'); 
+    })->name('dashboard');
 
     // --- GRUP ADMIN (Full Access) ---
     Route::middleware('role:admin')->group(function () {
@@ -96,7 +100,7 @@ Route::get('/admin', function () {
             Route::delete('/type-barcode/{id}', [TypeBarcodeController::class, 'destroy'])->name('barcode.type.delete');
         });
 
-        // MAP ROUTE TRANSACTION (MENGGUNAKAN TRANSACTION CONTROLLER)
+        // MAP ROUTE TRANSACTION (MENGGUNAKAN TRANSACTION CONTROLLER & DISPOSAL CONTROLLER BARU)
         Route::prefix('stock-eng/transaction')->name('stock_eng.transaction.')->group(function () {
             Route::get('/in', [TransactionController::class, 'indexIn'])->name('in');
             Route::get('/out', [TransactionController::class, 'indexOut'])->name('out');
@@ -109,12 +113,15 @@ Route::get('/admin', function () {
             })->name('return.manual');
 
             Route::post('/return/store', [TransactionController::class, 'storeReturn'])->name('return.store');
-            Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('disposal');
-            Route::post('/disposal/store', [TransactionController::class, 'storeDisposal'])->name('disposal.store');
+            
+            // 🛠️ FIX SYSTEM: Pembaruan rute terarah split arsitektur modul Disposal Engineering
+            Route::get('/disposal', [TransactionDisposalController::class, 'index'])->name('disposal');
+            Route::get('/disposal/scan', [DisposalEngineeringController::class, 'scanView'])->name('disposal.scan');
+            Route::post('/disposal/scan/process', [DisposalEngineeringController::class, 'processScan'])->name('disposal.scan.process');
         });
     });
     
-    // --- 🚀 GRUP PRODUCTION (SEKARANG BERSIH DI-IMPORT DARI FILE SEPARATE) ---
+    // --- 🚀 GRUP PRODUCTION ---
     Route::middleware('role:admin,production')->group(function () {
         require base_path('routes/Production/transaction.php');
     });
@@ -140,7 +147,7 @@ Route::get('/admin', function () {
     
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
-    // RUTE APPROVAL HISTORY & PREVIEW JALUR ASLI BLADE LO
+    // RUTE APPROVAL HISTORY & PREVIEW
     Route::get('/approval/history', [HistoryApprovalController::class, 'index'])->name('approval.history');
     Route::get('/engineering/approval-history/preview/{id}', [HistoryApprovalController::class, 'preview'])->name('approval.history.preview');
     Route::delete('/approval/history/{id}', [HistoryApprovalController::class, 'destroy'])->name('approval.history.destroy');

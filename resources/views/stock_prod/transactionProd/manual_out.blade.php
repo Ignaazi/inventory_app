@@ -1,196 +1,161 @@
 @extends('admin')
 
 @section('content')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
-
-  .manual-out-prod-view, .manual-out-prod-view * {
-    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
-  }
-
-  /* Custom Clean Hover & Shadow matching main theme */
-  .photo-grad-btn {
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  }
-  .photo-grad-btn:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.05);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
-  }
-  .photo-grad-btn:active {
-    transform: translateY(0);
-  }
+    .font-nunito { font-family: 'Nunito', sans-serif !important; }
 </style>
 
-<div class="manual-out-prod-view mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-  {{-- HEADER SECTION & NAV BUTTONS --}}
-  <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h2 class="text-xl font-extrabold text-slate-950 dark:text-white tracking-tight uppercase">
-        Create Manual OUT (Production Floor)
-      </h2>
-      <p class="text-xs font-semibold text-slate-500 dark:text-gray-400 mt-0.5">Kurangi dan keluarkan nozzle berdasarkan referensi Inproduction ID</p>
-    </div>
-
-    <div class="flex items-center gap-3 w-full sm:w-auto">
-      <a href="{{ route('prod.transaction.out') }}"
-        class="photo-grad-btn w-full sm:w-44 h-10 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] via-[#4F7FE7] to-[#EAB308] px-3 text-xs font-black text-white tracking-wider uppercase"
-      >
-        <i class="fas fa-arrow-left mr-2"></i> Kembali ke History
-      </a>
-    </div>
-  </div>
-
-  {{-- CONTAINER FORM --}}
-  <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-6 pt-5 dark:border-gray-800 dark:bg-slate-900 shadow-sm sm:px-6">
+<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
     
-    <div class="mb-6 border-b border-gray-100 pb-4 dark:border-gray-800">
-      <h3 class="text-base font-extrabold text-slate-950 dark:text-white tracking-tight uppercase">
-        Transaction Detail Form
-      </h3>
-    </div>
+    <div class="max-w-3xl mx-auto">
+        
+        {{-- Flash Notification Error Feedback --}}
+        @if(session('error'))
+            <div class="mb-4 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900/50 px-4 py-3 shadow-sm">
+                <i class="fa-solid fa-circle-exclamation text-rose-600 dark:text-rose-400 text-lg"></i>
+                <p class="text-sm font-bold text-rose-800 dark:text-rose-400">{{ session('error') }}</p>
+            </div>
+        @endif
 
-    {{-- ALERT NOTIFIKASI ERROR --}}
-    @if(session('error'))
-        <div class="mb-5 p-4 bg-red-50 border border-red-200 text-red-600 dark:bg-red-950/20 dark:border-red-900 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm">
-            <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
-        </div>
-    @endif
-
-    <form action="{{ route('prod.transaction.out.manual.store') }}" method="POST" id="form-manual-out-prod">
-        @csrf
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+        {{-- Main Form Card Container --}}
+        <div class="w-full overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
             
-            {{-- 1. DROPDOWN UTAMA: PILIH INPRODUCTION ID REFERENCE --}}
-            <div class="flex flex-col gap-2 md:col-span-2 bg-gray-50/70 p-4 rounded-xl border border-dashed border-blue-300 dark:bg-slate-800/40 dark:border-slate-700">
-                <label class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">PILIH INPRODUCTION ID (REFERENSI IN)</label>
-                <div class="relative mt-1">
-                    <select id="inproduction_id" name="inproduction_id" required onchange="fetchInProdDetail(this.value)"
-                            class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-950 dark:text-white focus:outline-none focus:border-blue-500 appearance-none shadow-sm font-mono">
-                        <option value="" class="font-sans">-- Pilih Referensi IN --</option>
-                        @foreach($availableIns as $item)
-                            <option value="{{ $item->inproduction_id }}">
-                                ID: {{ $item->inproduction_id }} | Nozzle: {{ $item->no_nozzle }} | Line: {{ $item->no_line }} (Stok Live: {{ $item->current_stock_qty }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <i class="fas fa-chevron-down text-xs"></i>
+            <div class="border-b border-gray-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between bg-transparent">
+                <div>
+                    <h3 class="text-base md:text-lg font-black text-slate-950 dark:text-white uppercase tracking-tight">
+                        <i class="fa-solid fa-keyboard text-blue-500 mr-1.5"></i> Manual Out Log Creation
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold">Kurangi kuantitas stok lantai produksi secara manual dengan validasi barcode</p>
+                </div>
+                <a href="{{ url('/prod/transaction/out') }}" class="text-xs font-black text-slate-400 hover:text-slate-600 dark:hover:text-white uppercase no-underline transition-colors">
+                    Cancel
+                </a>
+            </div>
+
+            <div class="p-6">
+                {{-- Form wajib menggunakan enctype untuk handling berkas foto/file gambar --}}
+                <form action="{{ url('/prod/transaction/out/store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                    @csrf
+                    <input type="hidden" name="process_type" value="manual">
+
+                    {{-- 1. PILIH ITEM / BARCODE STOK PROD YANG MAU DIKURANGI --}}
+                    <div>
+                        <label for="stock_prods_id" class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                            Select Production Component Stock / Barcode <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="stock_prods_id" id="stock_prods_id" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" required>
+                            <option value="" selected disabled>-- Pilih Item Komponen Aktif di Lini --</option>
+                            @foreach($activeStocks as $stock)
+                                <option value="{{ $stock->id }}" {{ old('stock_prods_id') == $stock->id ? 'selected' : '' }}>
+                                    Lini: {{ $stock->line_name ?? $stock->line_id }} | Barcode: {{ $stock->barcode_code ?? 'No Barcode' }} | Item: {{ $stock->item_code ?? '120' }} (Stok: {{ $stock->qty }} Pcs)
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-bold mt-1">Sistem otomatis memotong nilai stok (-1 Qty) pada ID stock_prods terpilih setelah log berhasil disimpan.</p>
                     </div>
-                </div>
-                <small id="load-status" class="text-[11px] font-bold text-slate-500 mt-1.5 font-mono">Status: Menunggu pilihan referensi...</small>
-            </div>
 
-            {{-- 2. LINE ORIGIN (Auto-fill & Readonly) --}}
-            <div class="flex flex-col gap-2">
-                <label class="text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-wider">LINE ORIGIN</label>
-                <input type="text" id="line_display" name="line_display" required readonly placeholder="- Otomatis Terisi -"
-                       class="w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-inner">
-            </div>
+                    {{-- 2. INPUT NIK KARYAWAN PIC --}}
+                    <div>
+                        <label for="nik_karyawan" class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                            NIK Karyawan / PIC Lapangan <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" 
+                               name="nik_karyawan" 
+                               id="nik_karyawan" 
+                               value="{{ old('nik_karyawan') }}"
+                               class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" 
+                               placeholder="Masukkan NIK Operator yang bertanggung jawab..." 
+                               required>
+                    </div>
 
-            {{-- 3. NO NOZZLE (Auto-fill & Readonly) --}}
-            <div class="flex flex-col gap-2">
-                <label class="text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-wider">NO NOZZLE</label>
-                <input type="text" id="no_nozzle_display" name="no_nozzle_display" required readonly placeholder="- Otomatis Terisi -"
-                       class="w-full bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed font-mono shadow-inner">
-            </div>
+                    {{-- 3. KATEGORI OUT (OUT CATEGORY ENUM) --}}
+                    <div>
+                        <label for="out_category" class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                            Out Category / Kategori Pengeluaran <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="out_category" id="out_category" onchange="evaluatePhotoRequirement(this.value)" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" required>
+                            <option value="" selected disabled>-- Pilih Kategori Kondisi --</option>
+                            <option value="broken" {{ old('out_category') == 'broken' ? 'selected' : '' }}>Broken (Barang Rusak / Patah / Malfungsi fisik)</option>
+                            <option value="lost" {{ old('out_category') == 'lost' ? 'selected' : '' }}>Lost (Menghilangkan / Barang Hilang dari Lantai Produksi)</option>
+                        </select>
+                    </div>
 
-            {{-- DYNAMIC DETAILS BOX (Auto-fill & Smooth layout injection) --}}
-            <div id="detail_box" class="hidden md:col-span-2 p-4 bg-slate-50 dark:bg-slate-800/30 border border-gray-100 dark:border-gray-800 rounded-xl space-y-2">
-                <div class="flex justify-between items-center pb-2 border-b border-gray-200/50 dark:border-gray-800">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">REQUEST NO:</span>
-                    <span id="req_no_display" class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 font-mono">-</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">BARCODE ID:</span>
-                    <span id="barcode_display" class="text-[11px] font-bold text-slate-950 dark:text-white font-mono tracking-tight">-</span>
-                </div>
-            </div>
+                    {{-- 4. UPLOAD FOTO BUKTI FISIK (KONDISIONAL VIA JS) --}}
+                    <div id="photo-upload-wrapper" class="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 transition-all duration-300">
+                        <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                            Upload Photo Proof / Foto Bukti Kondisi Fisik <span id="star-required" class="text-rose-500 hidden">*</span>
+                        </label>
+                        <p id="photo-instruction-text" class="text-[11px] font-bold text-slate-400 dark:text-slate-500 mb-3">
+                            Silakan tentukan kategori pengeluaran terlebih dahulu untuk memvalidasi lampiran berkas.
+                        </p>
+                        
+                        <input type="file" 
+                               name="photo_path" 
+                               id="photo_path" 
+                               accept="image/*" 
+                               class="block w-full text-xs font-bold text-slate-500 dark:text-slate-400
+                                      file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0
+                                      file:text-xs file:font-black file:uppercase file:tracking-wide
+                                      file:bg-blue-50 file:text-blue-700 file:cursor-pointer
+                                      dark:file:bg-slate-800 dark:file:text-blue-400
+                                      hover:file:bg-blue-100 transition-all">
+                    </div>
 
-            {{-- 4. QUANTITY OUT WITH MAXIMUM NOTIFICATION --}}
-            <div class="flex flex-col gap-2">
-                <label class="text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-wider">QTY OUT</label>
-                <input type="number" name="qty_out" id="qty_out" required min="1" placeholder="Masukkan jumlah yang mau dikeluarkan"
-                       class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-950 dark:text-white focus:outline-none focus:border-blue-500 shadow-sm text-center">
-                <span id="max-info" class="text-[10px] text-rose-600 font-extrabold tracking-tight mt-0.5 block"></span>
-            </div>
+                    {{-- 5. REMARK / CATATAN TAMBAHAN KRONOLOGI --}}
+                    <div>
+                        <label for="remark" class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                            Remark / Keterangan Kronologi
+                        </label>
+                        <textarea name="remark" id="remark" rows="3" class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" placeholder="Tulis catatan detail alasan kerusakan atau hilangnya komponen barang..."></option>{{ old('remark') }}</textarea>
+                    </div>
 
-            {{-- 5. COMMENT / REASON --}}
-            <div class="flex flex-col gap-2">
-                <label class="text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-wider">COMMENT / ALASAN KELUAR</label>
-                <input type="text" name="comment" placeholder="Contoh: Nozzle aus / Maintenance berkala / Scrap / Tukar barang"
-                       class="w-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-950 dark:text-white focus:outline-none focus:border-blue-500 shadow-sm">
+                    {{-- SUBMIT BUTTON --}}
+                    <div class="pt-2">
+                        <button type="submit" class="w-full inline-flex items-center justify-center h-11 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-xs font-black text-white tracking-wider uppercase shadow-md hover:opacity-95 transition-all active:scale-[0.98]">
+                            <i class="fa-solid fa-cloud-arrow-up mr-2 text-sm"></i> Save Manual Out Transaction
+                        </button>
+                    </div>
+
+                </form>
             </div>
 
         </div>
-
-        {{-- SUBMIT BUTTON WITH GRADIENT THEME MATCHING MAIN DESIGN --}}
-        <div class="mt-8 pt-5 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
-            <a href="{{ route('prod.transaction.out') }}" class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-xs font-extrabold text-slate-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700/50 transition-colors uppercase tracking-wider">
-                Batal
-            </a>
-            <button type="submit" class="photo-grad-btn inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2563EB] via-[#4F7FE7] to-[#EAB308] px-6 py-2.5 text-xs font-black text-white tracking-wider uppercase">
-                <i class="fas fa-save mr-1"></i> Submit Out
-            </button>
-        </div>
-    </form>
-  </div>
+    </div>
 </div>
 
-{{-- SCRIPT AJAX AUTOFILL DETAIL --}}
+{{-- CLIENT-SIDE DYNAMIC VALIDATION ENGINE --}}
 <script>
-function fetchInProdDetail(id) {
-    const detailBox = document.getElementById('detail_box');
-    const lineDisplay = document.getElementById('line_display');
-    const nozzleDisplay = document.getElementById('no_nozzle_display');
-    const reqDisplay = document.getElementById('req_no_display');
-    const barcodeDisplay = document.getElementById('barcode_display');
-    const qtyInput = document.getElementById('qty_out');
-    const maxInfo = document.getElementById('max-info');
-    const statusText = document.getElementById('load-status');
+    function evaluatePhotoRequirement(selectedValue) {
+        const wrapper = document.getElementById('photo-upload-wrapper');
+        const star = document.getElementById('star-required');
+        const text = document.getElementById('photo-instruction-text');
+        const photoInput = document.getElementById('photo_path');
 
-    if(!id) {
-        detailBox.classList.add('hidden');
-        lineDisplay.value = '';
-        nozzleDisplay.value = '';
-        qtyInput.max = '';
-        maxInfo.textContent = '';
-        statusText.innerText = 'Status: Menunggu pilihan referensi...';
-        statusText.className = 'text-[11px] font-bold text-slate-500 mt-1.5 font-mono';
-        return;
+        if (selectedValue === 'lost') {
+            // Jika HILANG (lost): Foto bersifat opsional/tidak wajib karena fisik barang tidak ada
+            wrapper.classList.remove('border-amber-400', 'bg-amber-50/20', 'dark:border-amber-900/40');
+            star.classList.add('hidden');
+            photoInput.required = false;
+            text.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-extrabold font-mono uppercase">[FOTO OPSIONAL] Komponen dilaporkan hilang. Data bisa langsung disimpan tanpa lampiran bukti foto fisik.</span>';
+        } else if (selectedValue === 'broken') {
+            // Jika RUSAK (broken): Foto mutlak WAJIB dilampirkan ke sistem
+            wrapper.classList.add('border-amber-400', 'bg-amber-50/20', 'dark:border-amber-900/40');
+            star.classList.remove('hidden');
+            photoInput.required = true;
+            text.innerHTML = '<span class="text-rose-600 dark:text-rose-400 font-extrabold font-mono uppercase">[FOTO WAJIB] Komponen dalam kondisi rusak fisik. Anda wajib mengambil foto bukti fisik barang!</span>';
+        }
     }
 
-    statusText.innerText = '🔄 Memuat seluruh rincian aspek data referensi IN...';
-    statusText.className = 'text-[11px] font-bold text-orange-500 mt-1.5 font-mono';
-
-    fetch(`/prod/transaction/out/detail/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if(data.success) {
-                detailBox.classList.remove('hidden');
-                lineDisplay.value = data.line_display;
-                nozzleDisplay.value = data.no_nozzle;
-                reqDisplay.textContent = data.request_no;
-                barcodeDisplay.textContent = data.barcode_id;
-                
-                qtyInput.max = data.max_available;
-                maxInfo.textContent = `*Batas maksimum pengeluaran item ini: ${data.max_available} unit`;
-                
-                statusText.innerText = '✅ Seluruh data referensi masuk berhasil disinkronkan!';
-                statusText.className = 'text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1.5 font-mono';
-            } else {
-                statusText.innerText = '❌ Gagal: ' + data.message;
-                statusText.className = 'text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1.5 font-mono';
-                alert(data.message);
-            }
-        })
-        .catch(err => {
-            console.error('Error fetching detail:', err);
-            statusText.innerText = '❌ Error Jaringan/Server: Pastikan Route API sudah benar!';
-            statusText.className = 'text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1.5 font-mono';
-        });
-}
+    // Eksekusi ulang saat halaman reload/validation error agar form state tidak ter-reset gantung
+    document.addEventListener("DOMContentLoaded", function() {
+        const currentCategory = document.getElementById('out_category').value;
+        if(currentCategory) {
+            evaluatePhotoRequirement(currentCategory);
+        }
+    });
 </script>
 @endsection

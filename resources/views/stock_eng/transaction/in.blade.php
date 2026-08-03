@@ -116,12 +116,12 @@
                         
                         <!-- NIK -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->nik ?? '-' }}
+                            {{ $log->nik ?? $log->operator_nik ?? '-' }}
                         </td>
                         
                         <!-- SPAREPART ID -->
                         <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide text-center whitespace-nowrap leading-normal text-blue-600 dark:text-blue-400">
-                            {{ $log->stockEng->sparepart->sparepart_id ?? '-' }}
+                            {{ $log->stockEng->sparepart->sparepart_id ?? $log->sparepart_id ?? '-' }}
                         </td>
                         
                         <!-- PART NO -->
@@ -136,13 +136,13 @@
                         
                         <!-- RAK -->
                         <td class="px-2 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->stockEng->rak->nama_rak ?? '-' }}
+                            {{ $log->stockEng->rak->nama_rak ?? $log->nama_rak ?? '-' }}
                         </td>
                         
                         <!-- QTY IN -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                +{{ ($log->qty_added > 0) ? $log->qty_added : 1 }}
+                                +{{ (isset($log->qty_added) && $log->qty_added > 0) ? $log->qty_added : ($log->qty ?? 1) }}
                             </span>
                         </td>
                         
@@ -150,8 +150,8 @@
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex justify-center items-center">
                                 <span class="status-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
-                                    @if(strtolower($log->status) == 'success') bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800
-                                    @elseif(strtolower($log->status) == 'pending') bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-800
+                                    @if(strtolower($log->status ?? '') == 'success') bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800
+                                    @elseif(strtolower($log->status ?? '') == 'pending') bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-800
                                     @else bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-800 @endif">
                                     {{ $log->status ?? 'SUCCESS' }}
                                 </span>
@@ -194,20 +194,20 @@
                         <!-- CREATED AT -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
                             <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ $log->created_at ? $log->created_at->format('d/m/Y') : '-' }}
+                                {{ isset($log->created_at) ? (\Carbon\Carbon::parse($log->created_at)->format('d/m/Y')) : '-' }}
                             </div>
                             <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ $log->created_at ? $log->created_at->format('H:i') : '' }}
+                                {{ isset($log->created_at) ? (\Carbon\Carbon::parse($log->created_at)->format('H:i')) : '' }}
                             </div>
                         </td>
 
                         <!-- UPDATED AT -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
                             <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ $log->updated_at ? $log->updated_at->format('d/m/Y') : '-' }}
+                                {{ isset($log->updated_at) ? (\Carbon\Carbon::parse($log->updated_at)->format('d/m/Y')) : '-' }}
                             </div>
                             <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ $log->updated_at ? $log->updated_at->format('H:i') : '' }}
+                                {{ isset($log->updated_at) ? (\Carbon\Carbon::parse($log->updated_at)->format('H:i')) : '' }}
                             </div>
                         </td>
                     </tr>
