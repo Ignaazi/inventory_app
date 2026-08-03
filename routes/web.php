@@ -63,6 +63,14 @@ Route::middleware('auth')->group(function () {
             Route::resource('list-sparepart', ListSparepartEngController::class);
         });
 
+        // 🛠️ MODUL UTAMA STOCK IN ENGINEERING (Amankan di dalam role engineering)
+        Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
+        Route::get('/eng/in/index', [StockInEngineeringController::class, 'index'])->name('eng.in.index'); // Alias pendukung view baru
+        Route::get('/eng/in/manual', [StockInEngineeringController::class, 'manual'])->name('eng.in.manual'); 
+        Route::get('/eng/in/scan', [StockInEngineeringController::class, 'scan'])->name('eng.in.scan');
+        Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
+        Route::post('/eng/in/scan/store', [StockInEngineeringController::class, 'storeScan'])->name('eng.in.scan.store'); // Handler submit scanner
+
         Route::get('/eng/approval', [ApprovalEngController::class, 'index'])->name('eng.approval');
         Route::get('/eng/approval/review/{id}', [ApprovalEngController::class, 'review'])->name('eng.approval.review');
         Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
@@ -138,12 +146,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/rak-store', 'storeRak')->name('rak.store');
         Route::post('/eng/in/update', 'updateStockIn')->name('stock.eng.in.update');
     });
-
-    // MODUL UTAMA STOCK IN ENGINEERING
-    Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
-    Route::get('/eng/in/manual', [StockInEngineeringController::class, 'manual'])->name('eng.in.manual'); 
-    Route::get('/eng/in/scan', [StockInEngineeringController::class, 'scan'])->name('eng.in.scan');
-    Route::post('/eng/in/store', [StockInEngineeringController::class, 'store'])->name('eng.in.store');
     
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     

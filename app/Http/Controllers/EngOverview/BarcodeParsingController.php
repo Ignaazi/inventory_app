@@ -31,15 +31,36 @@ class BarcodeParsingController extends Controller
                                     $pr->sparepart = (object) [
                                         'id'        => $pr->sparepart_id, 
                                         'part_no'   => $pr->custom_sparepart_code, 
-                                        'part_name' => $pr->custom_sparepart_code
+                                        'part_name' => $pr->custom_sparepart_code,
+                                        'part_number' => $pr->part_number,
+                                        'sap_code'  => $pr->sap_code
                                     ];
                                     return $pr;
                                 });
 
-        // 2. Ambil data material received untuk dropdown select IN
+        // 2. Ambil data material received DENGAN JOIN via purchase_requests ke spareparts
         $materialReceived = DB::table('material_received')
-                                ->orderBy('id', 'desc')
-                                ->get();
+                                ->leftJoin('purchase_requests', 'material_received.purchase_request_id', '=', 'purchase_requests.id')
+                                ->leftJoin('spareparts', 'purchase_requests.sparepart_id', '=', 'spareparts.id')
+                                ->select(
+                                    'material_received.*',
+                                    'purchase_requests.sparepart_id',
+                                    'spareparts.sparepart_id as custom_sparepart_code',
+                                    'spareparts.part_number',
+                                    'spareparts.sap_code'
+                                )
+                                ->orderBy('material_received.id', 'desc')
+                                ->get()
+                                ->map(function ($mr) {
+                                    $mr->sparepart = (object) [
+                                        'id'        => $mr->sparepart_id, 
+                                        'part_no'   => $mr->custom_sparepart_code, 
+                                        'part_name' => $mr->custom_sparepart_code,
+                                        'part_number' => $mr->part_number,
+                                        'sap_code'  => $mr->sap_code
+                                    ];
+                                    return $mr;
+                                });
 
         // 3. Data master stok engineering
         $stockEngineering = DB::table('stock_engs')
@@ -135,8 +156,6 @@ class BarcodeParsingController extends Controller
                         'created_at'            => now(),
                         'updated_at'            => now(),
                     ]);
-
-                    // 🛑 KODE TRANSAKSI & INCREMENT QTY MAKSAL SUDAH DIHAPUS DARI SINI
                 }
 
                 DB::commit();
@@ -156,7 +175,6 @@ class BarcodeParsingController extends Controller
 
                 $qty = (int) $prDoc->qty_req;
                 
-                // Pengecekan kuantitas fisik sebelum barcode dicetak (opsional, tetap dipertahankan untuk validasi kuota)
                 if ($stockEngRecord->qty < $qty) {
                     return response()->json([
                         'success' => false, 
@@ -223,8 +241,6 @@ class BarcodeParsingController extends Controller
                         'created_at'            => now(),
                         'updated_at'            => now(),
                     ]);
-
-                    // 🛑 KODE TRANSAKSI & DECREMENT QTY MAKSAL SUDAH DIHAPUS DARI SINI
                 }
 
                 DB::commit();
@@ -275,14 +291,36 @@ class BarcodeParsingController extends Controller
                                     $pr->sparepart = (object) [
                                         'id'        => $pr->sparepart_id, 
                                         'part_no'   => $pr->custom_sparepart_code, 
-                                        'part_name' => $pr->custom_sparepart_code
+                                        'part_name' => $pr->custom_sparepart_code,
+                                        'part_number' => $pr->part_number,
+                                        'sap_code'  => $pr->sap_code
                                     ];
                                     return $pr;
                                 });
 
+        // 2. Ambil data material received DENGAN JOIN via purchase_requests ke spareparts
         $materialReceived = DB::table('material_received')
-                                ->orderBy('id', 'desc')
-                                ->get();
+                                ->leftJoin('purchase_requests', 'material_received.purchase_request_id', '=', 'purchase_requests.id')
+                                ->leftJoin('spareparts', 'purchase_requests.sparepart_id', '=', 'spareparts.id')
+                                ->select(
+                                    'material_received.*',
+                                    'purchase_requests.sparepart_id',
+                                    'spareparts.sparepart_id as custom_sparepart_code',
+                                    'spareparts.part_number',
+                                    'spareparts.sap_code'
+                                )
+                                ->orderBy('material_received.id', 'desc')
+                                ->get()
+                                ->map(function ($mr) {
+                                    $mr->sparepart = (object) [
+                                        'id'        => $mr->sparepart_id, 
+                                        'part_no'   => $mr->custom_sparepart_code, 
+                                        'part_name' => $mr->custom_sparepart_code,
+                                        'part_number' => $mr->part_number,
+                                        'sap_code'  => $mr->sap_code
+                                    ];
+                                    return $mr;
+                                });
 
         $stockEngineering = DB::table('stock_engs')
                                 ->join('spareparts', 'stock_engs.sparepart_id', '=', 'spareparts.id')

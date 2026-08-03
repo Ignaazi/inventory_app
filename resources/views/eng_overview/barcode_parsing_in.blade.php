@@ -40,13 +40,10 @@
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <!-- Tombol Barcode IN — Mengarah ke Named Route 'barcode.parsing.in' dengan warna solid cerah -->
             <a href="{{ route('barcode.parsing.in') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
                 Barcode IN
             </a>
-            
-            <!-- Tombol Barcode OUT — Mengarah ke Named Route 'barcode.parsing' -->
-            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center  dark:ring-offset-slate-950">
+            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center dark:ring-offset-slate-950">
                 Barcode OUT
             </a>
         </div>
@@ -71,7 +68,17 @@
                         <select id="source_id" name="source_id" onchange="handleDocumentSelection()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
                             <option value="" disabled selected>-- Select Material Received --</option>
                             @foreach($materialReceived as $mr)
-                                <option value="{{ $mr->id }}" data-qty="{{ $mr->qty_received }}">
+                                @php
+                                    // Ambil langsung dari hasil Query JOIN stdClass
+                                    $spCode = $mr->custom_sparepart_code ?? $mr->sparepart_id ?? '-';
+                                    $spPartNum = $mr->part_number ?? '-';
+                                    $spSapCode = $mr->sap_code ?? '-';
+                                @endphp
+                                <option value="{{ $mr->id }}" 
+                                        data-qty="{{ $mr->qty_received }}"
+                                        data-partnum="{{ $spPartNum }}"
+                                        data-sap="{{ $spSapCode }}"
+                                        data-sparepart-id="{{ $spCode }}">
                                     {{ $mr->no_mr ?? 'MR-Doc #'.$mr->id }}
                                 </option>
                             @endforeach
@@ -87,12 +94,17 @@
                         <select id="stock_eng_id" name="stock_eng_id" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
                             <option value="" disabled selected>-- Select Destination Rak --</option>
                             @foreach($stockEngineering as $stock)
+                                @php
+                                    // Query stdClass memuat spareparts.sparepart_id ke properti part_name
+                                    $stockSpCode = $stock->part_name ?? $stock->sparepart_id ?? '-';
+                                @endphp
                                 <option value="{{ $stock->stock_id }}" 
+                                        data-sparepart-id="{{ $stockSpCode }}"
                                         data-partname="{{ $stock->part_name }}" 
                                         data-partnum="{{ $stock->part_number }}" 
                                         data-sap="{{ $stock->sap_code }}"
-                                        data-rakname="{{ trim(str_replace(['[', ']'], '', $stock->rak_name)) }}">
-                                    {{ $stock->part_name }} — [{{ trim(str_replace(['[', ']'], '', $stock->rak_name)) }}]
+                                        data-rakname="{{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}">
+                                    {{ $stock->part_name }} — [{{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}]
                                 </option>
                             @endforeach
                         </select>
@@ -126,7 +138,11 @@
 
                 <!-- SEKSI KANAN: PREVIEW DOKUMEN & ACTION -->
                 <div class="lg:col-span-5 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 space-y-4">
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-black uppercase text-slate-400">Sparepart ID</label>
+                            <input type="text" id="display_sparepart_id" readonly class="w-full h-9 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-black text-center text-blue-600 dark:text-blue-400 outline-none shadow-sm" placeholder="-">
+                        </div>
                         <div class="space-y-1">
                             <label class="block text-[10px] font-black uppercase text-slate-400">Part Number</label>
                             <input type="text" id="display_part_num" readonly class="w-full h-9 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-black text-center text-slate-700 dark:text-slate-300 outline-none shadow-sm" placeholder="-">
@@ -172,12 +188,13 @@
         </div>
 
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1100px]" id="barcodeTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1200px]" id="barcodeTable">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-orange-600 dark:bg-orange-950/80 text-white dark:text-orange-200 font-nunito">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
                         <th class="px-3 py-3.5 w-[110px] border-l border-orange-500 dark:border-orange-900/50 text-center">Barcode Img</th>
                         <th class="px-4 py-3.5 border-l border-orange-500 dark:border-orange-900/50 text-left">Generated Barcode String (Inbound Format)</th>
+                        <th class="px-3 py-3.5 w-[110px] border-l border-orange-500 dark:border-orange-900/50">Sparepart ID</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 dark:border-orange-900/50">Part Number</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 dark:border-orange-900/50">SAP Code</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 dark:border-orange-900/50">Destination Rak</th>
@@ -187,7 +204,7 @@
                 </thead>
                 <tbody id="batch_table_body" class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-black dark:text-slate-200 font-nunito bg-transparent">
                     <tr>
-                        <td colspan="8" class="py-12 text-center text-slate-400 italic font-medium text-[13px] font-nunito">
+                        <td colspan="9" class="py-12 text-center text-slate-400 italic font-medium text-[13px] font-nunito">
                             Pilih dokumen Material Received dan target Rak lokasi di atas untuk memuat daftar preview serialisasi masuk.
                         </td>
                     </tr>
@@ -203,7 +220,6 @@
     </div>
 </div>
 
-<!-- LOGIC RENDERING MOTOR -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
 
@@ -214,15 +230,17 @@
 
         if (!selectedOpt || !selectedOpt.value) return;
 
-        const qty = selectedOpt.getAttribute('data-qty');
+        const qty = selectedOpt.getAttribute('data-qty') || '0';
+        const partNum = selectedOpt.getAttribute('data-partnum') || '-';
+        const sapCode = selectedOpt.getAttribute('data-sap') || '-';
+        const sparepartId = selectedOpt.getAttribute('data-sparepart-id') || '-';
+
         document.getElementById('display_qty').value = qty + " Pcs";
+        document.getElementById('display_part_num').value = partNum;
+        document.getElementById('display_sap').value = sapCode;
+        document.getElementById('display_sparepart_id').value = sparepartId;
 
-        // Reset info kanan rak sampai rak dipilih
-        document.getElementById('stock_eng_id').selectedIndex = 0;
-        document.getElementById('display_part_num').value = '-';
-        document.getElementById('display_sap').value = '-';
-
-        clearTableGrid();
+        calculateBatchPreview();
     }
 
     function calculateBatchPreview() {
@@ -241,14 +259,24 @@
         const selectedDocOpt = docSelect.options[docSelect.selectedIndex];
         const selectedRakOpt = rakSelect.options[rakSelect.selectedIndex];
 
-        // Isikan Data Display Informasi Master Item dari Rak pilihan
-        document.getElementById('display_part_num').value = selectedRakOpt.getAttribute('data-partnum') || '-';
-        document.getElementById('display_sap').value = selectedRakOpt.getAttribute('data-sap') || '-';
+        const sparepartId = (selectedDocOpt.getAttribute('data-sparepart-id') && selectedDocOpt.getAttribute('data-sparepart-id') !== '-') 
+                            ? selectedDocOpt.getAttribute('data-sparepart-id') 
+                            : (selectedRakOpt.getAttribute('data-sparepart-id') || '-');
+                            
+        const partNum = (selectedDocOpt.getAttribute('data-partnum') && selectedDocOpt.getAttribute('data-partnum') !== '-') 
+                        ? selectedDocOpt.getAttribute('data-partnum') 
+                        : (selectedRakOpt.getAttribute('data-partnum') || '-');
+                        
+        const sapCode = (selectedDocOpt.getAttribute('data-sap') && selectedDocOpt.getAttribute('data-sap') !== '-') 
+                        ? selectedDocOpt.getAttribute('data-sap') 
+                        : (selectedRakOpt.getAttribute('data-sap') || '-');
 
-        // Susun struktur kode IN: TXENGIN + DDMMYY + 5 Digit Counter
+        document.getElementById('display_sparepart_id').value = sparepartId;
+        document.getElementById('display_part_num').value = partNum;
+        document.getElementById('display_sap').value = sapCode;
+
         const prefix = "TXENGIN";
         
-        // Dapatkan string DDMMYY hari ini di sisi client (Tahun 2026)
         const d = new Date();
         const dd = String(d.getDate()).padStart(2, '0');
         const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -278,8 +306,9 @@
                     </div>
                 </td>
                 <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-mono font-black tracking-wide text-orange-600 dark:text-orange-400 select-all">${fullBarcodeString}</td>
-                <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${selectedRakOpt.getAttribute('data-partnum')}</td>
-                <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${selectedRakOpt.getAttribute('data-sap')}</td>
+                <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-black text-blue-600 dark:text-blue-400">${sparepartId}</td>
+                <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${partNum}</td>
+                <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${sapCode}</td>
                 <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold text-black dark:text-white">${selectedRakOpt.getAttribute('data-rakname')}</td>
                 <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
                     <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400">${bType}</span>
@@ -318,7 +347,7 @@
         const tbody = document.getElementById('batch_table_body');
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="py-12 text-center text-slate-400 italic font-medium text-[13px] font-nunito">
+                <td colspan="9" class="py-12 text-center text-slate-400 italic font-medium text-[13px] font-nunito">
                     Pilih dokumen Material Received dan target Rak lokasi di atas untuk memuat daftar preview serialisasi masuk.
                 </td>
             </tr>
@@ -333,6 +362,8 @@
         document.getElementById('display_qty').value = '-';
         document.getElementById('display_part_num').value = '-';
         document.getElementById('display_sap').value = '-';
+        document.getElementById('display_sparepart_id').value = '-';
+
         clearTableGrid();
     }
 

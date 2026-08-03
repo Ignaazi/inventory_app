@@ -1,151 +1,166 @@
 @extends('admin')
 
 @section('content')
-<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 md:p-8 dark:border-gray-800 dark:bg-white/[0.03]">
+<!-- Import Font Profesional ala Dashboard -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .tail-admin-ui { font-family: 'Inter', sans-serif; }
+    
+    .panel-box {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+    .dark .panel-box {
+        background-color: #1e293b;
+        border-color: #334155;
+    }
+
+    .scanner-viewport {
+        position: relative;
+        overflow: hidden;
+        background-color: #020617;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        border: 1px solid #334155;
+    }
+
+    /* Laser Line Emerald untuk Mode Stock IN */
+    .laser-line {
+        position: absolute;
+        width: 100%;
+        height: 3px;
+        background: rgba(16, 185, 129, 0.8);
+        box-shadow: 0 0 15px 2px rgba(16, 185, 129, 0.6);
+        left: 0;
+        top: 0;
+        z-index: 10;
+        display: none;
+        animation: scanAnim 2s ease-in-out infinite;
+    }
+    @keyframes scanAnim {
+        0% { top: 5%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 95%; opacity: 0; }
+    }
+
+    #reader { width: 100%; height: 100%; }
+    #reader video { object-fit: cover !important; border-radius: 8px; }
+</style>
+
+<div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 tail-admin-ui text-slate-800 dark:text-slate-200">
+    
+    <!-- HEADER DASHBOARD -->
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+                <i class="fa-solid fa-qrcode text-emerald-600 dark:text-emerald-400 mr-2"></i> Terminal Stock In Otomatis
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">1 Barcode scan langsung menambah 1 stock gudang & otomatis mengikat Material Received ID terkait.</p>
+        </div>
+        <a href="{{ route('eng.in') }}" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all no-underline">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </a>
+    </div>
+
+    <!-- GRID LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div class="flex items-center justify-between mb-8 pb-5 border-b border-gray-100 dark:border-gray-800">
-            <div>
-                <h2 class="text-lg font-bold text-slate-950 dark:text-white">Scan IN To Add Nozzle</h2>
+        <!-- MODULE UTAMA: SCANNER KAMERA -->
+        <div class="lg:col-span-8 panel-box flex flex-col">
+            <div class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 rounded-t-xl">
+                <h3 class="font-semibold text-slate-800 dark:text-white text-sm">Hardware Lensa Live</h3>
+                <span id="badge_method" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 rounded flex items-center gap-1.5 uppercase tracking-wider">
+                    <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY
+                </span>
             </div>
             
-            <a href="{{ route('eng.in') }}" 
-               class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 via-blue-700 to-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all">
-                <i class="fas fa-arrow-left text-xs"></i> Kembali
-            </a>
+            <div class="p-6 flex-1 flex flex-col">
+                <div class="scanner-viewport shadow-inner">
+                    <div id="reader"></div>
+                    <div id="scan-laser-line" class="laser-line"></div>
+                    
+                    <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-0">
+                        <i class="fa-solid fa-camera-retro text-5xl text-slate-700 mb-3"></i>
+                        <span class="text-slate-500 text-xs font-mono">LENSA OFFLINE</span>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 transition-all uppercase tracking-wide cursor-pointer">
+                        <i class="fa-solid fa-video"></i> Aktifkan Lensa
+                    </button>
+                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-md bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 transition-all uppercase tracking-wide hidden cursor-pointer">
+                        <i class="fa-solid fa-power-off"></i> Matikan Lensa
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- PANEL DIAGNOSTIC & FAILSAFE -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
             
-            <div class="lg:col-span-5 flex flex-col gap-4">
-                <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Chosee Type Code</label>
-                    <div class="relative">
-                        <select id="barcode-type" onchange="updateScannerUI()"
-                                class="w-full bg-gray-50 dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-950 dark:text-white focus:outline-none focus:border-indigo-500 appearance-none">
-                            <option value="ALL">-- AUTO DETECT --</option>
-                            <option value="QR_CODE">QR CODE</option>
-                            <option value="BARCODE">1D BARCODE</option>
-                            <option value="DATA_MATRIX">DATA MATRIX</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                            <i class="fas fa-chevron-down text-xs"></i>
+            <!-- PANEL SYSTEM LOG -->
+            <div id="status-container" class="panel-box overflow-hidden transition-colors duration-300">
+                <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
+                    <h3 class="font-semibold text-slate-800 dark:text-white text-sm">Log Terminal Realtime</h3>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-start gap-4">
+                        <div id="status-icon-box" class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500">
+                            <i class="fa-solid fa-microchip text-lg" id="main-status-icon"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-white" id="status-title">Mesin Ready</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" id="status-desc">
+                                Jalankan lensa kamera atau gunakan input manual untuk mengeksekusi penerimaan/pemasukan barang.
+                            </p>
                         </div>
                     </div>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Scan Your Camera</label>
-                    <div id="wrapper-scan" class="overflow-hidden rounded-2xl bg-slate-950 border border-gray-200 dark:border-gray-800 relative shadow-inner aspect-[4/3] flex items-center justify-center">
-                        
-                        <div id="reader" class="w-full h-full object-cover"></div>
-                        
-                        <div id="scanner-overlay" class="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none z-10 hide-laser">
-                            <div id="custom-laser-box" class="relative transition-all duration-300 ease-in-out">
-                                <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-indigo-500 -mt-1 -ml-1 rounded-tl"></div>
-                                <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-indigo-500 -mt-1 -mr-1 rounded-tr"></div>
-                                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-indigo-500 -mb-1 -ml-1 rounded-bl"></div>
-                                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-indigo-500 -mb-1 -mr-1 rounded-br"></div>
-                                
-                                <div class="absolute left-0 w-full h-[3px] bg-red-500 shadow-[0_0_10px_#ef4444] animate-scan-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-30">
-                            <button type="button" id="start-cam" class="bg-indigo-600/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg backdrop-blur-sm transition-all hover:bg-indigo-600 whitespace-nowrap">
-                                <i class="fas fa-play mr-1"></i> START
-                            </button>
-                            <button type="button" id="stop-cam" class="bg-rose-600/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg backdrop-blur-sm transition-all hover:bg-rose-600 whitespace-nowrap">
-                                <i class="fas fa-stop mr-1"></i> STOP
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-2 mt-2">
-                    <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Kamera Rusak? Upload Foto Barcode/QR</label>
-                    <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-transparent cursor-pointer hover:bg-gray-100/50 transition-all p-3 text-center">
-                        <div class="flex flex-col items-center justify-center">
-                            <i class="fas fa-images text-xl text-indigo-500 mb-1"></i>
-                            <p class="text-xs font-bold text-slate-700 dark:text-gray-300">Pilih / Drop Foto Kode</p>
-                            <p id="file-name-info" class="text-[10px] text-slate-400 mt-0.5">Mendukung format JPG, PNG, atau WEBP</p>
-                        </div>
-                        <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
-                    </label>
                 </div>
             </div>
 
-            <div class="lg:col-span-7">
-                <form action="{{ route('eng.in.store') }}" method="POST" id="form-stock-in" class="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 p-6 rounded-2xl h-full flex flex-col justify-between">
-                    @csrf
-                    
-                    <input type="hidden" name="stock_eng_id" id="stock_id_final">
-                    
-                    <input type="hidden" name="source" value="scan">
-                    
-                    <div class="space-y-6">
-                        <div class="p-6 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-xl text-center shadow-sm">
-                             <span class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">Status Scanner</span>
-                             <h3 id="display_name" class="text-xl font-extrabold text-slate-950 dark:text-white uppercase tracking-wide mt-1">Menunggu Scan...</h3>
-                             <div class="mt-2 inline-block px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-md">
-                                 <p id="view_sap_text" class="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">READY TO SCAN</p>
-                             </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Jumlah Stok Masuk</label>
-                            <input type="number" name="qty_in" required min="1" placeholder="0"
-                                   class="w-full text-center text-5xl font-black bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-slate-950 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            @error('qty_in')
-                                <span class="text-xs text-red-500 font-bold mt-1">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label class="text-xs font-bold text-slate-700 dark:text-gray-300">Comment / Catatan</label>
-                            <textarea name="comment" rows="3" placeholder="Catatan khusus hasil scan (optional)" 
-                                      class="w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-950 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"></textarea>
-                            @error('comment')
-                                <span class="text-xs text-red-500 font-bold mt-1">{{ $message }}</span>
-                            @enderror
+            <!-- MANUAL KEYBOARD MODE & FAILSAFE -->
+            <div class="panel-box flex flex-col">
+                <div class="border-b border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-800/50">
+                    <h3 class="font-semibold text-slate-800 dark:text-white text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-keyboard text-amber-500"></i> Mode Input Manual / Keyboard
+                    </h3>
+                </div>
+                <div class="p-5 flex flex-col gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ketik / Tembak Barcode ID IN</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="manual_barcode" placeholder="Contoh: TXENGIN04082600001" class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-950 dark:text-white focus:outline-none focus:border-emerald-500">
+                            <button type="button" id="btn_manual_submit" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all cursor-pointer">
+                                Kirim
+                            </button>
                         </div>
                     </div>
 
-                    <div class="mt-8 pt-5 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                        <button type="submit" class="w-full md:w-auto bg-gradient-to-r from-purple-600 to-red-500 text-white px-10 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all uppercase tracking-wider">
-                            Submit
-                        </button>
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-3">
+                        <p class="text-[10px] text-slate-400 mb-2">Alternatif: Deteksi via upload berkas gambar QR / Barcode</p>
+                        <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 cursor-pointer transition-all group">
+                            <i class="fa-solid fa-cloud-arrow-up text-emerald-500 mb-1"></i>
+                            <span class="text-xs font-medium text-emerald-600" id="label-upload-status">Browse Image</span>
+                            <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
+                        </label>
                     </div>
-                </form>
+                </div>
             </div>
 
         </div>
     </div>
 </div>
-
-<style>
-    #reader__border_shifter, #reader div {
-        border: none !important;
-    }
-    
-    .hide-laser {
-        display: none !important;
-    }
-
-    .target-qr { width: 200px; height: 200px; }
-    .target-long { width: 85%; height: 70px; }
-    .target-all { width: 75%; height: 150px; }
-
-    @keyframes scanAnimation {
-        0% { top: 0%; }
-        50% { top: 100%; }
-        100% { top: 0%; }
-    }
-
-    .animate-scan-line {
-        animation: scanAnimation 2s infinite linear;
-    }
-</style>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -153,148 +168,201 @@
 <script>
     let html5QrCode = new Html5Qrcode("reader");
     let isCameraRunning = false;
+    let isProcessing = false;
+    
+    const photoInput = document.getElementById('upload-image-scan');
+    const startCamBtn = document.getElementById('start-cam');
+    const stopCamBtn = document.getElementById('stop-cam');
+    const laserLine = document.getElementById('scan-laser-line');
+    const camPlaceholder = document.getElementById('camera-placeholder');
+    const manualInput = document.getElementById('manual_barcode');
+    const btnManual = document.getElementById('btn_manual_submit');
 
-    function updateScannerUI() {
-        const type = document.getElementById('barcode-type').value;
-        const targetBox = document.getElementById('custom-laser-box');
+    const scanConfig = {
+        fps: 20, 
+        qrbox: function(width, height) {
+            const minEdge = Math.min(width, height);
+            return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
+        },
+        aspectRatio: 1.0
+    };
 
-        if (!isCameraRunning) return;
-
-        targetBox.className = "relative transition-all duration-300 ease-in-out";
-
-        if (type === 'QR_CODE') {
-            targetBox.classList.add('target-qr');
-        } else if (type === 'BARCODE' || type === 'DATA_MATRIX') {
-            targetBox.classList.add('target-long');
-        } else {
-            targetBox.classList.add('target-all');
-        }
-    }
-
-    const processDecodedText = (decodedText) => {
-        // Data stocks sekarang aman karena sudah dilempar dari method scan() controller baru
-        const stocks = @json($stocks ?? []);
-        const item = stocks.find(s => s.sap_code == decodedText);
+    // FUNGSI INTI AJAX SUBMIT SCAN IN
+    async function processAjaxStockIn(rawCode, mode = 'scan') {
+        const cleanCode = rawCode.replace(/[\n\r\t]/g, "").trim();
+        if (!cleanCode || isProcessing) return;
         
-        if(item) {
-            document.getElementById('stock_id_final').value = item.id;
-            document.getElementById('display_name').innerText = item.no_nozzle;
-            document.getElementById('view_sap_text').innerText = "SAP: " + item.sap_code;
-            
-            Swal.fire({ 
-                icon: 'success', 
-                title: 'Nozzle Ditemukan', 
-                text: item.no_nozzle + ' (' + item.sap_code + ')',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            stopScanner();
-        } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Barcode Tidak Terdaftar',
-                text: 'SAP Code: ' + decodedText,
-                confirmButtonColor: '#3C50E0'
-            });
-        }
-    };
-
-    const onScanSuccess = (decodedText) => {
-        processDecodedText(decodedText);
-    };
-
-    function getScannerConfig() {
-        const type = document.getElementById('barcode-type').value;
-        let config = { fps: 20 };
-
-        if (type === 'QR_CODE') {
-            config.qrbox = { width: 200, height: 200 };
-            config.formatsToSupport = [Html5QrcodeSupportedFormats.QR_CODE];
-        } else if (type === 'DATA_MATRIX') {
-            config.qrbox = { width: 280, height: 100 };
-            config.formatsToSupport = [Html5QrcodeSupportedFormats.DATA_MATRIX];
-        } else if (type === 'BARCODE') {
-            config.qrbox = { width: 320, height: 80 };
-            config.formatsToSupport = [
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13
-            ];
-        } else {
-            config.qrbox = { width: 280, height: 160 };
-        }
-
-        return config;
-    }
-
-    document.getElementById('start-cam').addEventListener('click', () => {
-        if (!isCameraRunning) {
-            const currentConfig = getScannerConfig();
-
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                currentConfig, 
-                onScanSuccess
-            )
-            .then(() => {
-                isCameraRunning = true;
-                document.getElementById('barcode-type').disabled = true;
-                document.getElementById('scanner-overlay').classList.remove('hide-laser');
-                updateScannerUI();
-            })
-            .catch((err) => {
-                console.error("Gagal start kamera: ", err);
-                Swal.fire({ icon: 'error', title: 'Kamera Gagal', text: 'Pastikan izin kamera aktif!' });
-            });
-        }
-    });
-
-    document.getElementById('stop-cam').addEventListener('click', () => {
-        stopScanner();
-    });
-
-    function stopScanner() {
-        if (isCameraRunning) {
-            html5QrCode.stop().then(() => {
-                isCameraRunning = false;
-                document.getElementById('barcode-type').disabled = false;
-                document.getElementById('scanner-overlay').classList.add('hide-laser');
-            }).catch((err) => {
-                console.error("Gagal stop kamera: ", err);
-            });
-        }
-    }
-
-    document.getElementById('upload-image-scan').addEventListener('change', function(e) {
-        if (e.target.files.length === 0) return;
-
-        const file = e.target.files[0];
-        document.getElementById('file-name-info').innerText = "Memproses: " + file.name;
-
-        stopScanner();
+        isProcessing = true; 
+        changeUIStatus('PROCESSING', 'MEMBACA...', `Mengirim data: ${cleanCode}`);
 
         Swal.fire({
-            title: 'Membaca Gambar...',
-            text: 'Harap tunggu, sistem sedang men-decode file kode.',
+            title: 'Menambah Stok Rak...',
+            html: `<div class="text-xs font-mono text-emerald-600 break-all">${cleanCode}</div>`,
             allowOutsideClick: false,
+            showConfirmButton: false,
+            width: '320px',
             didOpen: () => { Swal.showLoading(); }
         });
 
-        html5QrCode.scanFile(file, true)
-            .then(decodedText => {
-                Swal.close();
-                processDecodedText(decodedText);
-            })
-            .catch(err => {
-                Swal.close();
-                console.error("Gagal membaca gambar: ", err);
-                document.getElementById('file-name-info').innerText = "Gagal memproses gambar.";
+        const formData = new FormData();
+        formData.append('barcode_scan', cleanCode); // Dikirim ke StockInEngineeringController
+        formData.append('process_type', mode);       // Mengindikasikan tipe scan/manual
+        formData.append('comment', `Automated Stock IN via scan.`);
+
+        try {
+            const response = await fetch("{{ route('eng.in.store') }}", {
+                method: 'POST',
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'Accept': 'application/json' 
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                changeUIStatus('VALID', 'BERHASIL DITAMBAH', result.message);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Stok Bertambah (+1)',
+                    text: result.message,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    width: '350px'
+                });
+            } else {
+                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Gagal Membaca',
-                    text: 'Kode tidak terdeteksi di gambar. Pastikan posisi gambar tegak, jernih, dan tidak blur!'
+                    title: 'Gagal Scan In',
+                    text: result.message,
+                    confirmButtonColor: '#ef4444'
                 });
+            }
+        } catch (error) {
+            changeUIStatus('INVALID', 'KONEKSI LOSS', 'Koneksi ke database terputus.');
+            Swal.fire({ icon: 'error', title: 'Network Error', text: 'Periksa koneksi jaringan/server Anda.' });
+        } finally {
+            setTimeout(() => {
+                resetSystemState();
+            }, 1000);
+        }
+    }
+
+    // INTERFACE DYNAMIC CONTROLLER
+    function changeUIStatus(status, labelText, descText) {
+        const badge = document.getElementById('badge_method');
+        const statusContainer = document.getElementById('status-container');
+        const iconBox = document.getElementById('status-icon-box');
+        const mainIcon = document.getElementById('main-status-icon');
+        
+        document.getElementById('status-title').innerText = labelText;
+        document.getElementById('status-desc').innerText = descText;
+
+        badge.className = "px-2.5 py-1 text-[10px] font-bold rounded flex items-center gap-1.5 uppercase tracking-wider ";
+        iconBox.className = "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ";
+
+        if (status === 'VALID') {
+            badge.innerHTML = `<i class="fa-solid fa-check"></i> OK`;
+            badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-200');
+            statusContainer.className = "panel-box overflow-hidden border-emerald-400 bg-emerald-50/30";
+            iconBox.classList.add('bg-emerald-100', 'text-emerald-600');
+            mainIcon.className = "fa-solid fa-square-check text-lg";
+        } else if (status === 'PROCESSING') {
+            badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SYNC`;
+            badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-200');
+            statusContainer.className = "panel-box overflow-hidden border-emerald-400 bg-emerald-50/30";
+            iconBox.classList.add('bg-emerald-100', 'text-emerald-600');
+            mainIcon.className = "fa-solid fa-rotate fa-spin text-lg";
+        } else {
+            badge.innerHTML = `<i class="fa-solid fa-xmark"></i> DITOLAK`;
+            badge.classList.add('bg-rose-100', 'text-rose-700', 'border', 'border-rose-200');
+            statusContainer.className = "panel-box overflow-hidden border-rose-400 bg-rose-50/30";
+            iconBox.classList.add('bg-rose-100', 'text-rose-600');
+            mainIcon.className = "fa-solid fa-triangle-exclamation text-lg";
+        }
+    }
+
+    function resetSystemState() {
+        isProcessing = false;
+        photoInput.value = "";
+        manualInput.value = "";
+        document.getElementById('label-upload-status').innerText = "Browse Image";
+        
+        if(!isCameraRunning) {
+            document.getElementById('status-container').className = "panel-box overflow-hidden";
+            document.getElementById('status-icon-box').className = "flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500";
+            document.getElementById('main-status-icon').className = "fa-solid fa-microchip text-lg";
+            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY`;
+            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 rounded flex items-center gap-1.5 uppercase tracking-wider";
+            laserLine.style.display = 'none';
+        } else {
+            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-video text-[10px] animate-pulse"></i> LIVE SCANNING`;
+            document.getElementById('badge_method').className = "px-2.5 py-1 text-[10px] font-bold bg-emerald-600 text-white rounded flex items-center gap-1.5 uppercase tracking-wider";
+            laserLine.style.display = 'block';
+        }
+    }
+
+    // ACTIONS EVENT
+    startCamBtn.addEventListener('click', () => {
+        if (!isCameraRunning) {
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                scanConfig, 
+                (decodedText) => { 
+                    if (!isProcessing) processAjaxStockIn(decodedText.trim(), 'scan'); 
+                }
+            )
+            .then(() => { 
+                isCameraRunning = true; 
+                startCamBtn.classList.add('hidden');
+                stopCamBtn.classList.remove('hidden');
+                camPlaceholder.classList.add('hidden');
+                resetSystemState();
+            })
+            .catch(err => {
+                Swal.fire({ icon: 'warning', title: 'Izin Kamera Blokir', text: 'Gunakan protokol HTTPS atau jalankan via localhost.' });
+            });
+        }
+    });
+
+    stopCamBtn.addEventListener('click', () => {
+        if (isCameraRunning) {
+            html5QrCode.stop().then(() => { 
+                isCameraRunning = false; 
+                startCamBtn.classList.remove('hidden');
+                stopCamBtn.classList.add('hidden');
+                camPlaceholder.classList.remove('hidden');
+                resetSystemState();
+            });
+        }
+    });
+
+    // KIRIM MANUAL BY KEYBOARD / USB GUN SCANNER
+    btnManual.addEventListener('click', () => {
+        const val = manualInput.value.trim();
+        if(val) processAjaxStockIn(val, 'manual');
+    });
+
+    manualInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            btnManual.click();
+        }
+    });
+
+    // DEKRIPSI FILE GAMBAR BARCODE
+    photoInput.addEventListener('change', function(e) {
+        if (e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        document.getElementById('label-upload-status').innerText = "File terunggah";
+
+        html5QrCode.scanFile(file, true)
+            .then(decodedText => { processAjaxStockIn(decodedText.trim(), 'scan'); })
+            .catch(err => { 
+                Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR di dalam foto tidak jelas atau salah.' }); 
+                resetSystemState();
             });
     });
 </script>
