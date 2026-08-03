@@ -39,12 +39,12 @@
 
         {{-- Action Buttons --}}
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <a href="{{ Route::has('prod.transaction.in.scan') ? route('prod.transaction.in.scan') : '#' }}" 
+            <a href="{{ url('/prod/transaction/in/scan') }}" 
                class="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-4 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-36 text-center cursor-pointer no-underline">
                 <i class="fa-solid fa-qrcode mr-1"></i> Scan IN
             </a>
             
-            <a href="{{ route('prod.transaction.in.manual') }}" 
+            <a href="{{ url('/prod/transaction/in/manual') }}" 
                class="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-4 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-36 text-center cursor-pointer no-underline">
                 <i class="fa-solid fa-keyboard mr-1"></i> Manual IN
             </a>
@@ -90,19 +90,19 @@
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
                         <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 dark:border-blue-900/50">Transaction ID</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">NIK PIC</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Operator PIC</th>
                         <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Line Target</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Sparepart / Nozzle</th>
-                        <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 dark:border-blue-900/50">Ref Out ID</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Request No</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
+                        <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 dark:border-blue-900/50">Stock Eng TX ID</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Production Request ID</th>
+                        <th class="px-3 py-3.5 w-[220px] border-l border-blue-500 dark:border-blue-900/50">Barcode ID</th>
                         <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Stock Prod ID</th>
                         <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">Qty In</th>
                         <th class="px-2 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">Status</th>
                         <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Process Type</th>
-                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:border-blue-900/50">Remark / Notes</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
+                        <th class="px-3 py-3.5 w-[220px] border-l border-blue-500 dark:border-blue-900/50">Remark / Notes</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-black dark:text-slate-200 font-nunito bg-transparent">
@@ -113,51 +113,51 @@
                             {{ (method_exists($history, 'firstItem')) ? ($history->firstItem() + $key) : ($key + 1) }}
                         </td>
                         
-                        <!-- 2. TRANSACTION ID (Menggunakan field baru tx_id) -->
+                        <!-- 2. TRANSACTION ID -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center whitespace-nowrap text-slate-900 dark:text-slate-100">
-                            {{ $log->tx_id ?? $log->id }}
+                            {{ $log->tx_id ?? '-' }}
                         </td>
                         
-                        <!-- 3. NIK PIC (Menggunakan field baru nik_karyawan) -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center text-[12px]">
-                            {{ $log->nik_karyawan ?? '-' }}
+                        <!-- 3. OPERATOR PIC -->
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center text-[12px] truncate max-w-[130px]" title="{{ $log->operator_name ?? 'System' }}">
+                            {{ $log->operator_name ?? 'System' }}
                         </td>
                         
-                        <!-- 4. LINE TARGET (Relasi baru: stockProd -> line -> name) -->
+                        <!-- 4. LINE TARGET -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
                             <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 shadow-sm">
-                                {{ $log->stockProd->line->name ?? 'ID: '.($log->stockProd->line_id ?? '-') }}
+                                {{ $log->line_name ?? 'Lini '.$log->stock_prods_id }}
                             </span>
                         </td>
                         
-                        <!-- 5. SPAREPART / NOZZLE (Relasi baru: stockProd -> sparepart -> name) -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold text-center tracking-tight truncate max-w-[130px]" title="{{ $log->stockProd->sparepart->name ?? '-' }}">
-                            {{ $log->stockProd->sparepart->name ?? '-' }}
+                        <!-- 5. SPAREPART / NOZZLE (Membaca Tipe Nozzle 120 Dari Database) -->
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold text-center tracking-tight text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                            {{ $log->item_code ?? '120' }}
                         </td>
                         
-                        <!-- 6. REF OUT ID (Menggunakan field baru ref_tx_id / reference transaction jika ada) -->
+                        <!-- 6. STOCK ENG TX ID -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center whitespace-nowrap">
-                            {{ $log->ref_tx_id ?? $log->transaction_out_id ?? '-' }}
+                            {{ $log->stock_eng_tx_id ?? '-' }}
                         </td>
                         
-                        <!-- 7. REQUEST NO -->
+                        <!-- 7. PRODUCTION REQUEST ID -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
                             <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 font-mono shadow-sm">
-                                {{ $log->request_no ?? '-' }}
+                                {{ $log->production_request_id ?? '-' }}
                             </span>
                         </td>
                         
                         <!-- 8. BARCODE ID -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center tracking-tight text-blue-600 dark:text-blue-400">
-                            {{ $log->barcode_id ?? '-' }}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center tracking-tight text-blue-600 dark:text-blue-400 truncate max-w-[210px]" title="{{ $log->barcode_code }}">
+                            {{ $log->barcode_code ?? '-' }}
                         </td>
                         
                         <!-- 9. STOCK PROD ID -->
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-center">
-                            {{ $log->stock_prod_id }}
+                            {{ $log->stock_prods_id ?? '-' }}
                         </td>
                         
-                        <!-- 10. QTY IN (Menggunakan field baru qty_transaction) -->
+                        <!-- 10. QTY IN -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
                             <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 shadow-sm">
                                 +{{ $log->qty_transaction ?? 0 }}
@@ -174,24 +174,24 @@
                             </span>
                         </td>
                         
-                        <!-- 12. PROCESS TYPE (Menggunakan field baru process_type - Ditempel di class remark-cell agar JS filter tidak rusak) -->
+                        <!-- 12. PROCESS TYPE -->
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
                             @php
-                                $procText = $log->process_type ?? '';
+                                $procText = $log->process_type ?? 'scan';
                                 $procLower = strtolower($procText);
-                                $isManual = str_contains($procLower, 'manual');
-                                $isScan = str_contains($procLower, 'scan');
+                                $isManual = ($procLower == 'manual');
+                                $isScan = ($procLower == 'scan');
                             @endphp
-                            <span class="remark-cell inline-flex items-center justify-center rounded-lg px-2 py-0.5 text-[9px] font-black tracking-tight uppercase border shadow-sm
+                            <span class="remark-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border shadow-sm
                                 @if($isManual) bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
                                 @elseif($isScan) bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
                                 @else bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
-                                {{ $procText ? $log->process_type : '-' }} 
+                                {{ $procText ? $procText . ' In' : '-' }} 
                             </span>
                         </td>
                         
-                        <!-- 13. REMARK / NOTES (Menggunakan field baru remark) -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left truncate max-w-[160px]" title="{{ $log->remark }}">
+                        <!-- 13. REMARK / NOTES -->
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left truncate max-w-[210px]" title="{{ $log->remark }}">
                             {{ $log->remark ?? '-' }}
                         </td>
                         

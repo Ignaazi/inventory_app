@@ -5,9 +5,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EngineeringOverviewController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
-use App\Http\Controllers\Production\ProductionOverviewController;
-use App\Http\Controllers\Production\InProdController;
-use App\Http\Controllers\Production\OutProdController; 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\StockInEngineeringController;
@@ -16,7 +13,6 @@ use App\Http\Controllers\EngOverview\DbBarcodeController;
 use App\Http\Controllers\EngOverview\TypeBarcodeController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
-use App\Http\Controllers\Production\RequestProdController;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
@@ -37,9 +33,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     
     // Dashboard Utama (Admin)
-    Route::get('/admin', function () {
-        return view('admin'); 
-    })->name('dashboard');
+Route::get('/admin', function () {
+    return view('admin'); 
+})->name('dashboard');
 
     // --- GRUP ADMIN (Full Access) ---
     Route::middleware('role:admin')->group(function () {
@@ -60,7 +56,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/out/scan', [StockOutEngineeringController::class, 'scan'])->name('eng.out.scan');
             Route::post('/out/store', [StockOutEngineeringController::class, 'store'])->name('eng.out.store');
             
-            // UPDATE: Cukup gunakan Resource Route ini saja.
             Route::resource('list-sparepart', ListSparepartEngController::class);
         });
 
@@ -69,22 +64,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/approval/approve/{id}', [ApprovalEngController::class, 'approve'])->name('eng.approval.approve');
         Route::post('/eng/approval/reject/{id}', [ApprovalEngController::class, 'reject'])->name('eng.approval.reject');    
         
-        // =========================================================================
-        // 🚀 ROUTE PURCHASE REQUEST & FLOW VERIFIKASI (UPDATED WITHOUT COSTING MODULE)
-        // =========================================================================
-
+        // ROUTE PURCHASE REQUEST & FLOW VERIFIKASI
         Route::get('/eng/purchase-request', [PurchaseRequestEngController::class, 'index'])->name('purchase.request.index');
         Route::post('/eng/purchase-request', [PurchaseRequestEngController::class, 'store'])->name('purchase.request.store'); 
 
-        // Rute Verifikasi Meja Kerja 1 (Admin / Checker)
         Route::get('/eng/purchase-request/list', [PurchaseRequestEngController::class, 'listRequests'])->name('purchase.request.list');
         Route::post('/eng/purchase-request/{id}/reject', [PurchaseRequestEngController::class, 'rejectRequest'])->name('purchase.request.reject');
 
-        // 🔄 ALUR BARU JALUR CHECKED
         Route::get('/eng/purchase-request/{id}/check', [PurchaseRequestEngController::class, 'checkedView'])->name('purchase.request.checked.view');
         Route::post('/eng/purchase-request/{id}/check-confirm', [PurchaseRequestEngController::class, 'checkRequest'])->name('purchase.request.check');
 
-        // Rute History Manajemen Pengajuan PR
         Route::get('/eng/purchase-request/history', [PurchaseRequestHistoryEngController::class, 'index'])->name('purchase.request.history');
         Route::get('/eng/purchase-request/{id}/preview', [PurchaseRequestHistoryEngController::class, 'preview'])->name('purchase.request.preview');
         Route::get('/eng/purchase-request/{id}/edit', [PurchaseRequestHistoryEngController::class, 'edit'])->name('purchase.request.edit');
@@ -96,18 +85,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/barcode-scan', [BarcodeParsingController::class, 'scan'])->name('barcode.parsing.scan');
 
         Route::prefix('eng-overview')->group(function () {
-            // Barcode OUT (Halaman Utama Overview)
             Route::get('/barcode-parsing', [BarcodeParsingController::class, 'index'])->name('barcode.parsing');
-            
-            // Rute Barcode IN
             Route::get('/barcode-parsing-in', [BarcodeParsingController::class, 'indexIn'])->name('barcode.parsing.in');
-            
-            // 🛠️ FIX DISINI: Izinkan POST langsung ke /barcode-parsing
             Route::post('/barcode-parsing', [BarcodeParsingController::class, 'store'])->name('barcode.parsing.store');
-            
-            // Ini tetap dipertahankan jaga-jaga kalau ada form lain yang mengarah ke /store
             Route::post('/barcode-parsing/store', [BarcodeParsingController::class, 'store']);
-            
             Route::get('/barcode-parsing/get-configs', [BarcodeParsingController::class, 'getConfigs']);
             Route::get('/db-barcode', [DbBarcodeController::class, 'index'])->name('barcode.db');
             Route::delete('/db-barcode/{id}', [DbBarcodeController::class, 'destroy'])->name('barcode.db.delete');
@@ -120,9 +101,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/in', [TransactionController::class, 'indexIn'])->name('in');
             Route::get('/out', [TransactionController::class, 'indexOut'])->name('out');
             
-            // --- BAGIAN RETURN ---
             Route::get('/return', [TransactionController::class, 'indexReturn'])->name('return');
-            
             Route::get('/return/manual', function () {
                 $stocks = \App\Models\StockEng::all(); 
                 $raks = \App\Models\Rak::all(); 
@@ -130,48 +109,14 @@ Route::middleware('auth')->group(function () {
             })->name('return.manual');
 
             Route::post('/return/store', [TransactionController::class, 'storeReturn'])->name('return.store');
-            
-            // --- BAGIAN DISPOSAL ---
             Route::get('/disposal', [TransactionController::class, 'indexDisposal'])->name('disposal');
             Route::post('/disposal/store', [TransactionController::class, 'storeDisposal'])->name('disposal.store');
         });
     });
     
-    // --- GRUP PRODUCTION ---
+    // --- 🚀 GRUP PRODUCTION (SEKARANG BERSIH DI-IMPORT DARI FILE SEPARATE) ---
     Route::middleware('role:admin,production')->group(function () {
-        
-        Route::prefix('prod/request')->group(function () {
-            Route::get('/list', [RequestProdController::class, 'listRequest'])->name('prod.request.list');
-            Route::get('/create', [RequestProdController::class, 'create'])->name('prod.request.create');
-            Route::post('/store', [RequestProdController::class, 'store'])->name('prod.request.store');
-            Route::get('/draft/{id}', [RequestProdController::class, 'editDraft'])->name('prod.request.editDraft');
-            Route::put('/draft/{id}/update', [RequestProdController::class, 'updateDraft'])->name('prod.request.updateDraft');
-            Route::put('/update/{id}', [RequestProdController::class, 'update'])->name('prod.request.update');
-            Route::get('/preview/{id}', [RequestProdController::class, 'preview'])->name('prod.request.preview');
-            Route::delete('/delete/{id}', [RequestProdController::class, 'destroy'])->name('prod.request.destroy');
-            Route::get('/fetch-updates', [RequestProdController::class, 'fetchUpdates'])->name('prod.request.fetchUpdates');
-        });
-
-        Route::prefix('production/request')->group(function () {
-            Route::post('/store', [RequestProdController::class, 'store']);
-        });
-
-        Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
-        
-        // 🛠️ SEKTOR SINKRONISASI PRODUCTION (IN & OUT MANAGEMENT)
-        Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
-            Route::get('/in', [InProdController::class, 'stockIn'])->name('in');
-            Route::get('/get-eng-detail/{id}', [InProdController::class, 'getEngineeringDetail'])->name('get_eng_detail');
-            Route::get('/in/manual', [InProdController::class, 'manualIn'])->name('in.manual');
-            Route::post('/in/manual/store', [InProdController::class, 'storeManualIn'])->name('in.store_manual');
-            Route::post('/store', [InProdController::class, 'store'])->name('store'); 
-
-            Route::get('/out', [OutProdController::class, 'stockOut'])->name('out');
-            Route::post('/out/manual/store', [OutProdController::class, 'storeManualOut'])->name('out.manual.store');
-            Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail']); 
-        });
-        
-        Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
+        require base_path('routes/Production/transaction.php');
     });
     
     // --- SHARED / GLOBAL ---
@@ -187,7 +132,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/eng/in/update', 'updateStockIn')->name('stock.eng.in.update');
     });
 
-    // --- MODUL UTAMA STOCK IN ENGINEERING ---
+    // MODUL UTAMA STOCK IN ENGINEERING
     Route::get('/eng/in', [StockInEngineeringController::class, 'index'])->name('eng.in');
     Route::get('/eng/in/manual', [StockInEngineeringController::class, 'manual'])->name('eng.in.manual'); 
     Route::get('/eng/in/scan', [StockInEngineeringController::class, 'scan'])->name('eng.in.scan');

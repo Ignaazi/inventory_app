@@ -7,62 +7,73 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class inProd extends Model
 {
-    // Nama tabel log sesuai rancangan migrasi
-    protected $table = 'inProd_logs';
+    // 1. Ubah nama tabel ke tabel transaksi produksi yang baru
+    protected $table = 'stock_prod_transactions';
 
-    // Primary key utama tabel ini
-    protected $primaryKey = 'inproduction_id';
+    // 2. Sesuaikan primary key menjadi 'id' sesuai dengan skema tabel baru
+    protected $primaryKey = 'id';
 
-    // Kolom yang diizinkan diisi secara massal saat store transaksi
+    // 3. Kolom baru yang diizinkan untuk diisi secara massal (Mass Assignment)
     protected $fillable = [
-        'nik',
-        'line_id',
-        'no_nozzle',          // 🔥 Tambahkan ini
-        'transaction_out_id',
-        'request_no',         // 🔥 Tambahkan ini
-        'barcode_id',
-        'stock_prod_id',
-        'qty_in',
+        'tx_id',
+        'users_id',
+        'stock_prods_id',
+        'stock_eng_tx_id',
+        'db_barcodes_id',
+        'production_request_id',
+        'tx_type',
+        'out_category',
+        'nik_karyawan',
+        'qty_transaction',
+        'process_type',
+        'photo_path',
         'status',
-        'remark',
-        'comment'
+        'remark'
     ];
 
     /**
-     * 1. RELASI KE TABEL MASTER LINE PRODUCTION
-     * Lokasi Model: Models/Production/ListLineProduction.php
+     * RELASI KE TABEL USERS (Operator yang melakukan scan)
      */
-    public function line(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Production\ListLineProduction::class, 'line_id', 'line_id');
+        return $this->belongsTo(\App\Models\User::class, 'users_id', 'id');
     }
 
     /**
-     * 2. RELASI KE TABEL STOCK OUT ENGINEERING
-     * Lokasi Model: Models/Engineering/StockOutEng.php
-     * Berfungsi mengambil data No Nozzle dan Request No secara berantai
-     */
-    public function stockOutLog(): BelongsTo
-    {
-        return $this->belongsTo(\App\Models\Engineering\StockOutEng::class, 'transaction_out_id', 'transaction_out_id');
-    }
-
-    /**
-     * 3. RELASI KE TABEL BARCODE MASTER
-     * Lokasi Model: Models/DbBarcode.php
-     */
-    public function barcode(): BelongsTo
-    {
-        return $this->belongsTo(\App\Models\DbBarcode::class, 'barcode_id', 'barcode_id');
-    }
-
-    /**
-     * 4. RELASI KE TABEL STOCK PRODUCTION INTERNAL LINE
-     * Lokasi Model: Models/Production/stock_prod.php
-     * Digunakan untuk skema berantai mengambil part_no & sap_code, serta trigger penambahan qty
+     * RELASI KE DATA STOK PRODUKSI PER LINI
+     * Menghubungkan log transaksi ke item nozzle/sparepart di lini produksi terkait
      */
     public function stockProd(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Production\stock_prod::class, 'stock_prod_id', 'id');
+        return $this->belongsTo(\App\Models\Production\stock_prod::class, 'stock_prods_id', 'id');
+    }
+
+    /**
+     * RELASI KE TRANSAKSI HULU GUDANG ENGINEERING (Jembatan Audit)
+     * Digunakan untuk melacak dari mana asal barang yang masuk ke produksi ini
+     */
+    public function stockEngTransaction(): BelongsTo
+    {
+        // Asumsi nama model engineering transaksi lu adalah StockEngTransaction
+        return $this->belongsTo(\App\Models\Engineering\StockEngTransaction::class, 'stock_eng_tx_id', 'id');
+    }
+
+    /**
+     * RELASI KE TABEL BARCODE MASTER
+     * Berfungsi memetakan siklus hidup QR code yang discan
+     */
+    public function barcode(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\DbBarcode::class, 'db_barcodes_id', 'id');
+    }
+
+    /**
+     * RELASI KE DOKUMEN PERMINTAAN PRODUKSI
+     * Menghubungkan log masuk dengan dokumen request aslinya
+     */
+    public function productionRequest(): BelongsTo
+    {
+        // Asumsi nama model production request lu adalah ProductionRequest
+        return $this->belongsTo(\App\Models\Production\RequestProd::class, 'production_request_id', 'id');
     }
 }
