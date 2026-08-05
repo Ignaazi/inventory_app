@@ -10,17 +10,30 @@ use Illuminate\Support\Facades\Auth;
 
 class DisposalEngineeringController extends Controller
 {
+    /**
+     * 1. Halaman Utama: Menampilkan Tabel Riwayat History Disposal
+     */
     public function index(Request $request)
     {
-        $query = DisposalEng::disposal()->with(['user', 'stockEng']);
+        $perPage = $request->input('per_page', 15);
+
+        $query = DisposalEng::disposal()->with(['user', 'stockEng.sparepart', 'barcode']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = trim($request->search);
             $query->where(function($q) use ($search) {
                 $q->where('tx_id', 'LIKE', "%{$search}%")
                   ->orWhere('remark', 'LIKE', "%{$search}%")
-                  ->orWhereHas('stockEng', function($sq) use ($search) {
-                      $sq->where('part_no', 'LIKE', "%{$search}%")
+                  ->orWhereHas('user', function($u) use ($search) {
+                      $u->where('nik', 'LIKE', "%{$search}%")
+                        ->orWhere('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('barcode', function($b) use ($search) {
+                      $b->where('barcode_id', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('stockEng.sparepart', function($sq) use ($search) {
+                      $sq->where('sparepart_id', 'LIKE', "%{$search}%")
+                        ->orWhere('part_number', 'LIKE', "%{$search}%")
                         ->orWhere('sap_code', 'LIKE', "%{$search}%");
                   });
             });
@@ -33,17 +46,20 @@ class DisposalEngineeringController extends Controller
             }
         }
 
-        $history = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
+        $history = $query->orderBy('id', 'desc')->paginate($perPage)->withQueryString();
         return view('stock_eng.transaction.disposal', compact('history'));
     }
 
+    /**
+     * 2. Menampilkan Halaman Terminal Scanner
+     */
     public function scanView()
     {
         return view('stock_eng.transaction.disposal_scan');
     }
 
     /**
-     * CORE ENGINE: Instant Barcode Burning (JALUR AJAX JSON)
+     * 3. CORE ENGINE: Instant Barcode Burning (JALUR AJAX JSON)
      */
     public function processScan(Request $request)
     {
@@ -77,15 +93,18 @@ class DisposalEngineeringController extends Controller
                 ], 422);
             }
 
-            // C. Generate Unique Transaction ID
-            $datePrefix = 'TX-DISP-' . date('dmy'); 
-            $lastTrx = DisposalEng::where('tx_id', 'LIKE', $datePrefix . '%')->orderBy('id', 'desc')->first();
+            // C. Generate Unique Transaction ID (Format: TXENGDIS + DDMMYY + 001, 002, dst.)
+            // Karena menggunakan prefix tanggal ($datePrefix), counter otomatis reset ke 001 jika berganti hari.
+            $datePrefix = 'TXENGDIS' . date('dmy'); 
+            $lastTrx = DisposalEng::where('tx_id', 'LIKE', $datePrefix . '%')
+                ->orderBy('id', 'desc')
+                ->first();
 
             if ($lastTrx) {
-                $lastNum = (int) substr($lastTrx->tx_id, -4);
-                $nextNum = str_pad($lastNum + 1, 4, '0', STR_PAD_LEFT);
+                $lastNum = (int) substr($lastTrx->tx_id, -3);
+                $nextNum = str_pad($lastNum + 1, 3, '0', STR_PAD_LEFT);
             } else {
-                $nextNum = '0001';
+                $nextNum = '001';
             }
             $txUuid = $datePrefix . $nextNum;
 
@@ -104,7 +123,7 @@ class DisposalEngineeringController extends Controller
                 'process_type'          => $inputProcess,
                 'photo_path'            => null,
                 'status'                => 'success',
-                'remark'                => 'Instant Scrap via Terminal Scanner (Pemusnahan Permanen Barcode)'
+                'remark'                => 'Automated Disposal'
             ]);
 
             // 🔒 F. BURN IT: Kunci status di master barcode menjadi DISPOSAL

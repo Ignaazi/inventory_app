@@ -11,12 +11,12 @@ use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
 use App\Http\Controllers\Engineering\StockInEngineeringController;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
+use App\Http\Controllers\Engineering\StockReturnEngineeringController; // 🔥 ADDED
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 use App\Http\Controllers\Engineering\TransactionController;
-use App\Http\Controllers\Engineering\TransactionReturnController; // 👈 Controller Return Engineering Baru
 use App\Http\Controllers\Engineering\TransactionDisposalController;
 use App\Http\Controllers\Engineering\DisposalEngineeringController;
 use App\Http\Controllers\EngOverview\BarcodeParsingController;
@@ -91,6 +91,13 @@ Route::middleware('auth')->group(function () {
                 Route::post('/scan/store', 'storeScan')->name('.scan.store');
             });
 
+            // Stock Return 🔥 (Menggunakan StockReturnEngineeringController)
+            Route::controller(StockReturnEngineeringController::class)->prefix('return')->name('eng.return.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/scan', 'scan')->name('scan');
+                Route::post('/store', 'store')->name('store');
+            });
+
             // Approval Engineering
             Route::controller(ApprovalEngController::class)->prefix('approval')->name('eng.approval')->group(function () {
                 Route::get('/', 'index');
@@ -163,9 +170,10 @@ Route::middleware('auth')->group(function () {
                 Route::get('/out', 'indexOut')->name('out');
             });
 
-            // Transaksi RETURN (Menggunakan TransactionReturnController)
-            Route::controller(TransactionReturnController::class)->group(function () {
+            // Transaksi RETURN Log & Executions 🔥
+            Route::controller(StockReturnEngineeringController::class)->group(function () {
                 Route::get('/return', 'index')->name('return');
+                Route::get('/return/scan', 'scan')->name('return.scan');
                 Route::post('/return/store', 'store')->name('return.store');
             });
 

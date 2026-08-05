@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Engineering;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Engineering\TransactionDisposal; // Memakai Model resmi milik lu!
+use App\Models\Engineering\TransactionDisposal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,17 +12,38 @@ class TransactionDisposalController extends Controller
 {
     /**
      * 1. Halaman Utama: Menampilkan Tabel Riwayat History Disposal
-     * FIX: Menggunakan eager loading & sorting terbaru agar data langsung muncul!
+     * Memuat Eager Loading (User, StockEng -> Sparepart, Barcode) & Fitur Live Search
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Menarik data dengan relasi 'user' dan 'stockEng' sesuai kebutuhan di Blade lu
-        $history = TransactionDisposal::with(['user', 'stockEng'])
-            ->where('tx_type', 'disposal')
-            ->orderBy('id', 'desc') // PENTING: Biar data baru hasil scan langsung nongol di baris paling atas!
-            ->paginate(15);
+        $perPage = $request->input('per_page', 10);
 
-        // Mengirimkan variabel $history ke view Blade lu
+        // Load relasi user, stockEng beserta sparepart-nya, dan barcode
+        $query = TransactionDisposal::with(['user', 'stockEng.sparepart', 'barcode'])
+            ->where('tx_type', 'disposal');
+
+        // Filter Pencarian (Search)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('tx_id', 'LIKE', "%{$search}%")
+                  ->orWhereHas('user', function($u) use ($search) {
+                      $u->where('nik', 'LIKE', "%{$search}%")
+                        ->orWhere('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('barcode', function($b) use ($search) {
+                      $b->where('barcode_id', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('stockEng.sparepart', function($sp) use ($search) {
+                      $sp->where('sparepart_id', 'LIKE', "%{$search}%")
+                         ->orWhere('part_number', 'LIKE', "%{$search}%")
+                         ->orWhere('sap_code', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        $history = $query->orderBy('id', 'desc')->paginate($perPage);
+
         return view('stock_eng.transaction.disposal', compact('history'));
     }
 
@@ -35,7 +56,8 @@ class TransactionDisposalController extends Controller
     }
 
     /**
-     * 3. Eksekutor Scan: Menyimpan Data & Mematikan Barcode Lifecyle
+     * 3. Eksekutor Scan: Menyimpan Data & Mematikan Barcode Lifecycle
+     * Mendukung pemrosesan AJAX / Redirect Form
      */
     public function processScan(Request $request)
     {
@@ -43,23 +65,37 @@ class TransactionDisposalController extends Controller
             'barcode_raw' => 'required|string'
         ]);
 
+        $barcodeRaw = trim($request->barcode_raw);
+
         DB::beginTransaction();
         try {
             // A. Cari barcode di sistem
             $barcodeData = DB::table('db_barcodes')
-                ->where('barcode_id', trim($request->barcode_raw))
+                ->where('barcode_id', $barcodeRaw)
                 ->first();
             
             if (!$barcodeData) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Gagal Eksekusi! Kode barcode tidak terdaftar di sistem inventaris.'
+                    ], 404);
+                }
                 return redirect()->back()
                     ->with('error', 'Gagal Eksekusi! Kode barcode tidak terdaftar di sistem inventaris.')
                     ->withInput();
             }
 
-            // 🛑 B. PROTEKSI: Tolak kalau statusnya emang udah DISPOSAL
+            // B. PROTEKSI: Tolak kalau statusnya memang sudah DISPOSAL
             if ($barcodeData->current_lifecycle === 'DISPOSAL') {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => "🚨 Transaksi Ditolak! Barcode '{$barcodeRaw}' sudah berstatus DISPOSAL."
+                    ], 422);
+                }
                 return redirect()->back()
-                    ->with('error', "🚨 Transaksi Ditolak! Barcode '{$request->barcode_raw}' sudah berstatus DISPOSAL dan tidak valid untuk diproses ulang.")
+                    ->with('error', "🚨 Transaksi Ditolak! Barcode '{$barcodeRaw}' sudah berstatus DISPOSAL dan tidak valid untuk diproses ulang.")
                     ->withInput();
             }
 
@@ -77,7 +113,9 @@ class TransactionDisposalController extends Controller
             }
             $txUuid = $datePrefix . $nextNum;
 
-            // D. Simpan Log menggunakan Model 'TransactionDisposal' kesayangan lu
+            $processType = $request->input('process_type', 'scan');
+
+            // D. Simpan Log
             TransactionDisposal::create([
                 'tx_id'                 => $txUuid,
                 'users_id'              => Auth::id() ?? 1, 
@@ -86,13 +124,13 @@ class TransactionDisposalController extends Controller
                 'production_request_id' => null, 
                 'tx_type'               => 'disposal', 
                 'qty_transaction'       => 1,          
-                'process_type'          => 'scan',     
+                'process_type'          => $processType,     
                 'photo_path'            => null,
                 'status'                => 'success',
                 'remark'                => 'Instant Scrap via Terminal Scanner (Pemusnahan Permanen Barcode)'
             ]);
 
-            // 🔒 E. Kunci status barcode di table master barcode menjadi DISPOSAL
+            // E. Kunci status barcode di table master barcode menjadi DISPOSAL
             DB::table('db_barcodes')
                 ->where('id', $barcodeData->id)
                 ->update([
@@ -102,12 +140,24 @@ class TransactionDisposalController extends Controller
 
             DB::commit();
 
-            // Redirect balik ke route index halaman utama lu
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "🔥 Sukses! Barcode '{$barcodeRaw}' berhasil dimatikan secara permanen."
+                ]);
+            }
+
             return redirect()->route('stock_eng.transaction.disposal')
-                ->with('success', "🔥 Sukses! Barcode '{$request->barcode_raw}' berhasil dimatikan secara permanen.");
+                ->with('success', "🔥 Sukses! Barcode '{$barcodeRaw}' berhasil dimatikan secara permanen.");
 
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Kegagalan database internal: ' . $e->getMessage()
+                ], 500);
+            }
             return redirect()->back()
                 ->with('error', 'Kegagalan database internal: ' . $e->getMessage())
                 ->withInput();

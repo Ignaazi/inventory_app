@@ -9,30 +9,30 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-    /* UTAMA FONT NUNITO */
-    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container { 
+    /* UTAMA FONT NUNITO DI SELURUH KOMPONEN */
+    *, body, html, .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container { 
         font-family: 'Nunito', sans-serif !important; 
     }
     
-    /* BINGKAI GRID BIRU TUA SECARA PERSISI (EFEK 3D CLEAN) */
+    /* BINGKAI GRID 3D DENGAN GARIS BIRU TUA PERSISI */
     .panel-box-3d {
         background-color: #ffffff;
-        border: 1.5px solid #1e3a8a; /* Blue-900 Border */
+        border: 2px solid #1e3a8a; /* Biru Tua / Blue-900 */
         border-radius: 16px;
-        box-shadow: 0 4px 12px -2px rgba(30, 58, 138, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 6px 16px -2px rgba(30, 58, 138, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         transition: all 0.25s ease-in-out;
     }
     .dark .panel-box-3d {
         background-color: #0f172a;
-        border-color: #1e40af; /* Dark Blue Border */
-        box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
+        border-color: #1e40af; /* Biru Tua Dark Mode */
+        box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.5);
     }
 
-    /* KOTAK VIEWPORT KAMERA */
+    /* KOTAK VIEWPORT KAMERA SCANNER */
     .scanner-viewport {
         position: relative;
         overflow: hidden;
-        background-color: #020617;
+        background-color: #0f172a;
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -42,7 +42,7 @@
         border: 1.5px solid #1e3a8a;
     }
 
-    /* Laser Line Emerald untuk Mode Stock IN */
+    /* Laser Line Emerald untuk Scanner */
     .laser-line {
         position: absolute;
         width: 100%;
@@ -68,34 +68,36 @@
 
 <div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
     
-    <!-- HEADER TERMINAL SCAN -->
+    <!-- HEADER TERMINAL SCAN IN -->
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between font-nunito">
         <div>
             <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                <i class="fa-solid fa-qrcode text-emerald-500"></i> Terminal Stock In Otomatis
+                Terminal Stock In Otomatis
             </h2>
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
                 Scan barcode/QR untuk menambah stok rak gudang dan mencatat transaksi penerimaan barang.
             </p>
         </div>
         <div>
-            <a href="{{ route('eng.in') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-900 px-4 py-2.5 text-xs font-black text-slate-700 dark:text-slate-200 border-[1.5px] border-blue-900/60 dark:border-blue-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm no-underline active:scale-95">
-                <i class="fa-solid fa-arrow-left"></i> Kembali ke Riwayat
+            {{-- Tombol BACK Gradient Hijau Tanpa Icon --}}
+            <a href="{{ route('eng.in') }}" 
+               class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 px-6 py-2.5 text-xs font-black text-white shadow-md shadow-emerald-600/20 hover:brightness-110 active:scale-95 transition-all no-underline font-nunito tracking-wider uppercase">
+                BACK
             </a>
         </div>
     </div>
 
-    <!-- GRID LAYOUT (1 GRID KAMERA & 2 GRID LOG REALTIME) -->
+    <!-- TAMPILAN 2 GRID MURNI (KOTAK KIRI KAMERA SCAN & KOTAK KANAN LOG TERMINAL) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 font-nunito">
         
-        <!-- GRID 1: LENSA KAMERA SCANNER (RESPONSIVE: COL-SPAN 7 DI DESKTOP) -->
+        <!-- GRID 1: LENSA KAMERA SCANNER (DESKTOP: COL-SPAN 7) -->
         <div class="lg:col-span-7 panel-box-3d flex flex-col overflow-hidden">
-            <div class="border-b-[1.5px] border-blue-900/40 dark:border-blue-800/60 px-5 py-3.5 flex justify-between items-center bg-slate-50/80 dark:bg-slate-900/80">
+            <div class="border-b-2 border-blue-900/60 dark:border-blue-800 px-5 py-3.5 flex justify-between items-center bg-slate-50/80 dark:bg-slate-900/80">
                 <h3 class="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-camera text-emerald-500"></i> Lensa Kamera Live
+                    <i class="fa-solid fa-camera text-emerald-600 dark:text-emerald-400"></i> Lensa Kamera Live
                 </h3>
-                <span id="badge_method" class="px-3 py-1 text-[10px] font-black bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 rounded-md flex items-center gap-1.5 uppercase tracking-wider">
-                    <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY
+                <span id="badge_method" class="px-3 py-1 text-[10px] font-black bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-md flex items-center gap-1.5 uppercase tracking-wider font-nunito">
+                    STANDBY
                 </span>
             </div>
             
@@ -105,82 +107,82 @@
                     <div id="reader"></div>
                     <div id="scan-laser-line" class="laser-line"></div>
                     
-                    <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-0 text-center p-4">
-                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-blue-900/50 flex items-center justify-center mb-3 shadow-inner">
-                            <i class="fa-solid fa-camera-retro text-2xl text-slate-500"></i>
+                    <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-0 text-center p-4">
+                        <div class="w-16 h-16 rounded-2xl bg-slate-800 border-2 border-blue-900/60 flex items-center justify-center mb-3 shadow-md">
+                            <i class="fa-solid fa-qrcode text-2xl text-slate-400"></i>
                         </div>
-                        <span class="text-slate-300 text-xs font-black uppercase tracking-wider">Lensa Offline</span>
-                        <p class="text-[11px] text-slate-500 font-bold mt-1">Klik tombol di bawah untuk mengaktifkan kamera scanner</p>
+                        <span class="text-slate-200 text-xs font-black uppercase tracking-wider font-nunito">Lensa Standby / Offline</span>
+                        <p class="text-[11px] text-slate-400 font-bold mt-1 font-nunito">Klik tombol di bawah untuk mengaktifkan kamera scanner</p>
                     </div>
                 </div>
 
                 {{-- TOMBOL CONTROL KAMERA (GRADIENT EMERALD) --}}
                 <div class="w-full pt-1">
-                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-6 py-3.5 text-xs font-black text-white shadow-lg hover:opacity-90 active:scale-95 transition-all uppercase tracking-wider cursor-pointer border border-emerald-400/30">
-                        <i class="fa-solid fa-video text-sm"></i> Aktifkan Lensa Kamera
+                    <button type="button" id="start-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 px-6 py-3.5 text-xs font-black text-white shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wider cursor-pointer border border-emerald-400/30 font-nunito">
+                        Aktifkan Lensa Kamera
                     </button>
-                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 px-6 py-3.5 text-xs font-black text-white shadow-lg hover:opacity-90 active:scale-95 transition-all uppercase tracking-wider hidden cursor-pointer border border-rose-400/30">
-                        <i class="fa-solid fa-power-off text-sm"></i> Matikan Lensa Kamera
+                    <button type="button" id="stop-cam" class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 px-6 py-3.5 text-xs font-black text-white shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wider hidden cursor-pointer border border-rose-400/30 font-nunito">
+                        Matikan Lensa Kamera
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- GRID 2: LOG TERMINAL REALTIME & INFORMASI SYSTEM (RESPONSIVE: COL-SPAN 5 DI DESKTOP) -->
-        <div class="lg:col-span-5 flex flex-col gap-5">
+        <!-- GRID 2: LOG TERMINAL REALTIME (DESKTOP: COL-SPAN 5) -->
+        <div class="lg:col-span-5 flex flex-col">
             
-            <!-- PANEL LOG SYSTEM -->
-            <div id="status-container" class="panel-box-3d flex flex-col overflow-hidden transition-colors duration-300">
-                <div class="border-b-[1.5px] border-blue-900/40 dark:border-blue-800/60 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/80 flex justify-between items-center">
-                    <h3 class="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-terminal text-blue-600 dark:text-blue-400"></i> Log Terminal Realtime
-                    </h3>
-                    <span class="text-[10px] font-mono font-bold text-slate-400">SYNC ONLINE</span>
-                </div>
-                
-                <div class="p-5 flex-1 flex flex-col justify-between gap-4">
-                    <div class="flex items-start gap-3.5 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-                        <div id="status-icon-box" class="shrink-0 w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 shadow-sm">
-                            <i class="fa-solid fa-microchip text-lg" id="main-status-icon"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide" id="status-title">Mesin Standby</h4>
-                            <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" id="status-desc">
-                                Terminal siap mendeteksi masukan data via scan barcode/QR dari kamera live.
-                            </p>
-                        </div>
+            <div id="status-container" class="panel-box-3d flex flex-col overflow-hidden h-full justify-between">
+                <div>
+                    <div class="border-b-2 border-blue-900/60 dark:border-blue-800 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/80 flex justify-between items-center">
+                        <h3 class="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-blue-800 dark:text-blue-400"></i> Log Terminal Realtime
+                        </h3>
+                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 font-nunito">SYNC ONLINE</span>
                     </div>
-
-                    {{-- MONITOR DISPLAY HASIL SCAN TERAKHIR --}}
-                    <div class="rounded-xl border border-blue-900/50 bg-slate-950 p-4 font-mono text-slate-300 flex flex-col justify-between min-h-[140px] shadow-inner">
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Last Scanned Payload</span>
-                            <span id="scan-timestamp" class="text-[10px] text-emerald-400 font-bold">--:--:--</span>
-                        </div>
-                        <div class="py-3">
-                            <div id="last-scanned-code" class="text-xs font-bold text-emerald-400 break-all bg-slate-900 p-3 rounded-lg border border-slate-800 text-center tracking-wider">
-                                WAITING FOR SCAN...
+                    
+                    <div class="p-5 flex flex-col gap-4">
+                        {{-- MESIN STATUS HEADER --}}
+                        <div class="flex items-start gap-3.5 bg-slate-50 dark:bg-slate-900/80 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div id="status-icon-box" class="shrink-0 w-11 h-11 rounded-xl bg-blue-900/10 dark:bg-blue-900/30 border border-blue-900/40 flex items-center justify-center text-blue-900 dark:text-blue-400 shadow-sm">
+                                <i class="fa-solid fa-server text-lg" id="main-status-icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide font-nunito" id="status-title">Mesin Standby</h4>
+                                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-nunito" id="status-desc">
+                                    Terminal siap mendeteksi masukan data via scan barcode/QR dari kamera live.
+                                </p>
                             </div>
                         </div>
-                        <div class="text-[10px] text-slate-500 flex justify-between items-center pt-1 border-t border-slate-800/60">
-                            <span>Status Process:</span>
-                            <span id="last-scanned-type" class="text-slate-400 font-bold uppercase">IDLE</span>
+
+                        {{-- MONITOR DISPLAY HASIL SCAN TERAKHIR (WARNA SLATE ELEGANT ELEGAN & BORDER BIRU TUA) --}}
+                        <div class="rounded-xl border-2 border-blue-900/60 bg-gradient-to-br from-slate-900 via-slate-850 to-blue-950 p-4 text-slate-200 flex flex-col justify-between min-h-[160px] shadow-lg relative overflow-hidden">
+                            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2.5">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest font-nunito">Last Scanned Payload</span>
+                                <span id="scan-timestamp" class="text-[10px] text-emerald-400 font-extrabold font-nunito">--:--:--</span>
+                            </div>
+                            
+                            <div class="py-4">
+                                <div id="last-scanned-code" class="text-xs font-extrabold text-emerald-400 break-all bg-slate-950/70 p-3.5 rounded-lg border border-blue-900/50 text-center tracking-wider font-nunito shadow-inner">
+                                    WAITING FOR SCAN...
+                                </div>
+                            </div>
+                            
+                            <div class="text-[10px] text-slate-400 flex justify-between items-center pt-2 border-t border-slate-700/60 font-nunito">
+                                <span>Status Process:</span>
+                                <span id="last-scanned-type" class="text-slate-300 font-black uppercase">IDLE</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- PANEL PERINGATAN / INFORMASI OPERASIONAL -->
-            <div class="panel-box-3d p-5 flex flex-col gap-3">
-                <div class="flex items-center gap-2 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm"></i>
-                    <h3 class="font-black text-xs uppercase tracking-wider">Peringatan & Panduan Scan</h3>
+                {{-- STATISTIK/INFO FOOTER DALAM LOG --}}
+                <div class="p-5 pt-0">
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <span>Mode Transaksi</span>
+                        <span class="text-slate-800 dark:text-slate-200 font-black uppercase">STOCK IN (+1 AUTO)</span>
+                    </div>
                 </div>
-                <ul class="text-[11px] font-bold text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
-                    <li>Pastikan stiker barcode ID dalam kondisi bersih dan pencahayaan ruangan mencukupi.</li>
-                    <li>Satu kali scan sukses otomatis menambahkan <strong>+1 QTY Stock IN</strong> ke dalam rak.</li>
-                    <li>Sistem memiliki jeda verifikasi otomatis <strong>2 detik</strong> untuk mencegah duplikasi masukan data.</li>
-                </ul>
+
             </div>
 
         </div>
@@ -200,7 +202,7 @@
     const laserLine = document.getElementById('scan-laser-line');
     const camPlaceholder = document.getElementById('camera-placeholder');
 
-    // KONFIGURASI SCANNER MULTI-FORMAT
+    // KONFIGURASI SCANNER
     const scanConfig = {
         fps: 25, 
         qrbox: function(viewfinderWidth, viewfinderHeight) {
@@ -225,7 +227,7 @@
         }
     };
 
-    // FUNGSI INTI AJAX SUBMIT SCAN IN
+    // FUNGSI INTI AJAX SUBMIT SCAN IN (REMARK: AUTOMATED IN)
     async function processAjaxStockIn(rawCode, mode = 'scan') {
         const cleanCode = rawCode.replace(/[\n\r\t]/g, "").trim();
         if (!cleanCode || isProcessing) return;
@@ -237,7 +239,7 @@
         // ALERT LOADING PROSES
         Swal.fire({
             title: 'Memproses Stok IN...',
-            html: `<div class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 break-all mt-2 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">${cleanCode}</div>`,
+            html: `<div class="text-xs font-bold text-emerald-600 dark:text-emerald-400 break-all mt-2 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 font-nunito">${cleanCode}</div>`,
             allowOutsideClick: false,
             showConfirmButton: false,
             width: '340px',
@@ -248,7 +250,8 @@
         const formData = new FormData();
         formData.append('barcode_scan', cleanCode);
         formData.append('process_type', mode);
-        formData.append('comment', `Automated Stock IN via camera scan.`);
+        formData.append('comment', 'AUTOMATED IN');
+        formData.append('remark', 'AUTOMATED IN');
 
         try {
             const response = await fetch("{{ route('eng.in.store') }}", {
@@ -266,7 +269,6 @@
                 changeUIStatus('VALID', 'STOK IN BERHASIL', result.message || 'Stok berhasil ditambahkan!');
                 updateMonitorDisplay(cleanCode, 'SUCCESS');
                 
-                // ALERT BERHASIL - JEDA JELAS (2000 ms / 2 DETIK)
                 Swal.fire({
                     icon: 'success',
                     title: 'Stok Bertambah (+1)',
@@ -281,7 +283,6 @@
                 changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message || 'Format barcode tidak terdaftar.');
                 updateMonitorDisplay(cleanCode, 'FAILED');
 
-                // ALERT GAGAL - JEDA JELAS (2000 ms / 2 DETIK)
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal Scan In',
@@ -297,7 +298,6 @@
             changeUIStatus('INVALID', 'KONEKSI TERPUTUS', 'Gagal terhubung ke database server.');
             updateMonitorDisplay(cleanCode, 'ERROR');
             
-            // ALERT ERROR KONEKSI - JEDA JELAS (2000 ms / 2 DETIK)
             Swal.fire({ 
                 icon: 'error', 
                 title: 'Network Error', 
@@ -309,7 +309,6 @@
                 customClass: { popup: 'font-nunito rounded-2xl' }
             });
         } finally {
-            // JEDA SAMA DENGAN ALERT (2000 ms / 2 DETIK) SEBELUM SCAN SELANJUTNYA
             setTimeout(() => {
                 resetSystemState();
             }, 2000);
@@ -328,11 +327,11 @@
         typeEl.innerText = status;
         
         if (status === 'SUCCESS') {
-            typeEl.className = "text-emerald-400 font-bold uppercase";
+            typeEl.className = "text-emerald-400 font-extrabold uppercase font-nunito";
         } else if (status === 'PROCESSING') {
-            typeEl.className = "text-amber-400 font-bold uppercase animate-pulse";
+            typeEl.className = "text-amber-400 font-extrabold uppercase font-nunito";
         } else {
-            typeEl.className = "text-rose-400 font-bold uppercase";
+            typeEl.className = "text-rose-400 font-extrabold uppercase font-nunito";
         }
     }
 
@@ -346,27 +345,27 @@
         document.getElementById('status-title').innerText = labelText;
         document.getElementById('status-desc').innerText = descText;
 
-        badge.className = "px-3 py-1 text-[10px] font-black rounded-md flex items-center gap-1.5 uppercase tracking-wider ";
-        iconBox.className = "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ";
+        badge.className = "px-3 py-1 text-[10px] font-black rounded-md flex items-center gap-1.5 uppercase tracking-wider font-nunito ";
+        iconBox.className = "shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ";
 
         if (status === 'VALID') {
-            badge.innerHTML = `<i class="fa-solid fa-check"></i> OK`;
-            badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-300', 'dark:bg-emerald-950', 'dark:text-emerald-400', 'dark:border-emerald-800');
-            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden !border-emerald-500/80";
+            badge.innerText = "OK";
+            badge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-300', 'dark:bg-emerald-950', 'dark:text-emerald-400');
+            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden h-full justify-between !border-emerald-500/80";
             iconBox.classList.add('bg-emerald-100', 'text-emerald-600', 'dark:bg-emerald-950', 'dark:text-emerald-400');
-            mainIcon.className = "fa-solid fa-square-check text-lg";
+            mainIcon.className = "fa-solid fa-circle-check text-lg";
         } else if (status === 'PROCESSING') {
-            badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SYNC`;
-            badge.classList.add('bg-amber-100', 'text-amber-700', 'border', 'border-amber-300', 'dark:bg-amber-950', 'dark:text-amber-400', 'dark:border-amber-800');
-            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden !border-amber-500/80";
+            badge.innerText = "SYNC";
+            badge.classList.add('bg-amber-100', 'text-amber-700', 'border', 'border-amber-300', 'dark:bg-amber-950', 'dark:text-amber-400');
+            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden h-full justify-between !border-amber-500/80";
             iconBox.classList.add('bg-amber-100', 'text-amber-600', 'dark:bg-amber-950', 'dark:text-amber-400');
-            mainIcon.className = "fa-solid fa-rotate fa-spin text-lg";
+            mainIcon.className = "fa-solid fa-spinner text-lg";
         } else {
-            badge.innerHTML = `<i class="fa-solid fa-xmark"></i> DITOLAK`;
-            badge.classList.add('bg-rose-100', 'text-rose-700', 'border', 'border-rose-300', 'dark:bg-rose-950', 'dark:text-rose-400', 'dark:border-rose-800');
-            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden !border-rose-500/80";
+            badge.innerText = "DITOLAK";
+            badge.classList.add('bg-rose-100', 'text-rose-700', 'border', 'border-rose-300', 'dark:bg-rose-950', 'dark:text-rose-400');
+            statusContainer.className = "panel-box-3d flex flex-col overflow-hidden h-full justify-between !border-rose-500/80";
             iconBox.classList.add('bg-rose-100', 'text-rose-600', 'dark:bg-rose-950', 'dark:text-rose-400');
-            mainIcon.className = "fa-solid fa-triangle-exclamation text-lg";
+            mainIcon.className = "fa-solid fa-circle-xmark text-lg";
         }
     }
 
@@ -374,15 +373,15 @@
         isProcessing = false;
         
         if(!isCameraRunning) {
-            document.getElementById('status-container').className = "panel-box-3d flex flex-col overflow-hidden";
-            document.getElementById('status-icon-box').className = "shrink-0 w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500";
-            document.getElementById('main-status-icon').className = "fa-solid fa-microchip text-lg";
-            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY`;
-            document.getElementById('badge_method').className = "px-3 py-1 text-[10px] font-black bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 rounded-md flex items-center gap-1.5 uppercase tracking-wider";
+            document.getElementById('status-container').className = "panel-box-3d flex flex-col overflow-hidden h-full justify-between";
+            document.getElementById('status-icon-box').className = "shrink-0 w-11 h-11 rounded-xl bg-blue-900/10 dark:bg-blue-900/30 border border-blue-900/40 flex items-center justify-center text-blue-900 dark:text-blue-400";
+            document.getElementById('main-status-icon').className = "fa-solid fa-server text-lg";
+            document.getElementById('badge_method').innerText = "STANDBY";
+            document.getElementById('badge_method').className = "px-3 py-1 text-[10px] font-black bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-md flex items-center gap-1.5 uppercase tracking-wider font-nunito";
             laserLine.style.display = 'none';
         } else {
-            document.getElementById('badge_method').innerHTML = `<i class="fa-solid fa-video text-[10px] animate-pulse"></i> LIVE SCANNING`;
-            document.getElementById('badge_method').className = "px-3 py-1 text-[10px] font-black bg-emerald-600 text-white rounded-md flex items-center gap-1.5 uppercase tracking-wider";
+            document.getElementById('badge_method').innerText = "LIVE SCANNING";
+            document.getElementById('badge_method').className = "px-3 py-1 text-[10px] font-black bg-emerald-600 text-white rounded-md flex items-center gap-1.5 uppercase tracking-wider font-nunito";
             laserLine.style.display = 'block';
         }
     }

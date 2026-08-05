@@ -27,7 +27,7 @@ class TransactionDisposal extends Model
         'remark'
     ];
 
-    // 3. Cast tipe data enum/timestamp jika diperlukan (Opsional tapi direkomendasikan)
+    // 3. Cast tipe data enum/timestamp jika diperlukan
     protected $casts = [
         'qty_transaction' => 'integer',
         'created_at' => 'datetime',
@@ -47,7 +47,7 @@ class TransactionDisposal extends Model
     }
 
     /**
-     * Relasi ke tabel 'stock_engs' via 'stock_engs_id'[cite: 5]
+     * Relasi ke tabel 'stock_engs' via 'stock_engs_id'
      */
     public function stockEng(): BelongsTo
     {
@@ -55,21 +55,26 @@ class TransactionDisposal extends Model
     }
 
     /**
-     * Relasi ke tabel 'db_barcodes' via 'db_barcodes_id' (Nullable)[cite: 5]
-     * (Berguna saat pelacakan via scan barcode)
+     * Relasi ke tabel 'db_barcodes' via 'db_barcodes_id' (Nama method: barcode)
      */
-    public function dbBarcode(): BelongsTo
+    public function barcode(): BelongsTo
     {
-        // Jika nama Model Barcode kamu bukan 'DbBarcode', silakan sesuaikan class-nya
         return $this->belongsTo(\App\Models\DbBarcode::class, 'db_barcodes_id');
     }
 
     /**
-     * Relasi ke tabel 'production_requests' via 'production_request_id' (Nullable)[cite: 5]
+     * Alias relasi ke tabel 'db_barcodes' via 'db_barcodes_id' (Nama method: dbBarcode)
+     */
+    public function dbBarcode(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\DbBarcode::class, 'db_barcodes_id');
+    }
+
+    /**
+     * Relasi ke tabel 'production_requests' via 'production_request_id' (Nullable)
      */
     public function productionRequest(): BelongsTo
     {
-        // Menghubungkan ke constraint production_requests[cite: 5]
         return $this->belongsTo(\App\Models\Production\RequestProd::class, 'production_request_id');
     }
 }
