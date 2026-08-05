@@ -23,15 +23,6 @@
 
 <div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
-    {{-- Alert Banner Top Counter (TEMA BIRU) --}}
-    <div class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
-        <span class="h-2 w-2 shrink-0 rounded-full bg-blue-500 animate-pulse"></span>
-        <p class="text-[12px] md:text-[14px] font-bold text-blue-800 dark:text-blue-400 font-nunito leading-tight">
-            <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">STOCK IN ACTIVITIES:</span> 
-            Total {{ (isset($history) && method_exists($history, 'total')) ? $history->total() : count($history) }} incoming sparepart logs recorded.
-        </p>
-    </div>
-
     {{-- Header Section --}}
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
@@ -39,15 +30,11 @@
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Track and monitor your recent sparepart incoming logs and receiving history</p>
         </div>
 
+        {{-- Tombol Action Gradient Orange (Scan IN) --}}
         <div class="flex items-center gap-2 w-full sm:w-auto">
             <a href="{{ route('eng.in.scan') }}" 
-               class="inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3.5 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
-                <i class="fa-solid fa-qrcode text-xs"></i> Scan IN
-            </a>
-            
-            <a href="{{ route('eng.in.manual') }}" 
-               class="inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-to-r from-indigo-600 via-sky-600 to-blue-600 px-3.5 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
-                <i class="fa-solid fa-keyboard text-xs"></i> Manual IN
+               class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-5 text-xs font-black text-white shadow-md hover:shadow-lg hover:brightness-110 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
+                <i class="fa-solid fa-qrcode text-sm"></i> Scan IN
             </a>
         </div>
     </div>
@@ -56,13 +43,13 @@
     <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
         
         {{-- HEADER KONTROL RESPONSIF (Show Entries, Search, Export CSV) --}}
-        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
+        <div class="mb-4 flex flex-col gap-3 px-5 sm:flex-row sm:items-center sm:justify-between font-nunito">
             <!-- Entries Controller -->
             <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-2">
                     <span>Show</span>
                     <form action="{{ url()->current() }}" method="GET" id="entriesForm">
-                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-3 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
                             <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }} class="dark:bg-slate-900">10</option>
                             <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }} class="dark:bg-slate-900">25</option>
                             <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }} class="dark:bg-slate-900">50</option>
@@ -78,7 +65,7 @@
             <!-- Search & Export Grid -->
             <div class="grid grid-cols-12 gap-2 w-full sm:w-auto order-1 sm:order-2">
                 {{-- LIVE SEARCH INPUT --}}
-                <div class="relative col-span-8 sm:w-60 sm:block">
+                <div class="relative col-span-8 sm:w-64 sm:block">
                     <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
@@ -86,12 +73,12 @@
                         @if(request('per_page'))
                             <input type="hidden" name="per_page" value="{{ request('per_page') }}">
                         @endif
-                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search TX ID, Sparepart, NIK..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
+                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search TX ID, Sparepart, NIK..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-orange-500 text-slate-950 dark:text-white font-bold font-nunito">
                     </form>
                 </div>
 
                 {{-- TOMBOL EXPORT CSV --}}
-                <button type="button" onclick="exportTableToCSV('stock-in-activities.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                <button type="button" onclick="exportTableToCSV('stock-in-activities.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
                     <span class="hidden sm:inline">Export CSV</span>
                     <span class="sm:hidden">CSV</span>
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -101,114 +88,107 @@
             </div>
         </div>
 
-        {{-- AREA SCROLL HORIZONTAL TABEL TEMATIC BLUE --}}
+        {{-- AREA SCROLL HORIZONTAL TABEL BIRU DENGAN SPASING LONGGAR --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1700px]" id="historyTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[2000px]" id="historyTable">
                 <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
-                        <th class="px-2 py-3.5 w-[50px] text-center">
-                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-900 text-white font-nunito table-header-row">
+                        <th class="px-3 py-4 w-[50px] text-center">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-orange-600 focus:ring-orange-500 cursor-pointer checked:bg-white checked:border-white">
                         </th>
-                        <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 bg-blue-700/30">NO</th>
-                        <th class="px-3 py-3.5 w-[200px] border-l border-blue-500 bg-blue-700/30">TRANSACTION IN ID</th>
-                        <th class="px-3 py-3.5 w-[170px] border-l border-blue-500 bg-blue-700/30">OPERATOR</th>
-                        <th class="px-3 py-3.5 w-[170px] border-l border-blue-500 bg-blue-700/30">MATERIAL RECEIVED NO</th>
-                        <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 bg-blue-700/30">BARCODE ID</th>
-                        <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 bg-blue-700/30">SPAREPART ID</th>
-                        <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 bg-blue-700/30">RAK ID</th>
-                        <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 bg-blue-700/30">QTY IN</th>
-                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 bg-blue-700/30">STATUS</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 bg-blue-700/30">PROCESS TYPE</th>
-                        <th class="px-4 py-3.5 w-[220px] border-l border-blue-500 bg-blue-700/30 text-left">REMARK</th>
-                        <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 bg-blue-700/30 text-center">TIMESTAMP</th>
+                        <th class="px-4 py-4 w-[70px] border-l border-blue-500/50 bg-blue-700/50">NO</th>
+                        <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50">TRANSACTION IN ID</th>
+                        <th class="px-4 py-4 w-[140px] border-l border-blue-500/50 bg-blue-700/50">NIK</th>
+                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">OPERATOR NAME</th>
+                        <th class="px-5 py-4 w-[190px] border-l border-blue-500/50 bg-blue-700/50">BARCODE ID</th>
+                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50">SPAREPART ID</th>
+                        <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">RAK</th>
+                        <th class="px-4 py-4 w-[120px] border-l border-blue-500/50 bg-blue-700/50">QTY IN</th>
+                        <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">STATUS</th>
+                        <th class="px-4 py-4 w-[150px] border-l border-blue-500/50 bg-blue-700/50">PROCESS TYPE</th>
+                        <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50 text-left">REMARK</th>
+                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50 text-center">CREATED AT</th>
+                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50 text-center">UPDATED AT</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($history as $index => $log)
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
-                        <td class="px-2 py-3.5 text-center">
-                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <td class="px-3 py-4 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-orange-600 focus:ring-orange-500 cursor-pointer">
                         </td>
 
                         {{-- 1. NO --}}
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center">
                             {{ (method_exists($history, 'firstItem')) ? ($history->firstItem() + $index) : ($index + 1) }}
                         </td>
 
                         {{-- 2. TRANSACTION IN ID --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold font-mono text-blue-600 dark:text-blue-400 text-center whitespace-nowrap select-all">
-                            {{ $log->tx_id ?? $log->transaction_in_id ?? '-' }}
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-extrabold font-mono text-blue-600 dark:text-blue-400 text-center whitespace-nowrap select-all">
+                            {{ $log->tx_id ?? '-' }}
                         </td>
 
-                        {{-- 3. OPERATOR --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center text-[12px] whitespace-nowrap">
-                            <div class="font-extrabold text-slate-900 dark:text-white">
-                                {{ $log->operator_name ?? optional($log->user)->name ?? 'Unknown' }}
-                            </div>
-                            <div class="text-[10px] text-slate-400 font-mono">
-                                NIK: {{ $log->operator_nik ?? $log->nik ?? '-' }}
-                            </div>
+                        {{-- 3. NIK OPERATOR --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            {{ $log->nik ?? '-' }}
                         </td>
 
-                        {{-- 4. MATERIAL RECEIVED NO --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide text-center whitespace-nowrap text-blue-600 dark:text-blue-400">
-                            {{ $log->material_received_no ?? $log->material_received_id ?? $log->mr_no ?? $log->production_req_no ?? '-' }}
+                        {{-- 4. OPERATOR NAME --}}
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap font-extrabold text-slate-900 dark:text-white">
+                            {{ $log->name ?? 'Unknown' }}
                         </td>
 
                         {{-- 5. BARCODE ID --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
                             {{ $log->barcode_id ?? '-' }}
                         </td>
 
                         {{-- 6. SPAREPART ID --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-emerald-600 dark:text-emerald-400 text-center whitespace-nowrap">
-                            {{ $log->stockEng->sparepart->sparepart_id ?? $log->sparepart_id ?? '-' }}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-emerald-600 dark:text-emerald-400 text-center font-extrabold whitespace-nowrap">
+                            {{ $log->sparepart_id ?? '-' }}
                         </td>
 
-                        {{-- 7. RAK ID --}}
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-purple-600 dark:text-purple-400 text-center whitespace-nowrap">
-                            {{ $log->stockEng->rak->nama_rak ?? $log->nama_rak ?? $log->rak_id ?? '-' }}
+                        {{-- 7. RAK NAME --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-purple-600 dark:text-purple-400 text-center font-extrabold whitespace-nowrap">
+                            {{ $log->nama_rak ?? '-' }}
                         </td>
 
                         {{-- 8. QTY IN --}}
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[11px] font-black border border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50">
-                                +{{ number_format((isset($log->qty_added) && $log->qty_added > 0) ? $log->qty_added : ($log->qty_transaction ?? $log->qty ?? 1)) }} Pcs
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[11px] font-black border border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50">
+                                +{{ number_format($log->qty_transaction ?? 0) }} Pcs
                             </span>
                         </td>
 
                         {{-- 9. STATUS --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[10px] font-black tracking-tight uppercase border
                                 @if(strtolower($log->status ?? '') == 'success') border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50
                                 @elseif(strtolower($log->status ?? '') == 'pending') border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/50
                                 @else border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-900/50 @endif">
-                                {{ $log->status ?? 'success' }}
+                                {{ $log->status ?? 'SUCCESS' }}
                             </span>
                         </td>
 
                         {{-- 10. PROCESS TYPE --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             @php $isProcManual = strtolower($log->process_type ?? '') === 'manual'; @endphp
-                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[10px] font-black tracking-tight uppercase border
                                 @if($isProcManual) border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-900/50
-                                @else border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/50 @endif">
+                                @else border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50 @endif">
                                 {{ $log->process_type ?? 'Scan' }} In
                             </span>
                         </td>
 
-                        {{-- 11. REMARK --}}
-                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title="{{ $log->remark }}">
-                            {{ $log->remark ?? '-' }}
+                        {{-- 11. REMARK (AUTOMATIC IN UPPERCASE) --}}
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[220px]" title="{{ $log->remark ?? 'AUTOMATIC IN' }}">
+                            {{ !empty($log->remark) ? strtoupper($log->remark) : 'AUTOMATIC IN' }}
                         </td>
 
-                        {{-- 12. TIMESTAMP --}}
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                        {{-- 12. CREATED AT --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             @php
-                                $createdAt = null;
-                                if ($log->created_at) {
-                                    $createdAt = $log->created_at instanceof \Carbon\Carbon ? $log->created_at : \Carbon\Carbon::parse($log->created_at);
-                                }
+                                $createdAt = $log->created_at ? (\Carbon\Carbon::parse($log->created_at)) : null;
                             @endphp
                             <div class="font-bold text-slate-800 dark:text-slate-200 leading-tight">
                                 {{ $createdAt ? $createdAt->format('d/m/Y') : '-' }}
@@ -217,10 +197,23 @@
                                 {{ $createdAt ? $createdAt->format('H:i') . ' WIB' : '' }}
                             </div>
                         </td>
+
+                        {{-- 13. UPDATED AT --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            @php
+                                $updatedAt = $log->updated_at ? (\Carbon\Carbon::parse($log->updated_at)) : null;
+                            @endphp
+                            <div class="font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                                {{ $updatedAt ? $updatedAt->format('d/m/Y') : '-' }}
+                            </div>
+                            <div class="text-[10px] mt-0.5 text-slate-500">
+                                {{ $updatedAt ? $updatedAt->format('H:i') . ' WIB' : '' }}
+                            </div>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="13" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                        <td colspan="14" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No stock in logs found.
                         </td>
                     </tr>
@@ -230,7 +223,7 @@
         </div>
 
         {{-- FOOTER PAGINATION RESPONSIF --}}
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 font-nunito">
             <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
                 Showing {{ (isset($history) && method_exists($history, 'firstItem')) ? ($history->firstItem() ?? 0) : 0 }} 
                 to {{ (isset($history) && method_exists($history, 'lastItem')) ? ($history->lastItem() ?? 0) : 0 }} 

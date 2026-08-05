@@ -8,24 +8,24 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-    /* Custom Styling SweetAlert2 agar harmonis dengan tema aplikasi */
     .swal2-popup {
         border-radius: 1rem !important;
         font-family: 'Nunito', sans-serif !important;
     }
     .dark .swal2-popup {
-        background-color: #0f172a !important; /* slate-900 */
-        border: 1px solid #1e293b !important; /* slate-850 */
+        background-color: #0f172a !important; 
+        border: 1px solid #1e293b !important; 
     }
     .dark .swal2-title, .dark .swal2-html-container {
-        color: #f8fafc !important; /* slate-50 */
+        color: #f8fafc !important; 
     }
 </style>
 
-<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+{{-- MAIN CONTAINER - UKURAN & PADDING SAMA PERSIS DENGAN CONOH (p-1 md:p-2) --}}
+<div class="font-nunito w-full p-1 md:p-2 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
     {{-- Banner Top Alert Status Counter --}}
-    <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
+    <div class="mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 shadow-sm">
         <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
         <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
             <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">MASTER DATA:</span> 
@@ -33,14 +33,14 @@
         </p>
     </div>
 
-    {{-- Header Section --}}
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
+    {{-- Header Section - Ukuran & Posisi Mengikuti Contoh --}}
+    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 font-nunito px-1 pt-1">
         <div>
-            <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight">Master Data Spareparts</h2>
+            <h2 class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">Master Data Spareparts</h2>
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Engineering Specification Database</p>
         </div>
 
-        {{-- TOMBOL ADD NEW - REDIRECT KE VIEW BARU --}}
+        {{-- TOMBOL ADD NEW --}}
         <div class="flex items-center w-full sm:w-auto">
             <a href="{{ route('list-sparepart.create') }}" 
                class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-90 transition-opacity uppercase tracking-wider active:scale-95 transition-all font-nunito w-full sm:w-auto text-center cursor-pointer no-underline">
@@ -53,22 +53,31 @@
     </div>
 
     {{-- PEMBUNGKUS UTAMA TABEL --}}
-    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
+    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-3 shadow-sm">
         
-        {{-- HEADER KONTROL RESPONSIF --}}
-        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
-            <!-- Entries Selector -->
-            <div class="flex items-center gap-2 text-xs md:text-[13px] font-black text-black dark:text-slate-300 order-2 sm:order-1">
-                <span>Show</span>
-                <select class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-black dark:text-white font-black cursor-pointer font-nunito text-xs">
-                    <option value="10" class="dark:bg-slate-900">10</option>
-                    <option value="25" class="dark:bg-slate-900">25</option>
-                    <option value="50" class="dark:bg-slate-900">50</option>
-                </select>
-                <span>entries</span>
+        {{-- HEADER KONTROL RESPONSIF (SHOW ENTRIES AKTIF & SEARCH AKTIF) --}}
+        <div class="mb-3 flex flex-col gap-3 px-3 sm:flex-row sm:items-center sm:justify-between font-nunito">
+            
+            <!-- Entries Controller (AKTIF via Submit Form) -->
+            <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
+                <div class="flex items-center gap-1.5">
+                    <span>Show</span>
+                    <form action="{{ url()->current() }}" method="GET" id="entriesForm">
+                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                            <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }} class="dark:bg-slate-900">10</option>
+                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }} class="dark:bg-slate-900">25</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }} class="dark:bg-slate-900">50</option>
+                            <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }} class="dark:bg-slate-900">100</option>
+                        </select>
+                        @if(request('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                    </form>
+                    <span>entries</span>
+                </div>
             </div>
 
-            <!-- Search & Export Grid -->
+            <!-- Search & Export Grid (AKTIF via GET Request) -->
             <div class="grid grid-cols-12 gap-2 w-full sm:w-auto order-1 sm:order-2">
                 {{-- LIVE SEARCH INPUT --}}
                 <div class="relative col-span-8 sm:w-60 sm:block">
@@ -76,12 +85,15 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
                     <form action="{{ url()->current() }}" method="GET" class="w-full">
-                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-black dark:text-white font-bold font-nunito">
+                        @if(request('per_page'))
+                            <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+                        @endif
+                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
                     </form>
                 </div>
 
                 {{-- TOMBOL EXPORT CSV --}}
-                <button type="button" onclick="exportTableToCSV('spareparts-data.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-black dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                <button type="button" onclick="exportTableToCSV('spareparts-data.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
                     <span class="hidden sm:inline">Export CSV</span>
                     <span class="sm:hidden">CSV</span>
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -95,25 +107,25 @@
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
             <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1200px]" id="sparepartTable">
                 <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">
                             <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
                         </th>
-                        <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 dark:border-blue-900/50">NO</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">SAP Code</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Part Number</th>
-                        <th class="px-4 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[200px]">Sparepart ID</th>
-                        <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">Image</th>
-                        <th class="px-2 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Category</th>
-                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">Length</th>
-                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">Width</th>
-                        <th class="px-2 py-3.5 w-[95px] border-l border-blue-500 dark:border-blue-900/50">Thickness</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
-                        <th class="px-4 py-3.5 w-[150px] border-l border-blue-500 dark:border-blue-900/50">Action</th>
+                        <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 bg-blue-700/30">NO</th>
+                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 bg-blue-700/30">SAP Code</th>
+                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 bg-blue-700/30">Part Number</th>
+                        <th class="px-4 py-3.5 border-l border-blue-500 bg-blue-700/30 text-center w-[200px]">Sparepart ID</th>
+                        <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 bg-blue-700/30">Image</th>
+                        <th class="px-2 py-3.5 w-[120px] border-l border-blue-500 bg-blue-700/30">Category</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 bg-blue-700/30">Length</th>
+                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 bg-blue-700/30">Width</th>
+                        <th class="px-2 py-3.5 w-[95px] border-l border-blue-500 bg-blue-700/30">Thickness</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 bg-blue-700/30">Created At</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 bg-blue-700/30">Updated At</th>
+                        <th class="px-4 py-3.5 w-[150px] border-l border-blue-500 bg-blue-700/30">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-black dark:text-slate-200 font-nunito bg-transparent">
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($spareparts as $index => $item)
                     <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
                         <td class="px-2 py-3.5 text-center">
@@ -132,7 +144,6 @@
                             {{ $item->part_number ?? '-' }}
                         </td>
 
-                        {{-- Diubah menjadi $item->sparepart_id --}}
                         <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal" title="{{ $item->sparepart_id }}">
                             {{ $item->sparepart_id }}
                         </td>
@@ -196,19 +207,19 @@
             </table>
         </div>
 
-        {{-- FOOTER PAGINATION RESPONSIF --}}
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
-            <p class="text-[11px] font-black text-black dark:text-slate-400 tracking-wide uppercase font-nunito text-center sm:text-left">
-                Showing {{ $spareparts->firstItem() }} to {{ $spareparts->lastItem() }} of {{ $spareparts->total() }} Entries
+        {{-- FOOTER PAGINATION RESPONSIF DENGAN KOTAK PRESISI 34x34px WARNA BIRU --}}
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3.5 font-nunito">
+            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-slate-900 dark:text-slate-300">
+                Showing {{ $spareparts->firstItem() ?? 0 }} to {{ $spareparts->lastItem() ?? 0 }} of {{ $spareparts->total() }} Entries
             </p>
-            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito text-black dark:text-white w-full sm:w-auto">
-                {{ $spareparts->links() }}
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination">
+                {{ $spareparts->appends(request()->query())->links() }}
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL HANYA DIGUNAKAN UNTUK EDIT DATA --}}
+{{-- MODAL EDIT DATA --}}
 <div id="modalSparepart" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 font-nunito">
     <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transition-all transform scale-100">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
@@ -235,7 +246,6 @@
             </div>
 
             <div class="grid grid-cols-3 gap-4">
-                {{-- Diubah input name dan id dari 'name' menjadi 'sparepart_id' --}}
                 <div class="col-span-3">
                     <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Sparepart ID / Name</label>
                     <input type="text" name="sparepart_id" id="sparepart_id" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-semibold" required>
@@ -316,7 +326,6 @@
             
             document.getElementById('sap_code').value = data.sap_code ?? '';
             document.getElementById('part_number').value = data.part_number ?? '';
-            // Diubah dari data.name ke data.sparepart_id
             document.getElementById('sparepart_id').value = data.sparepart_id;
             document.getElementById('category').value = data.category;
             document.getElementById('length').value = data.length;
@@ -392,16 +401,135 @@
 </script>
 
 <style>
-    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container { font-family: 'Nunito', sans-serif !important; }
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #sparepartTable { 
+        font-family: 'Nunito', sans-serif !important; 
+    }
+
+    .table-body-data tr td, 
+    .table-body-data tr td div {
+        color: #000000 !important;
+    }
+
+    .dark .table-body-data tr td, 
+    .dark .table-body-data tr td div {
+        color: #f1f5f9 !important;
+    }
+
+    .table-header-row th {
+        color: #ffffff !important;
+    }
+    
     .scrollbar-thin::-webkit-scrollbar { height: 6px; }
     .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 3px; }
     
-    #sparepartTable td, #sparepartTable td span, #sparepartTable td font {
-        color: #000000 !important;
+    #sparepartTable td, #sparepartTable th {
         vertical-align: middle !important;
     }
-    #sparepartTable th { vertical-align: middle !important; }
+
+    /* ========================================================= */
+    /* FIX PAGINATION: SIMPLE, SINGLE BOX, EQUAL SIZE (34x34px) - TEMA BIRU */
+    /* ========================================================= */
+    .custom-pagination nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        box-shadow: none !important;
+    }
+    
+    /* Sembunyikan elemen pembungkus bawaan Laravel */
+    .custom-pagination nav div:first-child,
+    .custom-pagination nav p { 
+        display: none !important; 
+    }
+
+    /* RESET SEMUA PEMBUNGKUS LUAR */
+    .custom-pagination nav span.relative.z-0,
+    .custom-pagination nav span[aria-disabled="true"],
+    .custom-pagination nav span[aria-current="page"] {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        display: inline-flex !important;
+    }
+
+    /* UKURAN UTAMA TOMBOL (PRESISI 34px x 34px SAMA RATA) */
+    .custom-pagination nav a, 
+    .custom-pagination nav span[aria-current="page"] > span,
+    .custom-pagination nav span[aria-disabled="true"] > span {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    /* 1. TOMBOL BIASA & PANAH INAKTIF (TEMA BIRU) */
+    .custom-pagination nav a {
+        background-color: #eff6ff !important;
+        color: #1d4ed8 !important;
+        border: 1px solid #dbeafe !important;
+    }
+
+    .custom-pagination nav a:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+        transform: translateY(-1px);
+    }
+
+    /* 2. TOMBOL AKTIF (HALAMAN SAAT INI - BIRU SOLID) */
+    .custom-pagination nav span[aria-current="page"] > span {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #2563eb !important;
+        box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3) !important;
+    }
+
+    /* 3. TOMBOL PANAH MATI / DISABLED */
+    .custom-pagination nav span[aria-disabled="true"] > span {
+        background-color: #f8fafc !important;
+        color: #cbd5e1 !important;
+        border: 1px solid #e2e8f0 !important;
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
+
+    /* DARK MODE STYLING PAGINATION */
+    .dark .custom-pagination nav a {
+        background-color: #1e293b !important;
+        color: #93c5fd !important;
+        border-color: #1e3a8a !important;
+    }
+
+    .dark .custom-pagination nav a:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    .dark .custom-pagination nav span[aria-disabled="true"] > span {
+        background-color: #0f172a !important;
+        color: #475569 !important;
+        border-color: #1e293b !important;
+    }
+
+    /* Rapikan Ikon Panah SVG */
+    .custom-pagination nav svg { 
+        width: 14px !important; 
+        height: 14px !important; 
+        display: block !important; 
+        margin: auto !important;
+    }
 </style>
 @endsection

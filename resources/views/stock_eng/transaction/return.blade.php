@@ -1,6 +1,11 @@
 @extends('admin')
 
 @section('content')
+{{-- FALLBACK GUARD: Memastikan $history tidak pernah undefined --}}
+@php
+  $history = $history ?? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25);
+@endphp
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
 
@@ -8,7 +13,7 @@
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
   }
 
-  /* Custom Clean Hover & Shadow matching image_d4fed2.png */
+  /* Custom Clean Hover & Shadow */
   .photo-grad-btn {
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
@@ -34,14 +39,12 @@
     </div>
 
     <div class="flex items-center gap-3 w-full sm:w-auto">
-      {{-- Tombol Scan ditonaktifkan/diarahkan ke URL biasa sementara waktu jika scan views belum siap --}}
       <a href="#"
         class="photo-grad-btn w-full sm:w-36 h-10 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#E51E43] to-[#F86E1B] px-3 text-xs font-black text-white tracking-wider uppercase opacity-60 cursor-not-allowed"
       >
         <span>Scan RETURN</span>
       </a>
-      {{-- Menuju ke Form Manual Return --}}
-      <a href="{{ route('stock_eng.transaction.return.manual') }}"
+      <a href="{{ Route::has('stock_eng.transaction.return.manual') ? route('stock_eng.transaction.return.manual') : '#' }}"
         class="photo-grad-btn w-full sm:w-36 h-10 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] via-[#4F7FE7] to-[#EAB308] px-3 text-xs font-black text-white tracking-wider uppercase"
       >
         <span>Manual RETURN</span>
@@ -129,13 +132,13 @@
           @forelse($history as $key => $log)
           <tr class="table-row-item hover:bg-gray-50/60 transition-colors duration-200 dark:hover:bg-white/[0.02]">
             <td class="py-2 px-3 text-[11px] font-extrabold text-slate-950 dark:text-white">
-              {{ $history->firstItem() + $key }}
+              {{ method_exists($history, 'firstItem') && $history->firstItem() ? $history->firstItem() + $key : $key + 1 }}
             </td>
             <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white font-mono text-center whitespace-nowrap">
-              {{ $log->return_id }}
+              {{ $log->return_id ?? '-' }}
             </td>
             <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white whitespace-nowrap">
-              {{ $log->nik }}
+              {{ $log->nik ?? '-' }}
             </td>
             <td class="py-2 px-3 text-[11px] font-bold text-slate-900 dark:text-white text-center font-mono whitespace-nowrap">
               {{ $log->request_sparepart_id ?? '-' }}
@@ -151,15 +154,15 @@
             </td>
             <td class="py-2 px-3 text-center">
               <span class="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-extrabold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20">
-                +{{ $log->qty_return }}
+                +{{ $log->qty_return ?? 0 }}
               </span>
             </td>
             <td class="py-2 px-3 text-center">
               <span class="status-cell inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-tight uppercase
-                @if(strtolower($log->status) == 'success') bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400
-                @elseif(strtolower($log->status) == 'pending') bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400
+                @if(strtolower($log->status ?? '') == 'success') bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400
+                @elseif(strtolower($log->status ?? '') == 'pending') bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400
                 @else bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 @endif">
-                {{ $log->status }}
+                {{ $log->status ?? '-' }}
               </span>
             </td>
             <td class="py-2 px-3 text-center">
@@ -177,23 +180,23 @@
                 {{ $remarkText ? $log->remark : '-' }} 
               </span>
             </td>
-            <td class="py-2 px-3 text-[11px] font-semibold text-slate-600 dark:text-gray-300 max-w-[130px] truncate" title="{{ $log->comment }}">
+            <td class="py-2 px-3 text-[11px] font-semibold text-slate-600 dark:text-gray-300 max-w-[130px] truncate" title="{{ $log->comment ?? '' }}">
               {{ $log->comment ?? '-' }}
             </td>
             <td class="py-1.5 px-3 text-center whitespace-nowrap">
               <div class="text-[11px] font-bold text-slate-900 dark:text-white tracking-tight">
-                {{ $log->created_at ? $log->created_at->format('d/m/y') : '-' }}
+                {{ isset($log->created_at) && $log->created_at ? $log->created_at->format('d/m/y') : '-' }}
               </div>
               <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-none mt-0.5">
-                {{ $log->created_at ? $log->created_at->format('H:i') : '' }}
+                {{ isset($log->created_at) && $log->created_at ? $log->created_at->format('H:i') : '' }}
               </div>
             </td>
             <td class="py-1.5 px-3 text-center whitespace-nowrap">
               <div class="text-[11px] font-bold text-slate-900 dark:text-white tracking-tight">
-                {{ $log->updated_at ? $log->updated_at->format('d/m/y') : '-' }}
+                {{ isset($log->updated_at) && $log->updated_at ? $log->updated_at->format('d/m/y') : '-' }}
               </div>
               <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-none mt-0.5">
-                {{ $log->updated_at ? $log->updated_at->format('H:i') : '' }}
+                {{ isset($log->updated_at) && $log->updated_at ? $log->updated_at->format('H:i') : '' }}
               </div>
             </td>
           </tr>
@@ -211,10 +214,12 @@
     {{-- PAGINATION INTERFACE --}}
     <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 pb-1 border-t border-gray-100 pt-4 dark:border-gray-800">
       <p class="text-xs font-extrabold text-slate-950 dark:text-white">
-        Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} entries
+        Showing {{ method_exists($history, 'firstItem') ? ($history->firstItem() ?? 0) : 0 }} to {{ method_exists($history, 'lastItem') ? ($history->lastItem() ?? 0) : 0 }} of {{ method_exists($history, 'total') ? ($history->total() ?? 0) : 0 }} entries
       </p>
       <div class="flex items-center">
-        {{ $history->links() }}
+        @if(method_exists($history, 'links'))
+          {{ $history->links() }}
+        @endif
       </div>
     </div>
   </div>
@@ -264,8 +269,11 @@
         return;
       }
 
-      const statusText = row.querySelector('.status-cell').textContent.trim().toLowerCase();
-      const remarkText = row.querySelector('.remark-cell').textContent.trim().toLowerCase();
+      const statusCell = row.querySelector('.status-cell');
+      const remarkCell = row.querySelector('.remark-cell');
+
+      const statusText = statusCell ? statusCell.textContent.trim().toLowerCase() : '';
+      const remarkText = remarkCell ? remarkCell.textContent.trim().toLowerCase() : '';
 
       if (criteria === 'success' || criteria === 'pending') {
         if (statusText === criteria) {

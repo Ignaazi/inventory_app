@@ -212,7 +212,7 @@ class StockInEngineeringController extends Controller
                 $txUuid = $datePrefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
             }
 
-            // 6. INSERT LOG BUKU KORAN (`stock_eng_transactions`)
+            // Insert data transaksi ke database
             DB::table('stock_eng_transactions')->insert([
                 'tx_id'                 => $txUuid,
                 'users_id'              => Auth::id() ?? 1,
@@ -224,7 +224,7 @@ class StockInEngineeringController extends Controller
                 'process_type'          => $processType,
                 'photo_path'            => $fotoPath,
                 'status'                => 'success',
-                'remark'                => $request->input('comment', 'Automated Stock IN via ' . strtoupper($processType) . '. Rak: ' . ($stock->rak->nama_rak ?? '-')),
+                'remark'                => $request->input('comment', 'AUTOMATIC IN'),
                 'created_at'            => now(),
                 'updated_at'            => now(),
             ]);

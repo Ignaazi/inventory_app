@@ -5,6 +5,7 @@ use App\Http\Controllers\Production\RequestProdController;
 use App\Http\Controllers\Production\ProductionOverviewController;
 use App\Http\Controllers\Production\InProdController;
 use App\Http\Controllers\Production\OutProdController;
+use App\Http\Controllers\Production\ReturnProdController; // 👈 TAMBAHAN CONTROLLER RETURN
 
 // 📦 MODUL REQUEST PRODUCTION
 Route::prefix('prod/request')->group(function () {
@@ -27,7 +28,7 @@ Route::prefix('production/request')->group(function () {
 Route::get('/prod/overview', [ProductionOverviewController::class, 'index'])->name('prod.overview');
 Route::get('/production-dashboard', function () { return view('dashboard'); })->name('production.dashboard');
 
-// 🛠️ SEKTOR SINKRONISASI PRODUCTION (IN & OUT TRANSACTION)
+// 🛠️ SEKTOR SINKRONISASI PRODUCTION (IN, OUT & RETURN TRANSACTION)
 Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () {
     
     // ==========================================
@@ -57,10 +58,20 @@ Route::prefix('prod/transaction')->name('prod.transaction.')->group(function () 
     // 4. Terminal Mesin Live Scan OUT 
     Route::get('/out/scan', [OutProdController::class, 'scanOut'])->name('out.scan');
     
-    // 5. ✅ FIX 404: Rute POST Endpoint AJAX dari scan_out.blade.php
+    // 5. Rute POST Endpoint AJAX dari scan_out.blade.php
     Route::post('/out/scan/store', [OutProdController::class, 'storeScanOut'])->name('out.store_scan');
     
     // 6. API Live Fetch Detail Item berdasarkan ID Pilihan
     Route::get('/out/detail/{id}', [OutProdController::class, 'getInProductionDetail'])->name('out.detail');
     
+    // ==========================================
+    // ---        TRANSAKSI RETURN            ---  👈 TAMBAHAN RUTE RETURN
+    // ==========================================
+    // 1. Halaman Utama Tabel Log Riwayat Return (Mengatasi Error prod.transaction.return)
+    Route::get('/return', [ReturnProdController::class, 'stockReturn'])->name('return');
+    Route::get('/return/manual', [ReturnProdController::class, 'manualReturn'])->name('return.manual');
+    Route::post('/return/manual/store', [ReturnProdController::class, 'storeManualReturn'])->name('return.manual.store');
+    Route::get('/return/scan', [ReturnProdController::class, 'scanReturn'])->name('return.scan');
+    Route::post('/return/scan/store', [ReturnProdController::class, 'storeScanReturn'])->name('return.store_scan');
+
 });

@@ -9,44 +9,56 @@ use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // --- 1. DATA USERS ---
-        // Menggunakan updateOrCreate agar tidak error Duplicate Entry NIM
+        // --- 1. DATA USERS (LOGIN MENGGUNAKAN NIK) ---
+        // Pencarian updateOrCreate menggunakan kolom 'nik' agar tidak error duplicate entry
         $users = [
             [
-                'nik'      => '123456',
-                'name'     => 'Administrator',
-                'password' => Hash::make('password123'),
-                'role'     => 'admin',
+                'nik'       => '123456',
+                'name'      => 'Administrator',
+                'email'     => 'muhammad.anwar@student.president.ac.id',
+                'role'      => 'admin',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
             ],
             [
-                'nik'      => '654321',
-                'name'     => 'Engineering User',
-                'password' => Hash::make('password123'),
-                'role'     => 'engineering',
+                'nik'       => '654321',
+                'name'      => 'Engineering User',
+                'email'     => 'aji@student.president.ac.id',
+                'role'      => 'engineering',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
             ],
             [
-                'nik'      => '112233',
-                'name'     => 'Costing User',
-                'password' => Hash::make('password123'),
-                'role'     => 'costing',
+                'nik'       => '112233',
+                'name'      => 'Costing User',
+                'email'     => 'christin@student.president.ac.id',
+                'role'      => 'costing',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
             ],
             [
-                'nik'      => '445566',
-                'name'     => 'Production User',
-                'password' => Hash::make('password123'),
-                'role'     => 'production',
+                'nik'       => '445566',
+                'name'      => 'Production User',
+                'email'     => 'reza@student.president.ac.id',
+                'role'      => 'production',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
             ],
         ];
 
         foreach ($users as $userData) {
-            User::updateOrCreate(['nik' => $userData['nik']], $userData);
+            User::updateOrCreate(
+                ['nik' => $userData['nik']], 
+                $userData
+            );
         }
 
         // --- 2. DATA ENGINEERING OVERVIEW ---
-        // Menggunakan updateOrCreate agar tidak error Duplicate Entry SAP-CODE
         $items = [
             [
                 'sap_code'            => 'SAP-NOZ-001',
@@ -69,7 +81,10 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($items as $itemData) {
-            EngineeringOverview::updateOrCreate(['sap_code' => $itemData['sap_code']], $itemData);
+            EngineeringOverview::updateOrCreate(
+                ['sap_code' => $itemData['sap_code']], 
+                $itemData
+            );
         }
     }
 }

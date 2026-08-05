@@ -1,5 +1,6 @@
 <link rel="stylesheet" href="{{ asset('css/partials/sidebar.css') }}">
 
+<!-- MOBILE OVERLAY -->
 <div 
   x-show="sidebarToggle && window.innerWidth < 1024" 
   @click="sidebarToggle = false" 
@@ -19,14 +20,13 @@
   <!-- HEADER LOGO AREA -->
   <div
     :class="(sidebarToggle && window.innerWidth >= 1024) ? 'justify-center px-0' : 'justify-between px-6'"
-    class="flex items-center h-[65  px] border-b border-gray-50 dark:border-slate-800 transition-all duration-300 w-full"
+    class="flex items-center h-[65px] border-b border-gray-50 dark:border-slate-800 transition-all duration-300 w-full"
   >
     <a href="/admin" class="flex items-center justify-center w-full">
       <div 
         class="logo-wrapper"
         :class="(!sidebarToggle || window.innerWidth < 1024) ? 'logo-expanded' : 'logo-collapsed'"
       >
-        <!-- Penambahan style pelapis anti-melar -->
         <img 
           src="{{ asset('images/logosidebar.png') }}" 
           alt="SIIX Logo" 
@@ -108,9 +108,11 @@
                 <span x-show="!sidebarToggle || window.innerWidth < 1024">Transaction</span>
               </div>
               <div class="flex items-center gap-2">
-                <span x-show="!sidebarToggle || window.innerWidth < 1024" class="flex h-[18px] w-[18px] items-center justify-center rounded bg-[#ef4444] text-[10px] font-bold text-white shadow-sm">
-                  {{ $notifEngTrans ?? '3' }}
+                @if(($notifEngTrans ?? 0) > 0)
+                <span x-show="!sidebarToggle || window.innerWidth < 1024" class="flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded bg-[#ef4444] text-[10px] font-bold text-white shadow-sm">
+                  {{ $notifEngTrans }}
                 </span>
+                @endif
                 <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'trans' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </div>
             </button>
@@ -145,7 +147,7 @@
             </div>
           </li>
   
-          <!-- Dropdown: Barcode Parsing -->
+          <!-- Dropdown: Barcode Parsing (Type Barcode Dihapus) -->
           <li class="relative">
             <button 
               type="button"
@@ -170,12 +172,6 @@
                   <a href="{{ route('barcode.db') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('barcode.db') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('barcode.db') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
                     <span>DB Barcode</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="{{ route('barcode.type') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('barcode.type') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('barcode.type') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                    <span>Type Barcode</span>
                   </a>
                 </li>
               </ul>
@@ -213,50 +209,43 @@
             </div>
           </li>
   
-         <!-- Dropdown: Purchase Request -->
-<li class="relative">
-  <button 
-    type="button"
-    @click.stop="openMenu = (openMenu === 'pr' ? 'none' : 'pr')" 
-    class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*purchase-request*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-  >
-    <div class="flex items-center gap-3">
-      <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-      <span x-show="!sidebarToggle || window.innerWidth < 1024">Purchase Request</span>
-    </div>
-    <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-  </button>
-  
-  <div x-show="openMenu === 'pr'" x-collapse class="overflow-hidden">
-    <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
-      
-      <!-- 1. Create PR -->
-      <li>
-        <a href="/eng/purchase-request" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->is('eng/purchase-request') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-          <span class="w-1.5 h-1.5 rounded-full {{ request()->is('eng/purchase-request') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-          <span>Create PR</span>
-        </a>
-      </li>
-
-      <!-- 2. Verify PR (Menu baru untuk Checker/Admin memproses data 'pending') -->
-      <li>
-        <a href="{{ route('purchase.request.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('purchase.request.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-          <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('purchase.request.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-          <span>List Purchase Request</span>
-        </a>
-      </li>
-
-      <!-- 3. History PR -->
-      <li>
-        <a href="{{ route('purchase.request.history') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('purchase.request.history') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-          <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('purchase.request.history') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-          <span>History PR</span>
-        </a>
-      </li>
-
-    </ul>
-  </div>
-</li>
+          <!-- Dropdown: Purchase Request -->
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenu = (openMenu === 'pr' ? 'none' : 'pr')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*purchase-request*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Purchase Request</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenu === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            
+            <div x-show="openMenu === 'pr'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+                <li>
+                  <a href="/eng/purchase-request" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->is('eng/purchase-request') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->is('eng/purchase-request') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>Create PR</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('purchase.request.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('purchase.request.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('purchase.request.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>List Purchase Request</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('purchase.request.history') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('purchase.request.history') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('purchase.request.history') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>History PR</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </li>
 
           <!-- Dropdown: Material Received -->
           <li class="relative">
@@ -299,192 +288,192 @@
       <div class="mb-8" x-data="{ 
           openMenuProd: '{{ request()->routeIs('prod.transaction.*') ? 'trans' : (request()->routeIs('prod.request.*') ? 'request' : 'none') }}'
         }">
-          <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-            PRODUCTION
-          </h3>
-          <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">PROD</div>
-        
-          <ul class="flex flex-col gap-1.5">
-            <li>
-              <a href="/prod/overview" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*prod/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span x-show="!sidebarToggle || window.innerWidth < 1024">Production Overview</span>
-              </a>
-            </li>
-            <li>
-              <a href="{{ route('prod.line.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.line.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                  </svg>
-                  <span x-show="!sidebarToggle || window.innerWidth < 1024">List Line Prod</span>
-              </a>
-            </li>
-            <li>
-              <a href="/prod/stock" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*prod/stock*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                <span x-show="!sidebarToggle || window.innerWidth < 1024">Stock Prod</span>
-              </a>
-            </li>
-        
-            <!-- Dropdown: Request Nozzle -->
-            <li class="relative">
-              <button 
-                type="button"
-                @click.stop="openMenuProd = (openMenuProd === 'request' ? 'none' : 'request')" 
-                class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.request.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-              >
-                <div class="flex items-center gap-3">
-                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                  <span x-show="!sidebarToggle || window.innerWidth < 1024">Request Nozzle</span>
-                </div>
-                <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuProd === 'request' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-              </button>
-              <div x-show="openMenuProd === 'request'" x-collapse class="overflow-hidden">
-                <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
-                  <li>
-                    <a href="{{ route('prod.request.create') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.request.create') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                      <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.request.create') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                      <span>Create Request</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="{{ route('prod.request.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.request.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                      <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.request.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                      <span>List Request</span>
-                    </a>
-                  </li>
-                </ul>
+        <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+          PRODUCTION
+        </h3>
+        <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">PROD</div>
+      
+        <ul class="flex flex-col gap-1.5">
+          <li>
+            <a href="/prod/overview" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*prod/overview*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span x-show="!sidebarToggle || window.innerWidth < 1024">Production Overview</span>
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('prod.line.index') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.line.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">List Line Prod</span>
+            </a>
+          </li>
+          <li>
+            <a href="/prod/stock" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->is('*prod/stock*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+              <span x-show="!sidebarToggle || window.innerWidth < 1024">Stock Prod</span>
+            </a>
+          </li>
+
+          <!-- Dropdown: Request Nozzle -->
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenuProd = (openMenuProd === 'request' ? 'none' : 'request')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.request.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Request Nozzle</span>
               </div>
-            </li>
-            
-            <!-- Dropdown: Transaction -->
-            <li class="relative">
-              <button 
-                type="button"
-                @click.stop="openMenuProd = (openMenuProd === 'trans' ? 'none' : 'trans')" 
-                class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.transaction.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-              >
-                <div class="flex items-center gap-3">
-                  <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
-                  <span x-show="!sidebarToggle || window.innerWidth < 1024">Transaction</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span x-show="!sidebarToggle || window.innerWidth < 1024" class="flex h-[18px] w-[18px] items-center justify-center rounded bg-[#ef4444] text-[10px] font-bold text-white shadow-sm">
-                    {{ $notifProdTrans ?? '1' }}
-                  </span>
-                  <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuProd === 'trans' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </div>
-              </button>
-              <div x-show="openMenuProd === 'trans'" x-collapse class="overflow-hidden">
-                <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
-                  <li>
-                    <a href="{{ route('prod.transaction.in') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.in') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                      <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.in') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                      <span>In</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="{{ route('prod.transaction.out') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.out') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                      <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.out') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                      <span>Out</span>
-                    </a>
-                  </li>
-                </ul>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuProd === 'request' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="openMenuProd === 'request'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+                <li>
+                  <a href="{{ route('prod.request.create') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.request.create') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.request.create') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>Create Request</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('prod.request.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.request.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.request.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>List Request</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </li>
+          
+          <!-- Dropdown: Transaction (Dengan Penambahan Sub-menu Return) -->
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenuProd = (openMenuProd === 'trans' ? 'none' : 'trans')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('prod.transaction.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Transaction</span>
               </div>
-            </li>
-          </ul>
-        </div>
+              <div class="flex items-center gap-2">
+                @if(($notifProdTrans ?? 0) > 0)
+                <span x-show="!sidebarToggle || window.innerWidth < 1024" class="flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded bg-[#ef4444] text-[10px] font-bold text-white shadow-sm">
+                  {{ $notifProdTrans }}
+                </span>
+                @endif
+                <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuProd === 'trans' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </button>
+            <div x-show="openMenuProd === 'trans'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+                <li>
+                  <a href="{{ route('prod.transaction.in') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.in') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.in') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>In</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('prod.transaction.out') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.out') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.out') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>Out</span>
+                  </a>
+                </li>
+                <!-- TAMBAHAN SUB-MENU RETURN -->
+                <li>
+                  <a href="{{ route('prod.transaction.return') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.return') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.return') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>Return</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </li>
+        </ul>
+      </div>
       @endif
 
+      <!-- ================= COSTING MENU ================= -->
+      @if(in_array(auth()->user()->role, ['admin', 'costing']))
+      <div class="mb-8" x-data="{ openMenuCosting: '{{ request()->routeIs('costing.pr.*') ? 'pr' : (request()->routeIs('costing.material.*') ? 'material' : 'none') }}' }">
+        <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+          COSTING
+        </h3>
+        <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">CST</div>
 
-        <!-- ================= COSTING MENU ================= -->
-@if(in_array(auth()->user()->role, ['admin', 'costing']))
-<div class="mb-8" x-data="{ openMenuCosting: '{{ request()->routeIs('costing.pr.*') ? 'pr' : (request()->routeIs('costing.material.*') ? 'material' : 'none') }}' }">
-  <h3 x-show="!sidebarToggle || window.innerWidth < 1024" class="mb-4 ml-4 text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-    COSTING
-  </h3>
-  <div x-show="sidebarToggle && window.innerWidth >= 1024" class="mb-4 flex justify-center text-indigo-500 text-[10px] font-extrabold">CST</div>
-
-  <ul class="flex flex-col gap-1.5">
-    
-    {{-- 1. COSTING OVERVIEW (SINGLE LINK) --}}
-    <li>
-      <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.overview') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
-        <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-        <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
-      </a>
-    </li>
-    
-    {{-- 2. APPROVE PR (DROPDOWN MENU) --}}
-    <li class="relative">
-      <button 
-        type="button"
-        @click.stop="openMenuCosting = (openMenuCosting === 'pr' ? 'none' : 'pr')" 
-        class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.pr.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-      >
-        <div class="flex items-center gap-3">
-          <!-- Icon Baru: Clipboard Check (Approval) -->
-          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
-        </div>
-        <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-      
-      <div x-show="openMenuCosting === 'pr'" x-collapse class="overflow-hidden">
-        <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+        <ul class="flex flex-col gap-1.5">
           <li>
-            <a href="{{ route('costing.pr.index') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-              <span>List Approve PR</span>
+            <a href="{{ route('costing.overview') }}" class="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.overview') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+              <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+              <span x-show="!sidebarToggle || window.innerWidth < 1024">Costing Overview</span>
             </a>
           </li>
-          <li>
-            {{-- Note: Pastikan route costing.pr.history sudah terdaftar di web.php lu --}}
-            <a href="{{ route('costing.pr.history') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-              <span>History PR</span>
-            </a>
+          
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenuCosting = (openMenuCosting === 'pr' ? 'none' : 'pr')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.pr.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Approve PR</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'pr' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            
+            <div x-show="openMenuCosting === 'pr'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+                <li>
+                  <a href="{{ route('costing.pr.index') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.index') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>List Approve PR</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('costing.pr.history') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.pr.history') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>History PR</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </li>
+
+          <li class="relative">
+            <button 
+              type="button"
+              @click.stop="openMenuCosting = (openMenuCosting === 'material' ? 'none' : 'material')" 
+              class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.material.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
+            >
+              <div class="flex items-center gap-3">
+                <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
+              </div>
+              <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'material' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            
+            <div x-show="openMenuCosting === 'material'" x-collapse class="overflow-hidden">
+              <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
+                <li>
+                  <a href="{{ route('costing.material.received') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.received') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.received') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>Material Received Form</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('costing.material.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                    <span>List Material Received</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </li>
         </ul>
       </div>
-    </li>
-
-    {{-- 3. MATERIAL RECEIVED (DROPDOWN MENU) --}}
-    <li class="relative">
-      <button 
-        type="button"
-        @click.stop="openMenuCosting = (openMenuCosting === 'material' ? 'none' : 'material')" 
-        class="w-full group flex items-center justify-between rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all {{ request()->routeIs('costing.material.*') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800' }}"
-      >
-        <div class="flex items-center gap-3">
-          <!-- Icon Baru: Box 3D / Package (Fisik Material) -->
-          <svg class="siix-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-          <span x-show="!sidebarToggle || window.innerWidth < 1024">Material Received</span>
-        </div>
-        <svg x-show="!sidebarToggle || window.innerWidth < 1024" :class="openMenuCosting === 'material' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-      
-      <div x-show="openMenuCosting === 'material'" x-collapse class="overflow-hidden">
-        <ul :class="(sidebarToggle && window.innerWidth >= 1024) ? 'sidebar-mini-floating' : 'mt-1 ml-9 border-l border-slate-100 dark:border-slate-800'" class="flex flex-col gap-1 py-1">
-          <li>
-            <a href="{{ route('costing.material.received') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.received') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.received') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-              <span>Material Received Form</span>
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('costing.material.list') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('costing.material.list') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-              <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('costing.material.list') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-              <span>List Material Received</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </li>
-    
-  </ul>
-</div>
-@endif
+      @endif
 
     </nav>
   </div>

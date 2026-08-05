@@ -16,11 +16,11 @@ use App\Http\Controllers\Engineering\HistoryApprovalController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 use App\Http\Controllers\Engineering\TransactionController;
+use App\Http\Controllers\Engineering\TransactionReturnController; // 👈 Controller Return Engineering Baru
 use App\Http\Controllers\Engineering\TransactionDisposalController;
 use App\Http\Controllers\Engineering\DisposalEngineeringController;
 use App\Http\Controllers\EngOverview\BarcodeParsingController;
 use App\Http\Controllers\EngOverview\DbBarcodeController;
-use App\Http\Controllers\EngOverview\TypeBarcodeController;
 
 // Import Controller Costing Section
 use App\Http\Controllers\Costing\ApprovalController as CostingApprovalController;
@@ -152,20 +152,21 @@ Route::middleware('auth')->group(function () {
                 Route::get('/', 'index');
                 Route::delete('/{id}', 'destroy')->name('.delete');
             });
-
-            Route::controller(TypeBarcodeController::class)->prefix('type-barcode')->name('barcode.type')->group(function () {
-                Route::get('/', 'index');
-                Route::delete('/{id}', 'destroy')->name('.delete');
-            });
         });
 
         // Modul Stock Transaction & Disposal (/stock-eng/transaction/...)
         Route::prefix('stock-eng/transaction')->name('stock_eng.transaction.')->group(function () {
+            
+            // Transaksi IN & OUT
             Route::controller(TransactionController::class)->group(function () {
                 Route::get('/in', 'indexIn')->name('in');
                 Route::get('/out', 'indexOut')->name('out');
-                Route::get('/return', 'indexReturn')->name('return');
-                Route::post('/return/store', 'storeReturn')->name('return.store');
+            });
+
+            // Transaksi RETURN (Menggunakan TransactionReturnController)
+            Route::controller(TransactionReturnController::class)->group(function () {
+                Route::get('/return', 'index')->name('return');
+                Route::post('/return/store', 'store')->name('return.store');
             });
 
             Route::get('/return/manual', function () {

@@ -21,30 +21,21 @@
     }
 </style>
 
-<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+<div class="font-nunito w-full p-1 md:p-2 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
-    {{-- Banner Top Alert Status Counter --}}
-    <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
-        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
-        <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
-            <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">SYSTEM RECORD:</span> 
-            Total {{ $receivings->total() }} engineering material received records logged for approval routing.
-        </p>
-    </div>
-
-    {{-- Header Section --}}
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
+    {{-- Header Section - Diperbesar & Paling Pojok Kiri --}}
+    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 font-nunito px-1 pt-1">
         <div>
-            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">List Eng Material Received</h2>
+            <h2 class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">List Eng Material Received</h2>
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS INDONESIA — ENGINEERING SECTION</p>
         </div>
     </div>
 
     {{-- PEMBUNGKUS UTAMA TABEL --}}
-    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
+    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-3 shadow-sm">
         
         {{-- HEADER KONTROL RESPONSIF --}}
-        <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
+        <div class="mb-3 flex flex-col gap-3 px-3 sm:flex-row sm:items-center sm:justify-between font-nunito">
             <!-- Entries Controller -->
             <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
                 <div class="flex items-center gap-1.5">
@@ -111,7 +102,7 @@
                         <th class="px-2 py-3.5 w-[120px] border-l border-orange-500 bg-orange-700/30">QTY PR</th>
                         <th class="px-2 py-3.5 w-[120px] border-l border-orange-500 bg-orange-700/30">QTY RECEIVED</th>
                         <th class="px-2 py-3.5 w-[160px] border-l border-orange-500 bg-orange-700/30">QTY STATUS</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-755/30">Status Flow</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30">Status Flow</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30 text-center">Created At</th>
                         <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 bg-orange-700/30 text-center">Updated At</th>
                         <th class="px-3 py-3.5 w-[210px] border-l border-orange-500 bg-orange-700/30 text-center">Action Decision</th>
@@ -238,7 +229,7 @@
                                         Checked
                                     </a>
 
-                                {{-- FIX DI SINI: JIKA STATUS CHECKED: MUNCUL REJECT & APPROVE (SUPERVISOR DESK) --}}
+                                {{-- JIKA STATUS CHECKED: MUNCUL REJECT & APPROVE (SUPERVISOR DESK) --}}
                                 @elseif(strtolower($item->status) == 'checked')
                                     <form id="reject-form-{{ $item->id }}" action="{{ route('costing.material.delete', $item->id) }}" method="POST" class="hidden">
                                         @csrf @method('DELETE')
@@ -248,7 +239,6 @@
                                         Reject
                                     </button>
 
-                                    {{-- GARIS INI DIUBAH MENEMBAK ROUTE APPROVAL SUPERVISOR (.approve) --}}
                                     <a href="{{ route('eng.material.receiving.approve', $item->id) }}" 
                                        class="inline-flex items-center justify-center w-[85px] py-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white font-black rounded-md text-[11px] tracking-wider uppercase shadow hover:brightness-105 transition-all active:scale-95 cursor-pointer">
                                         Approve
@@ -272,11 +262,11 @@
         </div>
 
         {{-- FOOTER PAGINATION RESPONSIF --}}
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
-            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3.5 font-nunito">
+            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-slate-900 dark:text-slate-300">
                 Showing {{ $receivings->firstItem() ?? 0 }} to {{ $receivings->lastItem() ?? 0 }} of {{ $receivings->total() ?? 0 }} Entries
             </p>
-            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black">
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination">
                 {{ $receivings->appends(['search' => request('search'), 'per_page' => request('per_page')])->links() }}
             </div>
         </div>
@@ -338,6 +328,11 @@
         color: #000000 !important;
     }
 
+    .dark .table-body-data tr td, 
+    .dark .table-body-data tr td div {
+        color: #f1f5f9 !important;
+    }
+
     .status-badge {
         color: inherit !important; 
     }
@@ -348,12 +343,115 @@
     
     .scrollbar-thin::-webkit-scrollbar { height: 6px; }
     .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 3px; }
     
     #approvalTable td, #approvalTable th {
         vertical-align: middle !important;
     }
-    .custom-pagination nav svg { width: 14px; height: 14px; display: inline; }
-    .custom-pagination nav div:first-child { display: none; }
+
+    /* ========================================================= */
+    /* FIX PAGINATION: SIMPLE, SINGLE BOX, EQUAL SIZE (34x34px)  */
+    /* ========================================================= */
+    .custom-pagination nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        box-shadow: none !important;
+    }
+    
+    /* Sembunyikan elemen pembungkus bawaan Laravel */
+    .custom-pagination nav div:first-child,
+    .custom-pagination nav p { 
+        display: none !important; 
+    }
+
+    /* RESET SEMUA PEMBUNGKUS LUAR (Hilangkan Kotak Ganda/Double Border) */
+    .custom-pagination nav span.relative.z-0,
+    .custom-pagination nav span[aria-disabled="true"],
+    .custom-pagination nav span[aria-current="page"] {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        display: inline-flex !important;
+    }
+
+    /* UKURAN UTAMA TOMBOL (PRESISI 34px x 34px SAMA RATA) */
+    .custom-pagination nav a, 
+    .custom-pagination nav span[aria-current="page"] > span,
+    .custom-pagination nav span[aria-disabled="true"] > span {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    /* 1. TOMBOL BIASA & PANAH INAKTIF */
+    .custom-pagination nav a {
+        background-color: #fff7ed !important;
+        color: #c2410c !important;
+        border: 1px solid #ffedd5 !important;
+    }
+
+    .custom-pagination nav a:hover {
+        background-color: #ea580c !important;
+        color: #ffffff !important;
+        border-color: #ea580c !important;
+        transform: translateY(-1px);
+    }
+
+    /* 2. TOMBOL AKTIF (HALAMAN SAAT INI - ORANGE SOLID) */
+    .custom-pagination nav span[aria-current="page"] > span {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #ea580c !important;
+        box-shadow: 0 2px 5px rgba(234, 88, 12, 0.3) !important;
+    }
+
+    /* 3. TOMBOL PANAH MATI / DISABLED */
+    .custom-pagination nav span[aria-disabled="true"] > span {
+        background-color: #f8fafc !important;
+        color: #cbd5e1 !important;
+        border: 1px solid #e2e8f0 !important;
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
+
+    /* DARK MODE STYLING PAGINATION */
+    .dark .custom-pagination nav a {
+        background-color: #1e293b !important;
+        color: #fdba74 !important;
+        border-color: #431407 !important;
+    }
+
+    .dark .custom-pagination nav a:hover {
+        background-color: #ea580c !important;
+        color: #ffffff !important;
+    }
+
+    .dark .custom-pagination nav span[aria-disabled="true"] > span {
+        background-color: #0f172a !important;
+        color: #475569 !important;
+        border-color: #1e293b !important;
+    }
+
+    /* Rapikan Ikon Panah SVG */
+    .custom-pagination nav svg { 
+        width: 14px !important; 
+        height: 14px !important; 
+        display: block !important; 
+        margin: auto !important;
+    }
 </style>
 @endsection
