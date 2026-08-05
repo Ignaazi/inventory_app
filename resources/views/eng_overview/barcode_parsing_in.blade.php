@@ -90,7 +90,7 @@
                             <svg class="w-[18px] h-[18px] text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                             2. Destination Target Rak
                         </label>
-                        <select id="stock_eng_id" name="stock_eng_id" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
+                        <select id="stock_eng_id" name="stock_eng_id" onchange="refreshInboundCounter()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
                             <option value="" disabled selected>-- Select Destination Rak --</option>
                             @foreach($stockEngineering as $stock)
                                 @php
@@ -101,13 +101,23 @@
                                         data-partname="{{ $stock->part_name }}" 
                                         data-partnum="{{ $stock->part_number }}" 
                                         data-sap="{{ $stock->sap_code }}"
-                                        data-rakname="{{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}">
-                                    {{ $stock->part_name }} — [{{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}]
+                                        data-rakname="{{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}"
+                                        hidden disabled>
+                                    {{ trim(str_replace(['[', ']'], '', $stock->rak_name ?? '')) }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">3. Barcode Type</label>
+                        <select id="barcode_type" name="barcode_type" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
+                            <option value="QR CODE" selected>QR CODE</option>
+                        </select>
+                    </div>
+
+                    {{-- Size Label tidak digunakan untuk Barcode IN. --}}
+                    {{--
                     <!-- 3. Barcode Type Dropdown -->
                     <div class="space-y-1.5">
                         <label class="flex items-center gap-2 text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
@@ -132,6 +142,7 @@
                             <option value="20">20mm x 20mm</option>
                         </select>
                     </div>
+                    --}}
                 </div>
 
                 <!-- SEKSI KANAN: PREVIEW DOKUMEN & ACTION -->
@@ -238,6 +249,36 @@
         document.getElementById('display_sap').value = sapCode;
         document.getElementById('display_sparepart_id').value = sparepartId;
 
+        const rakSelect = document.getElementById('stock_eng_id');
+        Array.from(rakSelect.options).forEach((option, index) => {
+            if (index === 0) return;
+            const matchesSparepart = option.getAttribute('data-sparepart-id') === sparepartId;
+            option.hidden = !matchesSparepart;
+            option.disabled = !matchesSparepart;
+        });
+        rakSelect.value = '';
+
+        refreshInboundCounter();
+    }
+
+    let inboundNextCounter = 1;
+
+    async function refreshInboundCounter() {
+        if (!document.getElementById('source_id').value || !document.getElementById('stock_eng_id').value) {
+            clearTableGrid();
+            return;
+        }
+
+        try {
+            const response = await fetch("{{ route('barcode.get.last.counter') }}", {
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.success) inboundNextCounter = result.next_counter;
+        } catch (error) {
+            // Preview tetap bisa ditampilkan; counter final selalu ditentukan backend.
+        }
+
         calculateBatchPreview();
     }
 
@@ -284,23 +325,24 @@
         // Clean Sparepart ID
         let cleanSpId = sparepartId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-        // Format Tanggal MMYY (misal "0826")
+        // Format tanggal DDMMYY (misal "050826")
         const d = new Date();
+        const dd = String(d.getDate()).padStart(2, '0');
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const yy = String(d.getFullYear()).slice(-2);
-        const dateStr = mm + yy; 
+        const dateStr = dd + mm + yy;
 
         const qty = parseInt(selectedDocOpt.getAttribute('data-qty')) || 0;
-        const bType = document.getElementById('barcode_type').value;
+        const bType = 'QR CODE';
 
         patternText.innerText = `${prefix}${cleanRak}${cleanSpId}${dateStr}[4-Digit Counter]`;
         badgeCount.innerText = `${qty} Items Registered`;
         showingText.innerText = `Showing 1 to ${qty} of ${qty} Entries`;
 
         for(let i = 1; i <= qty; i++) {
-            let counterStr = String(i).padStart(4, '0');
+            let counterStr = String(inboundNextCounter + i - 1).padStart(4, '0');
             
-            // HASIL STRING INBOUND TERBARU: TXENGINRAK + RAK + SPAREPART_ID + MMYY + COUNTER
+            // Format: TXENGINRAK + RAK + SPAREPART_ID + DDMMYY + COUNTER
             let fullBarcodeString = `${prefix}${cleanRak}${cleanSpId}${dateStr}${counterStr}`;
             
             const inlineCanvasId = `inline_canvas_in_${i}`;
@@ -368,6 +410,11 @@
 
     function resetForm() {
         document.getElementById('automatedBarcodeForm').reset();
+        Array.from(document.getElementById('stock_eng_id').options).forEach((option, index) => {
+            if (index === 0) return;
+            option.hidden = true;
+            option.disabled = true;
+        });
         document.getElementById('display_qty').value = '-';
         document.getElementById('display_part_num').value = '-';
         document.getElementById('display_sap').value = '-';
@@ -479,8 +526,6 @@
     async function executeBatchGeneration() {
         const mode = document.getElementById('current_mode').value;
         const barcodeType = document.getElementById('barcode_type').value;
-        const sizeSelect = document.getElementById('barcode_size');
-        const barcodeSize = sizeSelect.value;
         const stockEngId = document.getElementById('stock_eng_id').value;
         const sourceDocumentId = document.getElementById('source_id').value;
 
@@ -531,9 +576,7 @@
                     mode: mode,
                     source_id: sourceDocumentId,
                     barcode_type: barcodeType,
-                    barcode_size: barcodeSize,
-                    stock_eng_id: stockEngId,
-                    generated_barcodes: generatedBarcodes // <--- PAYLOAD BARU: Mengirimkan array string format baru
+                    stock_eng_id: stockEngId
                 })
             });
 

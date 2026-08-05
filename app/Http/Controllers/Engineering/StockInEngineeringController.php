@@ -85,7 +85,7 @@ class StockInEngineeringController extends Controller
             ->values();
 
         // Tarik master barcode bertipe IN (Prefix TXENGIN)
-        $barcodes = \App\Models\DbBarcode::where('barcode_id', 'LIKE', 'TXENGIN%')
+        $barcodes = \App\Models\DbBarcode::where('barcode_id', 'LIKE', 'TXENGINRAK%')
             ->get()
             ->map(function($item) use ($usedBarcodeIds) {
                 return [
@@ -140,41 +140,60 @@ class StockInEngineeringController extends Controller
             // MODE 1: PROSES SCANNER (Mencari via Barcode Scanned)
             // ----------------------------------------------------
             if (!empty($scannedInput)) {
-                $barcodeDb = \App\Models\DbBarcode::where('barcode_id', $scannedInput)
-                    ->orWhere('final_content', $scannedInput)
+                $barcodeDb = \App\Models\DbBarcode::where(function ($query) use ($scannedInput) {
+                    $query->where('barcode_id', $scannedInput)
+                          ->orWhere('final_content', $scannedInput);
+                })
+                    ->lockForUpdate()
                     ->first();
 
                 if (!$barcodeDb) {
+                    DB::rollBack();
                     return $this->buildResponse($request, false, 'Gagal! Kode Barcode "' . $scannedInput . '" tidak terdaftar di database master.', 404);
+                }
+
+                // Barcode OUT tidak boleh diproses melalui terminal Stock IN.
+                if (!str_starts_with(strtoupper(trim($barcodeDb->barcode_id)), 'TXENGINRAK')) {
+                    DB::rollBack();
+                    return $this->buildResponse($request, false, 'Gagal! Barcode ini bukan Barcode IN Engineering dan tidak dapat diproses di terminal Stock IN.', 422);
                 }
 
                 // Validasi Status Lifecycle Barcode
                 if ($barcodeDb->current_lifecycle !== 'AVAILABLE') {
+                    DB::rollBack();
                     return $this->buildResponse($request, false, 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' sudah pernah di-scan / tidak aktif (Status: ' . $barcodeDb->current_lifecycle . ').', 422);
                 }
 
                 // Cek pemetaan ke Master Stock
                 if (!$barcodeDb->stock_eng_id) {
+                    DB::rollBack();
                     return $this->buildResponse($request, false, 'Gagal! Barcode ini belum dipetakan ke item master gudang.', 422);
                 }
 
-                $stock = StockEng::with(['sparepart', 'rak'])->find($barcodeDb->stock_eng_id);
+                $stock = StockEng::with(['sparepart', 'rak'])
+                    ->lockForUpdate()
+                    ->find($barcodeDb->stock_eng_id);
             } 
             // ----------------------------------------------------
             // MODE 2: PROSES MANUAL (Mencari via Input Form Direct)
             // ----------------------------------------------------
             else if ($request->filled('stock_eng_id')) {
-                $stock = StockEng::with(['sparepart', 'rak'])->find($request->stock_eng_id);
+                $stock = StockEng::with(['sparepart', 'rak'])
+                    ->lockForUpdate()
+                    ->find($request->stock_eng_id);
             } else {
+                DB::rollBack();
                 return $this->buildResponse($request, false, 'Gagal! Barcode scan atau pilih item barang wajib diisi.', 400);
             }
 
             if (!$stock) {
+                DB::rollBack();
                 return $this->buildResponse($request, false, 'Gagal! Master stok barang tidak ditemukan atau telah dihapus.', 404);
             }
 
             // Validasi Penempatan Rak
             if (empty($stock->rak_id)) {
+                DB::rollBack();
                 return $this->buildResponse($request, false, 'Gagal! Posisi Rak untuk item ini belum ditentukan pada master data.', 422);
             }
 

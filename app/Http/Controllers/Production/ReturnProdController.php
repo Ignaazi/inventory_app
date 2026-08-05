@@ -137,14 +137,26 @@ class ReturnProdController extends Controller
 
             // 1. Cari data barcode di database
             $barcodeDb = DB::table('db_barcodes')
-                ->where('barcode_id', $targetCode)
-                ->orWhere('final_content', $targetCode)
+                ->where(function ($query) use ($targetCode) {
+                    $query->where('barcode_id', $targetCode)
+                          ->orWhere('final_content', $targetCode);
+                })
+                ->lockForUpdate()
                 ->first();
 
             if (!$barcodeDb) {
                 return response()->json([
                     'success' => false, 
                     'message' => 'Gagal Return! Barcode "' . $targetCode . '" tidak terdaftar di database.'
+                ], 422);
+            }
+
+            if ($barcodeDb->current_lifecycle !== 'USED_OUT') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal Return! Barcode tidak berstatus USED_OUT '
+                        . '(status saat ini: ' . $barcodeDb->current_lifecycle . ').'
                 ], 422);
             }
 

@@ -92,7 +92,7 @@
                             <svg class="w-[18px] h-[18px] text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                             2. Rak Locations
                         </label>
-                        <select id="selected_stock_eng_id" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-blue-500 transition-all">
+                        <select id="selected_stock_eng_id" onchange="refreshOutboundCounter()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-blue-500 transition-all">
                             <option value="" disabled selected>-- Select Source Rak --</option>
                         </select>
                     </div>
@@ -104,23 +104,10 @@
                             3. Barcode Type
                         </label>
                         <select id="barcode_type" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-blue-500 transition-all">
-                            <option value="DATA MATRIX" selected>DATA MATRIX</option>
-                            <option value="QR CODE">QR CODE</option>
+                            <option value="QR CODE" selected>QR CODE</option>
                         </select>
                     </div>
 
-                    <!-- 4. Size Label Dropdown -->
-                    <div class="space-y-1.5">
-                        <label class="flex items-center gap-2 text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
-                            <svg class="w-[18px] h-[18px] text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v16.5m16.5-16.5v16.5M3.75 12h16.5M6 9h3M6 15h3m9-6h-3m3 6h-3"/></svg>
-                            4. Size Label
-                        </label>
-                        <select id="barcode_size" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-blue-500 transition-all">
-                            <option value="10" selected>10mm x 10mm</option>
-                            <option value="15">15mm x 15mm</option>
-                            <option value="20">20mm x 20mm</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- SEKSI KANAN: INPUTAN SHOW OTOMATIS & AKSI FORM -->
@@ -246,6 +233,27 @@
         clearTableGrid();
     }
 
+    let outboundNextCounter = 1;
+
+    async function refreshOutboundCounter() {
+        if (!document.getElementById('production_request_id').value || !document.getElementById('selected_stock_eng_id').value) {
+            clearTableGrid();
+            return;
+        }
+
+        try {
+            const response = await fetch("{{ route('barcode.get.last.counter') }}?mode=OUT", {
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.success) outboundNextCounter = result.next_counter;
+        } catch (error) {
+            // Preview tetap bisa ditampilkan; counter final selalu ditentukan backend.
+        }
+
+        calculateBatchPreview();
+    }
+
     function calculateBatchPreview() {
         const tbody = document.getElementById('batch_table_body');
         const patternText = document.getElementById('stats_pattern_rule');
@@ -269,16 +277,22 @@
         const rawLine = selectedPrOpt.getAttribute('data-line');
         const lineCode = "LINE" + String(rawLine).padStart(2, '0');
         const partCode = selectedPrOpt.getAttribute('data-part-code'); 
+        const d = new Date();
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yy = String(d.getFullYear()).slice(-2);
+        const dateStr = dd + mm + yy;
+
         const qty = parseInt(selectedPrOpt.getAttribute('data-qty')) || 0;
         const bType = document.getElementById('barcode_type').value;
 
-        patternText.innerText = `${baseTx}${formattedRakCode}${lineCode}${partCode}[4-Digit]`;
+        patternText.innerText = `${baseTx}${formattedRakCode}${lineCode}${partCode}${dateStr}[4-Digit Counter]`;
         badgeCount.innerText = `${qty} Items Registered`;
         showingText.innerText = `Showing 1 to ${qty} of ${qty} Entries`;
 
         for(let i = 1; i <= qty; i++) {
-            let counterStr = String(i).padStart(4, '0');
-            let fullBarcodeString = `${baseTx}${formattedRakCode}${lineCode}${partCode}${counterStr}`;
+            let counterStr = String(outboundNextCounter + i - 1).padStart(4, '0');
+            let fullBarcodeString = `${baseTx}${formattedRakCode}${lineCode}${partCode}${dateStr}${counterStr}`;
             
             const inlineCanvasId = `inline_canvas_${i}`;
             const tr = document.createElement('tr');
@@ -431,8 +445,6 @@
     async function executeBatchGeneration() {
         const mode = document.getElementById('current_mode').value;
         const barcodeType = document.getElementById('barcode_type').value;
-        const sizeSelect = document.getElementById('barcode_size');
-        const sizeText = sizeSelect.options[sizeSelect.selectedIndex].text;
         const stockEngId = document.getElementById('selected_stock_eng_id').value;
         const sourceDocumentId = document.getElementById('production_request_id').value;
 
@@ -460,7 +472,7 @@
             const response = await fetch('/eng-overview/barcode-parsing/store', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                body: JSON.stringify({ mode: mode, source_id: sourceDocumentId, barcode_type: barcodeType, barcode_size: sizeText, stock_eng_id: stockEngId })
+                body: JSON.stringify({ mode: mode, source_id: sourceDocumentId, barcode_type: barcodeType, stock_eng_id: stockEngId })
             });
 
             const result = await response.json();

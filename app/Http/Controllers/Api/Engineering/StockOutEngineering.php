@@ -123,34 +123,19 @@ class StockOutEngineeringController extends Controller
         DB::beginTransaction();
         try {
             // 2. Pencarian data barcode di DB Master berdasarkan barcode_id atau kontennya
-            $barcodeDb = \App\Models\DbBarcode::where(function ($query) use ($scannedInput) {
-                $query->where('barcode_id', $scannedInput)
-                      ->orWhere('final_content', $scannedInput);
-            })
-                ->lockForUpdate()
+            $barcodeDb = \App\Models\DbBarcode::where('barcode_id', $scannedInput)
+                ->orWhere('final_content', $scannedInput)
                 ->first();
 
             if (!$barcodeDb) {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Kode "' . $scannedInput . '" tidak terdaftar di database master.'
                 ], 404);
             }
 
-            // Terminal OUT hanya menerbitkan barang ke line dari barcode OUT yang sudah dialokasikan.
-            $barcodeCode = strtoupper(trim($barcodeDb->barcode_id));
-            if (!str_starts_with($barcodeCode, 'TXENGRAK') || !str_contains($barcodeCode, 'LINE')) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Terminal Stock OUT hanya menerima Barcode OUT Engineering yang memiliki tujuan LINE.'
-                ], 422);
-            }
-
             // 3. Validasi Siklus Hidup Barcode (Mencegah double scan data yang sama)
             if ($barcodeDb->current_lifecycle !== 'AVAILABLE') {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' sudah tidak aktif (Status: ' . $barcodeDb->current_lifecycle . ')'
@@ -159,18 +144,14 @@ class StockOutEngineeringController extends Controller
 
             // 4. Tarik data Master Stock berdasarkan stock_eng_id yang melekat pada barcode
             if (!$barcodeDb->stock_eng_id) {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Barcode ini belum dipetakan ke master item gudang manapun.'
                 ], 422);
             }
 
-            $stock = StockEng::with(['sparepart', 'rak'])
-                ->lockForUpdate()
-                ->find($barcodeDb->stock_eng_id);
+            $stock = StockEng::with(['sparepart', 'rak'])->find($barcodeDb->stock_eng_id);
             if (!$stock) {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Lokasi master stok untuk item ini tidak valid atau telah dihapus.'
@@ -179,7 +160,6 @@ class StockOutEngineeringController extends Controller
 
             // Validasi keberadaan fisik rak
             if (empty($stock->rak_id)) {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Posisi Rak untuk item ini belum ditentukan pada master data.'
@@ -188,7 +168,6 @@ class StockOutEngineeringController extends Controller
 
             // 5. Validasi Ketersediaan Saldo Stok di Rak Tersebut
             if ($stock->qty < $qtyKeluar) {
-                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal! Stok pada Rak ' . ($stock->rak->nama_rak ?? '-') . ' kosong atau tidak mencukupi.'

@@ -113,22 +113,35 @@ class InProdController extends Controller
         try {
             // 1. Ambil Master Data Barcode
             $barcodeDb = DB::table('db_barcodes')
-                ->where('barcode_id', $scannedInput)
-                ->orWhere('final_content', $scannedInput)
+                ->where(function ($query) use ($scannedInput) {
+                    $query->where('barcode_id', $scannedInput)
+                          ->orWhere('final_content', $scannedInput);
+                })
+                ->lockForUpdate()
                 ->first();
 
             if (!$barcodeDb) {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Gagal! Kode "' . $scannedInput . '" tidak terdaftar di database master.', 404);
+            }
+
+            $barcodeCode = strtoupper(trim($barcodeDb->barcode_id));
+            if (!str_starts_with($barcodeCode, 'TXENGRAK') || !str_contains($barcodeCode, 'LINE')) {
+                DB::rollBack();
+                return $this->buildResponse($isAjax, false, 'Gagal! Production IN hanya menerima Barcode OUT Engineering dengan tujuan LINE.', 422);
             }
 
             // 2. Lifecycle Guard
             if ($barcodeDb->current_lifecycle === 'AVAILABLE') {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Ditolak! Item masih berstatus AVAILABLE di Engineering (Belum scan OUT).', 422);
             }
             if (in_array($barcodeDb->current_lifecycle, ['USED_IN', 'ON_PRODUCTION'])) {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Double Scan! Barcode ' . $barcodeDb->barcode_id . ' ini sudah masuk di Lini Produksi.', 422);
             }
             if ($barcodeDb->current_lifecycle !== 'USED_OUT') {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Gagal! Siklus hidup barcode tidak valid (Status: ' . $barcodeDb->current_lifecycle . ').', 422);
             }
 
@@ -139,7 +152,23 @@ class InProdController extends Controller
                 ->first();
 
             if (!$engTx) {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Gagal! Riwayat pengeluaran dari Gudang Engineering tidak ditemukan.', 404);
+            }
+
+            if ((int) $engTx->stock_engs_id !== (int) $barcodeDb->stock_eng_id) {
+                DB::rollBack();
+                return $this->buildResponse($isAjax, false, 'Gagal! Relasi barcode dan stok asal Engineering tidak konsisten.', 422);
+            }
+
+            $alreadyReceived = DB::table('stock_prod_transactions')
+                ->where('db_barcodes_id', $barcodeDb->id)
+                ->where('tx_type', 'in')
+                ->exists();
+
+            if ($alreadyReceived) {
+                DB::rollBack();
+                return $this->buildResponse($isAjax, false, 'Double Scan! Barcode ini sudah pernah diterima di Production dan tidak dapat ditambahkan kembali.', 422);
             }
 
             // 4. FIXED ENGINE: 2-DIGIT BOUNDED LINE RESOLVER
@@ -185,6 +214,7 @@ class InProdController extends Controller
             }
 
             if (!$targetLineId) {
+                DB::rollBack();
                 return $this->buildResponse(
                     $isAjax, 
                     false, 
@@ -196,6 +226,7 @@ class InProdController extends Controller
             // 5. Ambil Data Master Komponen Induk dari Engineering
             $stockEng = DB::table('stock_engs')->where('id', $barcodeDb->stock_eng_id)->first();
             if (!$stockEng) {
+                DB::rollBack();
                 return $this->buildResponse($isAjax, false, 'Gagal! Master item asal dari Engineering tidak ditemukan.', 404);
             }
             $sparepartId = $stockEng->sparepart_id;
@@ -203,10 +234,12 @@ class InProdController extends Controller
             // 6. 🛡️ SINKRONISASI & PROTEKSI MISMATCH ALOKASI
             $stockProd = stock_prod::where('line_id', $targetLineId)
                 ->where('sparepart_id', $sparepartId)
+                ->lockForUpdate()
                 ->first();
 
             // 🛑 JIKA ALOKASI TIDAK ADA DI MASTER PRODUKSI, CEGAH CRASH & TOLAK RAMAH
             if (!$stockProd) {
+                DB::rollBack();
                 $tableSparepart = (new ListSparepartEng)->getTable();
                 $itemName = DB::table($tableSparepart)->where('id', $sparepartId)->value('sparepart_id') ?? 'Sparepart';
                 

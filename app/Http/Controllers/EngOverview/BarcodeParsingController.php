@@ -101,9 +101,8 @@ class BarcodeParsingController extends Controller
             'mode'               => 'required|in:IN,OUT',
             'source_id'          => 'required|integer',
             'barcode_type'       => 'required|string',
-            'barcode_size'       => 'required|string',
-            'stock_eng_id'       => 'required|integer', 
-            'generated_barcodes' => 'nullable|array'
+            'barcode_size'       => 'nullable|string',
+            'stock_eng_id'       => 'required|integer'
         ]);
 
         try {
@@ -113,6 +112,8 @@ class BarcodeParsingController extends Controller
             $mode          = $request->mode;
             $sourceId      = $request->source_id;
             $stockEngId    = $request->stock_eng_id;
+            $barcodeType   = $request->barcode_type;
+            $barcodeSize   = $mode === 'IN' ? '10' : ($request->barcode_size ?: '10');
 
             $stockEngRecord = DB::table('stock_engs')->where('id', $stockEngId)->first();
             if (!$stockEngRecord) {
@@ -157,6 +158,16 @@ class BarcodeParsingController extends Controller
                     return response()->json(['success' => false, 'message' => 'Dokumen Material Received tidak valid!'], 404);
                 }
 
+                if ((int) $stockEngRecord->sparepart_id !== (int) DB::table('purchase_requests')
+                    ->where('id', $mrDoc->purchase_request_id)
+                    ->value('sparepart_id')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rak tujuan tidak sesuai dengan sparepart pada Material Received.'
+                    ], 400);
+                }
+
                 $qty = (int) $mrDoc->qty_received;
 
                 // Ambil info Rak & Sparepart untuk fallback pembuatan string di PHP
@@ -174,36 +185,44 @@ class BarcodeParsingController extends Controller
                 $rawSp   = $stockDetails->sp_code ?? 'SP';
                 $cleanSp = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $rawSp));
 
-                $dateStr = date('my'); // Month (MM) & Year (YY), misal "0826"
-                $prefix  = "TXENGINRAK{$cleanRak}{$cleanSp}{$dateStr}";
+                $dateKey = now()->format('dmy');
+                $prefix  = "TXENGINRAK{$cleanRak}{$cleanSp}";
 
-                // Cari counter terakhir berbasis prefix pola baru
-                $latestIn = DB::table('db_barcodes')
-                                ->where('barcode_id', 'LIKE', "{$prefix}%")
-                                ->orderBy('id', 'desc')
-                                ->first();
+                // Counter IN global untuk semua rak dan sparepart pada hari yang sama.
+                DB::table('barcode_daily_counters')->insertOrIgnore([
+                    'date_key'     => $dateKey,
+                    'last_counter' => 0,
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
 
-                $localCounter = 0;
-                if ($latestIn) {
-                    $localCounter = (int) substr($latestIn->barcode_id, -4);
+                $dailyCounter = DB::table('barcode_daily_counters')
+                                  ->where('date_key', $dateKey)
+                                  ->lockForUpdate()
+                                  ->first();
+
+                $localCounter = max(
+                    (int) ($dailyCounter->last_counter ?? 0),
+                    $this->getExistingInboundCounterForToday()
+                );
+
+                if ($localCounter + $qty > 9999) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Counter barcode IN hari ini sudah mencapai batas 9999.'
+                    ], 400);
                 }
 
-                $frontendBarcodes = $request->input('generated_barcodes', []);
-
                 for ($i = 1; $i <= $qty; $i++) {
-                    // Prioritaskan string dari Frontend JS, jika tidak ada baru buat via PHP
-                    if (isset($frontendBarcodes[$i - 1]) && !empty($frontendBarcodes[$i - 1])) {
-                        $generatedBarcodeId = $frontendBarcodes[$i - 1];
-                    } else {
-                        $localCounter++;
-                        $generatedBarcodeId = $prefix . str_pad($localCounter, 4, '0', STR_PAD_LEFT);
-                    }
+                    $localCounter++;
+                    $generatedBarcodeId = $prefix . $dateKey . str_pad($localCounter, 4, '0', STR_PAD_LEFT);
 
                     $barcodeInId = DB::table('db_barcodes')->insertGetId([
                         'barcode_id'        => $generatedBarcodeId,
                         'users_id'          => $currentUserId,
-                        'barcode_type'      => $request->barcode_type,
-                        'barcode_size'      => $request->barcode_size,
+                        'barcode_type'      => $barcodeType,
+                        'barcode_size'      => $barcodeSize,
                         'final_content'     => $generatedBarcodeId,
                         'stock_eng_id'      => $stockEngId, 
                         'current_lifecycle' => 'AVAILABLE', 
@@ -225,6 +244,10 @@ class BarcodeParsingController extends Controller
                         'updated_at'            => now(),
                     ]);
                 }
+
+                DB::table('barcode_daily_counters')
+                  ->where('date_key', $dateKey)
+                  ->update(['last_counter' => $localCounter, 'updated_at' => now()]);
 
                 // Update Total Qty di Header & Update Status MR
                 DB::table('barcode_parsing_headers')->where('id', $headerId)->update(['total_qty' => $qty]);
@@ -277,25 +300,41 @@ class BarcodeParsingController extends Controller
 
                 $barcodePrefix = "TXENG{$formattedRakCode}LINE{$lineStr}{$partCode}";
 
-                $latestOut = DB::table('db_barcodes')
-                                    ->where('barcode_id', 'LIKE', "{$barcodePrefix}%")
-                                    ->orderBy('id', 'desc')
-                                    ->first();
+                $dateKey = now()->format('dmy');
+                DB::table('barcode_out_daily_counters')->insertOrIgnore([
+                    'date_key'     => $dateKey,
+                    'last_counter' => 0,
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
 
-                $localCounter = 0;
-                if ($latestOut) {
-                    $localCounter = (int) substr($latestOut->barcode_id, -4);
+                $dailyCounter = DB::table('barcode_out_daily_counters')
+                                  ->where('date_key', $dateKey)
+                                  ->lockForUpdate()
+                                  ->first();
+
+                $localCounter = max(
+                    (int) ($dailyCounter->last_counter ?? 0),
+                    $this->getExistingOutboundCounterForToday()
+                );
+
+                if ($localCounter + $qty > 9999) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Counter barcode OUT hari ini sudah mencapai batas 9999.'
+                    ], 400);
                 }
 
                 for ($i = 0; $i < $qty; $i++) {
                     $localCounter++;
-                    $generatedBarcodeId = $barcodePrefix . str_pad($localCounter, 4, '0', STR_PAD_LEFT);
+                    $generatedBarcodeId = $barcodePrefix . $dateKey . str_pad($localCounter, 4, '0', STR_PAD_LEFT);
 
                     $barcodeOutId = DB::table('db_barcodes')->insertGetId([
                         'barcode_id'        => $generatedBarcodeId,
                         'users_id'          => $currentUserId,
-                        'barcode_type'      => $request->barcode_type,
-                        'barcode_size'      => $request->barcode_size,
+                        'barcode_type'      => $barcodeType,
+                        'barcode_size'      => $barcodeSize,
                         'final_content'     => $generatedBarcodeId,
                         'stock_eng_id'      => $stockEngId, 
                         'current_lifecycle' => 'AVAILABLE', 
@@ -317,6 +356,10 @@ class BarcodeParsingController extends Controller
                         'updated_at'            => now(),
                     ]);
                 }
+
+                DB::table('barcode_out_daily_counters')
+                  ->where('date_key', $dateKey)
+                  ->update(['last_counter' => $localCounter, 'updated_at' => now()]);
 
                 // Update Total Qty di Header & Update Status PR
                 DB::table('barcode_parsing_headers')->where('id', $headerId)->update(['total_qty' => $qty]);
@@ -348,6 +391,54 @@ class BarcodeParsingController extends Controller
                      ->get();
 
         return response()->json($configs);
+    }
+
+    /**
+     * Mengambil nomor berikutnya untuk preview Barcode IN.
+     * Nomor final tetap dialokasikan ulang di store dalam transaksi terkunci.
+     */
+    public function getLastCounter(Request $request)
+    {
+        $dateKey = now()->format('dmy');
+        $isOutbound = strtoupper($request->query('mode', 'IN')) === 'OUT';
+        $counterTable = $isOutbound ? 'barcode_out_daily_counters' : 'barcode_daily_counters';
+        $counter = DB::table($counterTable)->where('date_key', $dateKey)->value('last_counter');
+
+        $lastCounter = max(
+            (int) $counter,
+            $isOutbound ? $this->getExistingOutboundCounterForToday() : $this->getExistingInboundCounterForToday()
+        );
+
+        return response()->json([
+            'success'      => true,
+            'date_key'     => $dateKey,
+            'last_counter' => $lastCounter,
+            'next_counter' => $lastCounter + 1,
+        ]);
+    }
+
+    private function getExistingInboundCounterForToday(): int
+    {
+        $today = now()->toDateString();
+
+        return (int) DB::table('db_barcodes')
+                       ->where('barcode_id', 'LIKE', 'TXENGINRAK%')
+                       ->whereDate('created_at', $today)
+                       ->get(['barcode_id'])
+                       ->map(fn ($barcode) => (int) substr($barcode->barcode_id, -4))
+                       ->max();
+    }
+
+    private function getExistingOutboundCounterForToday(): int
+    {
+        $today = now()->toDateString();
+
+        return (int) DB::table('db_barcodes')
+                       ->where('barcode_id', 'LIKE', 'TXENGRAK%')
+                       ->whereDate('created_at', $today)
+                       ->get(['barcode_id'])
+                       ->map(fn ($barcode) => (int) substr($barcode->barcode_id, -4))
+                       ->max();
     }
 
     /**

@@ -102,9 +102,11 @@ class OutProdController extends Controller
                     'stock_prod_transactions.stock_prods_id',
                     'stock_prod_transactions.db_barcodes_id',
                     'stock_prod_transactions.production_request_id',
-                    'stock_prod_transactions.stock_eng_tx_id'
+                    'stock_prod_transactions.stock_eng_tx_id',
+                    'db_barcodes.current_lifecycle as barcode_lifecycle'
                 ])
                 ->orderBy('stock_prod_transactions.id', 'desc')
+                ->lockForUpdate()
                 ->first();
 
             // Proteksi 1: Jika barcode tidak terdaftar di riwayat transaksi masuk lantai produksi
@@ -112,6 +114,15 @@ class OutProdController extends Controller
                 return response()->json([
                     'success' => false, 
                     'message' => 'Gagal Scan! Kode QR/Barcode (' . $targetCode . ') tidak ditemukan atau belum pernah di-Stock IN ke produksi.'
+                ], 422);
+            }
+
+            // Production OUT hanya boleh dilakukan setelah Production IN dan sebelum barcode di-return.
+            if ($historyIn->db_barcodes_id && $historyIn->barcode_lifecycle !== 'USED_IN') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal Scan! Barcode tidak berstatus USED_IN (status saat ini: '
+                        . ($historyIn->barcode_lifecycle ?? '-') . '). Barcode sudah dipakai atau sudah di-return.'
                 ], 422);
             }
 

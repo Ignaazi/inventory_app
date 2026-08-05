@@ -64,7 +64,7 @@
             <h2 class="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wide">
                 <i class="fa-solid fa-rotate-left text-indigo-600 dark:text-indigo-400 mr-2"></i> Terminal Stock Return Otomatis
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">1 Barcode scan mengembalikan 1 stock gudang ke rak asal & mengembalikan status lifecycle barcode menjadi AVAILABLE.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Return berlaku setelah Engineering OUT sebelum Production IN, atau setelah Production IN lalu OUT. Stok Engineering kembali +1 dan barcode ditutup permanen.</p>
         </div>
         <a href="{{ route('eng.return.index') }}" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all no-underline">
             <i class="fa-solid fa-arrow-left"></i> Kembali
@@ -195,7 +195,7 @@
         changeUIStatus('PROCESSING', 'MEMBACA...', `Mengirim data return: ${cleanCode}`);
 
         Swal.fire({
-            title: 'Mengembalikan Stok Rak...',
+            title: 'Mengembalikan Stok Engineering...',
             html: `<div class="text-xs font-mono text-indigo-600 break-all">${cleanCode}</div>`,
             allowOutsideClick: false,
             showConfirmButton: false,
@@ -222,7 +222,7 @@
                 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Stok Dikembalikan (+1)',
+                    title: 'Stok Engineering Dikembalikan (+1)',
                     text: result.message,
                     timer: 1800,
                     showConfirmButton: false,

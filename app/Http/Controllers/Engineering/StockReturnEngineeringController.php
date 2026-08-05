@@ -108,10 +108,9 @@ class StockReturnEngineeringController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $request->validate([
             'barcode_scan' => 'required|string',
-            'process_type' => 'nullable|in:scan,manual', 
+            'process_type' => 'nullable|in:scan,manual',
         ]);
 
         if (empty($request->barcode_scan)) {
@@ -120,66 +119,113 @@ class StockReturnEngineeringController extends Controller
 
         $scannedInput = trim($request->barcode_scan);
         $scannedInput = str_replace(["\r", "\n", "\t"], '', $scannedInput);
-        $processType  = $request->input('process_type', 'scan'); 
-        $qtyReturn    = 1; // 1 Barcode mengembalikan 1 stok fisik
+        $processType = $request->input('process_type', 'scan');
+        $qtyReturn = 1;
 
         DB::beginTransaction();
         try {
-            // 2. Cari Barcode di Database Master
-            $barcodeDb = \App\Models\DbBarcode::where('barcode_id', $scannedInput)
-                ->orWhere('final_content', $scannedInput)
+            $reject = static function (string $message, int $status = 422) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], $status);
+            };
+
+            // Kunci barcode selama proses agar dua scanner tidak mengembalikan item yang sama.
+            $barcodeDb = \App\Models\DbBarcode::where(function ($query) use ($scannedInput) {
+                    $query->where('barcode_id', $scannedInput)
+                          ->orWhere('final_content', $scannedInput);
+                })
+                ->lockForUpdate()
                 ->first();
 
             if (!$barcodeDb) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Kode Barcode "' . $scannedInput . '" tidak terdaftar di database master.'
-                ], 404);
+                return $reject('Gagal! Kode Barcode "' . $scannedInput . '" tidak terdaftar di database master.', 404);
             }
 
-            // 3. Validasi Lifecycle: Hanya barcode berstatus 'USED_OUT' yang bisa di-Return
             if ($barcodeDb->current_lifecycle !== 'USED_OUT') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Barcode ' . $barcodeDb->barcode_id . ' tidak berstatus OUT (Status saat ini: ' . $barcodeDb->current_lifecycle . '). Hanya barang yang sudah keluar yang bisa dikembalikan.'
-                ], 422);
+                return $reject(
+                    'Gagal! Barcode ' . $barcodeDb->barcode_id . ' tidak berada pada status yang dapat di-return '
+                    . '(status saat ini: ' . $barcodeDb->current_lifecycle . ').'
+                );
             }
 
-            // 4. Cari Master Stok asal barang tersebut
             if (!$barcodeDb->stock_eng_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Barcode ini tidak terhubung dengan master stok barang.'
-                ], 422);
+                return $reject('Gagal! Barcode ini tidak terhubung dengan master stok barang.');
             }
 
-            $stock = StockEng::with(['sparepart', 'rak'])->find($barcodeDb->stock_eng_id);
+            // Return hanya boleh berasal dari Engineering OUT yang sukses.
+            $engineeringOut = DB::table('stock_eng_transactions')
+                ->where('db_barcodes_id', $barcodeDb->id)
+                ->where('tx_type', 'out')
+                ->where('status', 'success')
+                ->latest('id')
+                ->first();
+
+            if (!$engineeringOut) {
+                return $reject('Gagal! Riwayat Engineering OUT untuk barcode ini tidak ditemukan.');
+            }
+
+            // Dua alur yang valid:
+            // 1) Engineering OUT lalu langsung return sebelum Production IN.
+            // 2) Engineering OUT, Production IN, Production OUT, lalu return.
+            $productionIn = DB::table('stock_prod_transactions')
+                ->where('db_barcodes_id', $barcodeDb->id)
+                ->where('tx_type', 'in')
+                ->where('status', 'success')
+                ->latest('id')
+                ->first();
+            $productionOut = DB::table('stock_prod_transactions')
+                ->where('db_barcodes_id', $barcodeDb->id)
+                ->where('tx_type', 'out')
+                ->where('status', 'success')
+                ->latest('id')
+                ->first();
+
+            if ($productionIn && !$productionOut) {
+                return $reject(
+                    'Return ditolak! Barcode sudah masuk ke Production, tetapi belum di-OUT. '
+                    . 'Lakukan Production OUT terlebih dahulu.'
+                );
+            }
+
+            if ($productionOut && !$productionIn) {
+                return $reject('Gagal! Riwayat Production OUT tidak memiliki pasangan Production IN.');
+            }
+
+            $returnScenario = $productionIn
+                ? 'setelah Production IN dan OUT'
+                : 'sebelum Production IN';
+
+            $stock = StockEng::with(['sparepart', 'rak'])
+                ->lockForUpdate()
+                ->find($barcodeDb->stock_eng_id);
             if (!$stock) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Data master stok untuk item ini tidak ditemukan.'
-                ], 404);
+                return $reject('Gagal! Data master stok untuk item ini tidak ditemukan.', 404);
             }
 
-            // 5. Handling Dokumentasi Foto (Jika ada)
             $fotoPath = null;
             if ($request->hasFile('test_photo')) {
                 $fotoPath = $request->file('test_photo')->store('stock_returns', 'public');
             }
 
-            // 6. 📈 EKSEKUSI UTAMA: Kembalikan (+1) Stok ke Master Stok & Rak Asalnya
             $stock->increment('qty', $qtyReturn);
 
-            // 7. Ambil relasi Production Request (jika ada) dari barcode_parsings
-            $parsingData = DB::table('barcode_parsings')
-                ->where('barcode_out_id', $barcodeDb->id)
-                ->orWhere('barcode_in_id', $barcodeDb->id)
-                ->first();
-            $productionRequestId = $parsingData ? $parsingData->production_request_id : null;
+            // Ambil referensi request dari transaksi OUT terlebih dahulu, lalu fallback ke parsing lama.
+            $productionRequestId = $engineeringOut->production_request_id;
+            if (!$productionRequestId) {
+                $parsingData = DB::table('barcode_parsings')
+                    ->where(function ($query) use ($barcodeDb) {
+                        $query->where('barcode_out_id', $barcodeDb->id)
+                              ->orWhere('barcode_in_id', $barcodeDb->id);
+                    })
+                    ->first();
+                $productionRequestId = $parsingData?->production_request_id;
+            }
 
-            // 8. GENERATE KODE TRANSAKSI UNIK (TXENGRET + DDMMYY + COUNTER 3 DIGIT)
-            $datePrefix = 'TXENGRET' . date('dmy'); // Contoh: TXENGRET050826
-            
+            $datePrefix = 'TXENGRET' . date('dmy');
             $latestTxLog = DB::table('stock_eng_transactions')
                 ->where('tx_id', 'LIKE', $datePrefix . '%')
                 ->orderBy('tx_id', 'desc')
@@ -193,7 +239,6 @@ class StockReturnEngineeringController extends Controller
                 $txUuid = $datePrefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
             }
 
-            // 9. SIMPAN LOG UTAMA RETURN (`stock_eng_transactions`)
             DB::table('stock_eng_transactions')->insert([
                 'tx_id'                 => $txUuid,
                 'users_id'              => Auth::id() ?? 1,
@@ -210,9 +255,9 @@ class StockReturnEngineeringController extends Controller
                 'updated_at'            => now(),
             ]);
 
-            // 10. 🔓 RESET STATUS LIFECYCLE BARCODE kembali menjadi AVAILABLE
+            // Barcode return adalah barcode sekali pakai: stok kembali, barcode tidak diaktifkan lagi.
             DB::table('db_barcodes')->where('id', $barcodeDb->id)->update([
-                'current_lifecycle' => 'AVAILABLE',
+                'current_lifecycle' => 'RETURNED',
                 'updated_at'        => now()
             ]);
 
@@ -221,11 +266,14 @@ class StockReturnEngineeringController extends Controller
             $sparepartName = $stock->sparepart->sparepart_id ?? $stock->sparepart->part_number ?? 'Item';
             return response()->json([
                 'success' => true,
-                'message' => 'Berhasil Return! Item [' . $sparepartName . '] telah dikembalikan ke Rak [' . ($stock->rak->nama_rak ?? '-') . ']. Stok rak sekarang: ' . $stock->qty . ' Pcs.',
+                'message' => 'Berhasil Return (' . $returnScenario . ')! Item [' . $sparepartName . '] telah '
+                    . 'dikembalikan ke Rak [' . ($stock->rak->nama_rak ?? '-') . ']. Stok rak sekarang: '
+                    . $stock->qty . ' Pcs. Barcode ditutup dan tidak dapat dipakai lagi.',
                 'data'    => [
                     'part_name'  => $sparepartName,
                     'barcode_id' => $barcodeDb->barcode_id,
-                    'total_qty'  => $stock->qty
+                    'total_qty'  => $stock->qty,
+                    'scenario'   => $returnScenario,
                 ]
             ]);
 
