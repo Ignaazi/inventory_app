@@ -46,6 +46,7 @@ class InProdController extends Controller
             ->leftJoin('db_barcodes as b', 't.db_barcodes_id', '=', 'b.id')
             ->select([
                 't.*',
+                'u.nik as nik', // <- Ditambahkan agar NIK Operator muncul di tabel
                 'u.name as operator_name',
                 'lp.no_line as line_name',
                 'se.sparepart_id as item_code',
@@ -199,7 +200,7 @@ class InProdController extends Controller
             }
             $sparepartId = $stockEng->sparepart_id;
 
-            // 6. 🛡️ SINKRONISASI & PROTEKSI MISMATCH ALOKASI (FIX UTAMA)
+            // 6. 🛡️ SINKRONISASI & PROTEKSI MISMATCH ALOKASI
             $stockProd = stock_prod::where('line_id', $targetLineId)
                 ->where('sparepart_id', $sparepartId)
                 ->first();
@@ -217,20 +218,6 @@ class InProdController extends Controller
                     "🚨 Mismatch Lini! Sparepart [{$itemName}] tidak terdaftar/dialokasikan untuk {$lineName}. (Lini ini hanya mendukung alokasi komponen tipe tertentu).", 
                     422
                 );
-
-                /* 
-                 * NOTE JIKA INGIN AUTO-CREATE (Alternatif tanpa blokir):
-                 * Jika di kemudian hari aturan pabrik berubah dan membolehkan bikin otomatis tanpa crash, 
-                 * hapus kode return di atas dan aktifkan blok di bawah ini dengan menyesuaikan kolom database lu:
-                 * 
-                 * $stockProd = new stock_prod();
-                 * $stockProd->line_id      = $targetLineId;
-                 * $stockProd->sparepart_id = $sparepartId;
-                 * $stockProd->qty          = $qtyMasuk;
-                 * $stockProd->min_stock    = 0;
-                 * // Tambahkan kolom wajib lainnya disini jika ada agar tidak memicu error 500
-                 * $stockProd->save();
-                 */
             }
 
             // Jika relasi valid dan aman, jalankan penambahan stok
@@ -247,6 +234,9 @@ class InProdController extends Controller
                 ? $datePrefix . '001' 
                 : $datePrefix . str_pad(((int) substr($latestTxLog->tx_id, -3)) + 1, 3, '0', STR_PAD_LEFT);
 
+            // Remark disetting konsisten menjadi "AUTOMATED IN"
+            $remarkText = $request->input('remark') ?? $request->input('comment') ?? 'AUTOMATED IN';
+
             DB::table('stock_prod_transactions')->insert([
                 'tx_id'                 => $txUuid,
                 'users_id'              => Auth::id() ?? 1,
@@ -258,7 +248,7 @@ class InProdController extends Controller
                 'qty_transaction'       => $qtyMasuk,
                 'process_type'          => $processType,
                 'status'                => 'success',
-                'remark'                => 'Automated Stock IN via ' . strtoupper($processType) . '. Sukses dipetakan ke Lini ID: ' . $targetLineId,
+                'remark'                => $remarkText,
                 'created_at'            => now(),
                 'updated_at'            => now()
             ]);

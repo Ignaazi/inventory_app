@@ -6,19 +6,56 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use App\Models\ListSparepartEng;
 
 class OutProdController extends Controller
 {
     /**
-     * 1. Halaman Utama Riwayat Stock OUT Production (Khusus Hasil Scan)
+     * Helper internal untuk mendeteksi Model Line secara dinamis
+     */
+    private function getLineModel()
+    {
+        $modelUtama = 'App\\Models\\ListLineProduction';
+        $modelSubFolder = 'App\\Models\\Production\\ListLineProduction';
+        return class_exists($modelUtama) ? $modelUtama : $modelSubFolder;
+    }
+
+    /**
+     * Helper internal untuk mendapatkan nama tabel Line secara dinamis
+     */
+    private function getLineTableName()
+    {
+        $lineModel = $this->getLineModel();
+        return (new $lineModel)->getTable();
+    }
+
+    /**
+     * 1. Halaman Utama Riwayat Stock OUT Production (Lengkap Join User, Barcode, & Line)
      */
     public function stockOut()
     {
-        $history = DB::table('stock_prod_transactions')
-            ->where('tx_type', 'out')
-            ->where('process_type', 'scan')
-            ->orderBy('created_at', 'desc')
+        $tableSparepart = class_exists(ListSparepartEng::class) 
+            ? (new ListSparepartEng)->getTable() 
+            : 'list_sparepart_engs';
+            
+        $tableLine = $this->getLineTableName();
+
+        $history = DB::table('stock_prod_transactions as t')
+            ->leftJoin('users as u', 't.users_id', '=', 'u.id')
+            ->leftJoin('stock_prods as sp', 't.stock_prods_id', '=', 'sp.id')
+            ->leftJoin($tableLine . ' as lp', 'sp.line_id', '=', 'lp.id') 
+            ->leftJoin($tableSparepart . ' as se', 'sp.sparepart_id', '=', 'se.id') 
+            ->leftJoin('db_barcodes as b', 't.db_barcodes_id', '=', 'b.id')
+            ->select([
+                't.*',
+                'u.nik as nik',
+                'u.name as operator_name',
+                DB::raw("REPLACE(UPPER(lp.no_line), 'LINI', 'LINE') as line_name"), // Mengubah LINI menjadi LINE01/LINE XX
+                'se.sparepart_id as item_code',
+                'b.barcode_id as barcode_code'
+            ])
+            ->where('t.tx_type', 'out')
+            ->orderBy('t.created_at', 'desc')
             ->paginate(10);
 
         return view('stock_prod.transactionProd.outProd', compact('history'));
@@ -40,8 +77,8 @@ class OutProdController extends Controller
         // Validasi parameter request scanner
         $request->validate([
             'barcode_scan' => 'required|string',
-            'process_type' => 'required|string|in:scan',
-            'out_category' => 'required|string|in:broken,lost,other', 
+            'process_type' => 'nullable|string|in:scan,manual',
+            'out_category' => 'nullable|string|in:broken,lost,other', 
             'remark'       => 'nullable|string'
         ]);
 
@@ -67,6 +104,7 @@ class OutProdController extends Controller
                     'stock_prod_transactions.production_request_id',
                     'stock_prod_transactions.stock_eng_tx_id'
                 ])
+                ->orderBy('stock_prod_transactions.id', 'desc')
                 ->first();
 
             // Proteksi 1: Jika barcode tidak terdaftar di riwayat transaksi masuk lantai produksi
@@ -90,11 +128,11 @@ class OutProdController extends Controller
                 ], 422);
             }
 
-            // Penomoran Otomatis Kode Transaksi Baru (TRXP-OUT-YYYYMMDD-XXXX)
-            $datePrefix = 'TRXP-OUT-' . date('Ymd');
+            // 🌟 Penomoran Otomatis Kode Transaksi Baru (Format: TXPRODOUT + DDMMYY + 0001 s/d 9999)
+            $datePrefix = 'TXPRODOUT' . date('dmy');
             $lastTrx = DB::table('stock_prod_transactions')
                 ->where('tx_id', 'LIKE', $datePrefix . '%')
-                ->orderBy('id', 'desc')
+                ->orderBy('tx_id', 'desc')
                 ->first();
             
             if ($lastTrx) {
@@ -103,26 +141,28 @@ class OutProdController extends Controller
             } else {
                 $nextNum = '0001';
             }
-            $txId = $datePrefix . '-' . $nextNum;
+            $txId = $datePrefix . $nextNum;
 
             // Jembatan Penyelamat ENUM: Jika dropdown memilih 'other', amankan menjadi NULL
-            $finalCategory = in_array($request->out_category, ['broken', 'lost']) ? $request->out_category : null;
+            $outCatInput = $request->input('out_category');
+            $finalCategory = in_array($outCatInput, ['broken', 'lost']) ? $outCatInput : null;
+            $processType   = $request->input('process_type', 'scan');
 
-            // 1. TULIS LOG TRANSAKSI BARU (stock_prod_transactions)[cite: 3]
+            // 1. TULIS LOG TRANSAKSI BARU (stock_prod_transactions)
             DB::table('stock_prod_transactions')->insert([
                 'tx_id'                 => $txId,
-                'users_id'              => Auth::id() ?? 1, // Mengunci regulasi NOT NULL DB[cite: 3]
+                'users_id'              => Auth::id() ?? 1,
                 'stock_prods_id'        => $liveStock->id,
                 'stock_eng_tx_id'       => $historyIn->stock_eng_tx_id,
                 'db_barcodes_id'        => $historyIn->db_barcodes_id,
                 'production_request_id' => $historyIn->production_request_id,
-                'nik_karyawan'          => Auth::user()->nik ?? '123456',
+                'nik_karyawan'          => Auth::user()->nik ?? null,
                 'tx_type'               => 'out',
                 'out_category'          => $finalCategory,
                 'qty_transaction'       => 1, // Pengurangan 1 unit per scan
-                'process_type'          => 'scan',
+                'process_type'          => $processType,
                 'status'                => 'success',
-                'remark'                => $request->remark ?? 'Scan Out via Terminal Produksi',
+                'remark'                => $request->remark ?? 'AUTOMATED OUT',
                 'created_at'            => now(),
                 'updated_at'            => now()
             ]);
@@ -132,12 +172,12 @@ class OutProdController extends Controller
                 ->where('id', $liveStock->id)
                 ->decrement('qty', 1);
 
-            // 3. UPDATE LOG SIKLUS HIDUP BARCODE (Opsional, agar sinkron kembali)
+            // 3. UPDATE LOG SIKLUS HIDUP BARCODE
             if ($historyIn->db_barcodes_id) {
                 DB::table('db_barcodes')
                     ->where('id', $historyIn->db_barcodes_id)
                     ->update([
-                        'current_lifecycle' => 'AVAILABLE', // Kembalikan status atau tandai keluar
+                        'current_lifecycle' => 'USED_OUT',
                         'updated_at'        => now()
                     ]);
             }
