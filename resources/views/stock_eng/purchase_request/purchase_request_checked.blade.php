@@ -51,7 +51,6 @@
                 
                 <div class="flex items-center bg-gray-200 dark:bg-slate-700 rounded overflow-hidden text-[10px] font-black border border-gray-300 dark:border-slate-600">
                     <span class="text-slate-500 dark:text-slate-400 px-4 py-1">Pending</span>
-                    {{-- WARNA STRIP GRADASI DIUBAH JADI BIRU MODERN DENGAN PANAH MATCHING --}}
                     <span class="bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 text-white px-4 py-1 relative after:content-[''] after:absolute after:top-0 after:right-[-6px] after:border-y-[12px] after:border-y-transparent after:border-l-[6px] after:border-l-sky-500 z-10">Checked</span>
                     <span class="text-slate-700 dark:text-slate-300 px-4 py-1">Approved</span>
                 </div>
@@ -161,9 +160,18 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Destination</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ $pr->destination }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ $pr->destination ?? 'Costing Dept & Purchasing Dept' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
+
+                        {{-- ROW VISUAL EMAIL COSTING (DITAMPILKAN AGAR PERSIS DENGAN CREATE VIEW) --}}
+                        <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
+                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide">Costing Email</label>
+                            <div class="col-span-2">
+                                <input type="text" value="Will be assigned during Costing Approval..." readonly class="w-full bg-transparent border-0 text-indigo-600 dark:text-indigo-400 font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -248,7 +256,7 @@
                                     <span class="text-xs text-slate-500 font-bold">Requester (Engineering)</span>
                                 </div>
 
-                                <!-- TTD 2: CHECKED BY (DIGANTI LOGIC-NYA BIAR LANGSUNG MUNCULIN GAMBAR TTD USER YANG SEDANG LOGIN) -->
+                                <!-- TTD 2: CHECKED BY (AKTIF UNTUK USER CHECKER YANG SEDANG LOGIN) -->
                                 <div class="border-2 border-indigo-500 dark:border-indigo-400 rounded bg-white dark:bg-slate-800 p-4 shadow-sm">
                                     <span class="block text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Step 2: Checked By (You)</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
@@ -268,7 +276,7 @@
                                     <span class="text-xs text-indigo-500 font-bold">Waiting Verification</span>
                                 </div>
 
-                                <!-- TTD 3: APPROVED BY -->
+                                <!-- TTD 3: APPROVED BY (PENDING COSTING) -->
                                 <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 3: Approved By</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-300 dark:text-slate-600 border-b border-dashed border-gray-300 dark:border-slate-600 mb-2 italic">
@@ -290,7 +298,7 @@
                         Cancel
                     </a>
                     <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500 hover:opacity-95 text-white text-xs font-black rounded shadow-md uppercase tracking-wider transition-all transform hover:-translate-y-0.5">
-                        Confirm & Mark as Checked
+                        Checked
                     </button>
                 </div>
 

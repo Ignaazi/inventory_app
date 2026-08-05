@@ -69,7 +69,6 @@
                             <option value="" disabled selected>-- Select Material Received --</option>
                             @foreach($materialReceived as $mr)
                                 @php
-                                    // Ambil langsung dari hasil Query JOIN stdClass
                                     $spCode = $mr->custom_sparepart_code ?? $mr->sparepart_id ?? '-';
                                     $spPartNum = $mr->part_number ?? '-';
                                     $spSapCode = $mr->sap_code ?? '-';
@@ -95,7 +94,6 @@
                             <option value="" disabled selected>-- Select Destination Rak --</option>
                             @foreach($stockEngineering as $stock)
                                 @php
-                                    // Query stdClass memuat spareparts.sparepart_id ke properti part_name
                                     $stockSpCode = $stock->part_name ?? $stock->sparepart_id ?? '-';
                                 @endphp
                                 <option value="{{ $stock->stock_id }}" 
@@ -117,8 +115,8 @@
                             3. Barcode Type
                         </label>
                         <select id="barcode_type" name="barcode_type" onchange="calculateBatchPreview()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-orange-500 transition-all">
-                            <option value="DATA MATRIX" selected>DATA MATRIX</option>
-                            <option value="QR CODE">QR CODE</option>
+                            <option value="DATA MATRIX">DATA MATRIX</option>
+                            <option value="QR CODE" selected>QR CODE</option>
                         </select>
                     </div>
 
@@ -275,24 +273,35 @@
         document.getElementById('display_part_num').value = partNum;
         document.getElementById('display_sap').value = sapCode;
 
-        const prefix = "TXENGIN";
-        
+        // --- STRUCTURAL STRING GENERATOR ---
+        const prefix = "TXENGINRAK"; 
+
+        // Ambil angka rak & pad 2 digit (misal rak "1" -> "01")
+        let rawRak = selectedRakOpt.getAttribute('data-rakname') || '';
+        let cleanRak = rawRak.replace(/[^0-9]/g, '');
+        cleanRak = cleanRak !== '' ? cleanRak.padStart(2, '0') : '01';
+
+        // Clean Sparepart ID
+        let cleanSpId = sparepartId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+        // Format Tanggal MMYY (misal "0826")
         const d = new Date();
-        const dd = String(d.getDate()).padStart(2, '0');
         const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yy = String(d.getFullYear()).substring(2);
-        const dateStr = dd + mm + yy;
+        const yy = String(d.getFullYear()).slice(-2);
+        const dateStr = mm + yy; 
 
         const qty = parseInt(selectedDocOpt.getAttribute('data-qty')) || 0;
         const bType = document.getElementById('barcode_type').value;
 
-        patternText.innerText = `${prefix}${dateStr}[5-Digit-Sequential-Counter]`;
+        patternText.innerText = `${prefix}${cleanRak}${cleanSpId}${dateStr}[4-Digit Counter]`;
         badgeCount.innerText = `${qty} Items Registered`;
         showingText.innerText = `Showing 1 to ${qty} of ${qty} Entries`;
 
         for(let i = 1; i <= qty; i++) {
-            let counterStr = String(i).padStart(5, '0');
-            let fullBarcodeString = `${prefix}${dateStr}${counterStr}`;
+            let counterStr = String(i).padStart(4, '0');
+            
+            // HASIL STRING INBOUND TERBARU: TXENGINRAK + RAK + SPAREPART_ID + MMYY + COUNTER
+            let fullBarcodeString = `${prefix}${cleanRak}${cleanSpId}${dateStr}${counterStr}`;
             
             const inlineCanvasId = `inline_canvas_in_${i}`;
             const tr = document.createElement('tr');
@@ -305,7 +314,7 @@
                         <div id="${inlineCanvasId}" class="bg-white p-1 rounded border border-gray-200 flex items-center justify-center w-11 h-11 overflow-hidden shadow-sm"></div>
                     </div>
                 </td>
-                <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-mono font-black tracking-wide text-orange-600 dark:text-orange-400 select-all">${fullBarcodeString}</td>
+                <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-mono font-black tracking-wide text-orange-600 dark:text-orange-400 select-all barcode-item-string">${fullBarcodeString}</td>
                 <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-black text-blue-600 dark:text-blue-400">${sparepartId}</td>
                 <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${partNum}</td>
                 <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-bold">${sapCode}</td>
@@ -479,6 +488,16 @@
             return Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'Silakan pilih dokumen Material Received dan target Lokasi Rak terlebih dahulu!' });
         }
 
+        // --- AMBIL SEMUA STRING BARCODE FORMAT BARU DARI TABEL PREVIEW ---
+        const generatedBarcodes = [];
+        document.querySelectorAll('#batch_table_body .barcode-item-string').forEach(el => {
+            generatedBarcodes.push(el.innerText.trim());
+        });
+
+        if (generatedBarcodes.length === 0) {
+            return Swal.fire({ icon: 'warning', title: 'Daftar Kosong', text: 'Tabel preview barcode masih kosong!' });
+        }
+
         const confirmAction = await Swal.fire({
             title: 'Eksekusi Otomasi Batch IN?',
             text: 'Sistem akan mendaftarkan serial barcode masuk baru dan menambahkan nominal kuantitas ke Master Stok Rak pilihan.',
@@ -513,7 +532,8 @@
                     source_id: sourceDocumentId,
                     barcode_type: barcodeType,
                     barcode_size: barcodeSize,
-                    stock_eng_id: stockEngId
+                    stock_eng_id: stockEngId,
+                    generated_barcodes: generatedBarcodes // <--- PAYLOAD BARU: Mengirimkan array string format baru
                 })
             });
 
@@ -526,7 +546,7 @@
                     text: result.message,
                     confirmButtonColor: '#ea580c'
                 }).then(() => {
-                    resetForm();
+                    window.location.reload();
                 });
             } else {
                 Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: result.message || 'Terjadi kesalahan internal backend.' });

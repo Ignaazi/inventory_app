@@ -73,21 +73,21 @@
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Requester Name</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? Auth::user()->name : 'muhammad ignazi' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ Auth::user() ? Auth::user()->name : 'Muhammad Anwar' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">NIK / NIM</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? (Auth::user()->nim ?? Auth::user()->nik) : '20260001' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ Auth::user() ? (Auth::user()->nim ?? Auth::user()->nik) : '123456' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Email Address</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ Auth::user() ? Auth::user()->email : 'ignazi@company.com' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ Auth::user() ? Auth::user()->email : 'admin@company.com' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
@@ -97,7 +97,6 @@
                                 <select name="sparepart_id" id="sparepart_select" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-sm font-black text-indigo-600 dark:text-indigo-400 p-0 cursor-pointer">
                                     <option value="" disabled selected>Select Sparepart ID...</option>
                                     @foreach($spareparts as $item)
-                                        {{-- FIX: Value diubah mengirim $item->id database, data-sparepart-id membawa string kustomnya --}}
                                         <option value="{{ $item->id }}" 
                                                 data-sparepart-id="{{ $item->sparepart_id }}"
                                                 data-part="{{ $item->part_number }}"
@@ -132,10 +131,20 @@
                             </div>
                         </div>
 
+                        {{-- QTY: DEFAULT 0, NO MINUS (-), NO SUBMIT 0 --}}
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Quantity (QTY) <span class="text-rose-500">*</span></label>
                             <div class="col-span-2 flex items-center gap-1">
-                                <input type="number" name="qty_pr" id="qty_input" min="1" value="{{ old('qty_pr', 1) }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 outline-none focus:ring-0" placeholder="0">
+                                <input type="number" 
+                                       name="qty_pr" 
+                                       id="qty_input" 
+                                       min="1" 
+                                       step="1" 
+                                       value="{{ old('qty_pr', 0) }}" 
+                                       required 
+                                       onkeydown="if(event.key==='-' || event.key==='e' || event.key==='E' || event.key==='.') event.preventDefault();"
+                                       class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 outline-none focus:ring-0" 
+                                       placeholder="0">
                                 <span class="text-xs text-slate-600 dark:text-slate-400 font-black uppercase pr-2">Pcs</span>
                             </div>
                         </div>
@@ -157,28 +166,67 @@
                             </div>
                         </div>
 
+                        @php
+                            $nowFormatted = now()->format('Y-m-d\TH:i');
+                        @endphp
+
+                        {{-- REQUEST DATE: Minimum Today/Now --}}
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Request Date</label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Request Date <span class="text-rose-500">*</span></label>
                             <div class="col-span-2">
-                                <input type="datetime-local" name="request_date" value="{{ old('request_date') ? \Carbon\Carbon::parse(old('request_date'))->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i') }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
+                                <input type="datetime-local" 
+                                       name="request_date" 
+                                       id="request_date"
+                                       min="{{ $nowFormatted }}"
+                                       value="{{ old('request_date') ? \Carbon\Carbon::parse(old('request_date'))->format('Y-m-d\TH:i') : $nowFormatted }}" 
+                                       required 
+                                       class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
                             </div>
                         </div>
 
+                        {{-- EXPECTED ARRIVAL DATE: Cannot be earlier than Request Date --}}
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Expected Arrival <span class="text-rose-500">*</span></label>
                             <div class="col-span-2">
-                                <input type="datetime-local" name="expected_arrival_date" value="{{ old('expected_arrival_date') ? \Carbon\Carbon::parse(old('expected_arrival_date'))->format('Y-m-d\TH:i') : now()->addDays(3)->format('Y-m-d\TH:i') }}" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
+                                <input type="datetime-local" 
+                                       name="expected_arrival_date" 
+                                       id="expected_arrival_date"
+                                       min="{{ $nowFormatted }}"
+                                       value="{{ old('expected_arrival_date') ? \Carbon\Carbon::parse(old('expected_arrival_date'))->format('Y-m-d\TH:i') : now()->addDays(3)->format('Y-m-d\TH:i') }}" 
+                                       required 
+                                       class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 outline-none focus:ring-0 cursor-pointer">
                             </div>
                         </div>
 
+                        {{-- DESTINATION: Costing Dept & Purchasing Dept --}}
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
                             <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Destination</label>
                             <div class="col-span-2">
                                 <select name="destination" id="destination_select" required class="w-full bg-transparent border-0 focus:ring-0 outline-none text-sm font-bold text-slate-950 dark:text-white p-0 cursor-pointer">
-                                    <option value="Costing & Procurement Room" selected>Costing & Procurement Room</option>
+                                    <option value="Costing Dept & Purchasing Dept" selected>Costing Dept & Purchasing Dept</option>
                                 </select>
                             </div>
                         </div>
+
+                        {{-- ROW VISUAL EMAIL COSTING --}}
+                        <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
+                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide">Costing Email</label>
+                            <div class="col-span-2">
+                                <select name="recipient_email" id="recipient_email_select" class="w-full bg-transparent border-0 focus:ring-0 outline-none text-sm font-black text-indigo-600 dark:text-indigo-400 p-0 cursor-pointer">
+                                    <option value="" disabled selected>Will be assigned during Costing Approval...</option>
+                                    @if(isset($costingUsers) && count($costingUsers) > 0)
+                                        @foreach($costingUsers as $cUser)
+                                            <option value="{{ $cUser->email }}">
+                                                {{ $cUser->name }} ({{ $cUser->email ?? 'No Email' }})
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="costing@company.com">Costing Dept Approver (costing@company.com)</option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -228,18 +276,18 @@
                                         <td id="table_part_number" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
                                         <td id="table_sap_code" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
                                         <td id="table_category" class="p-3 border-r border-gray-300 dark:border-slate-600">-</td>
-                                        <td id="table_qty" class="p-3 border-r border-gray-300 dark:border-slate-600 text-center text-orange-600">1 Pcs</td>
-                                        <td id="table_destination" class="p-3">Costing & Procurement Room</td>
+                                        <td id="table_qty" class="p-3 border-r border-gray-300 dark:border-slate-600 text-center text-orange-600">0 Pcs</td>
+                                        <td id="table_destination" class="p-3">Costing Dept & Purchasing Dept</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
-                        {{-- CONTENT TAB 2: APPROVAL PROCESS SIGNATURES --}}
+                        {{-- CONTENT TAB 2: APPROVAL PROCESS SIGNATURES (STEP 2 & 3 BLOCKED/LOCKED) --}}
                         <div id="odoo-tab-approval" class="hidden">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center text-sm">
                                 
-                                <!-- TTD 1: PREPARED BY -->
+                                <!-- TTD 1: PREPARED BY (AKTIF - REQUESTER) -->
                                 <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 1: Prepared By</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
@@ -255,28 +303,30 @@
                                             <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs rounded border border-amber-300">SYSTEM GENERATED</span>
                                         @endif
                                     </div>
-                                    <span class="block font-black text-slate-950 dark:text-white">{{ Auth::user() ? Auth::user()->name : 'Muhammad Ignazi' }}</span>
+                                    <span class="block font-black text-slate-950 dark:text-white">{{ Auth::user() ? Auth::user()->name : 'Muhammad Anwar' }}</span>
                                     <span class="text-xs text-slate-500 font-bold">Requester (Engineering)</span>
                                 </div>
 
-                                <!-- TTD 2: CHECKED BY -->
-                                <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
+                                <!-- TTD 2: CHECKED BY (LOCKED / BLOCKED) -->
+                                <div class="border border-gray-200 dark:border-slate-700/60 rounded bg-gray-100/70 dark:bg-slate-900/60 p-4 opacity-60 select-none cursor-not-allowed">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 2: Checked By</span>
-                                    <div class="h-16 flex items-center justify-center font-black text-slate-300 dark:text-slate-600 border-b border-dashed border-gray-300 dark:border-slate-600 mb-2 italic">
-                                        Waiting Approval
+                                    <div class="h-16 flex flex-col items-center justify-center border-b border-dashed border-gray-300 dark:border-slate-700 mb-2">
+                                        <svg class="w-5 h-5 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">LOCKED / BLOCKED</span>
                                     </div>
-                                    <span class="block font-black text-slate-400 dark:text-slate-500">- Pending Checker -</span>
-                                    <span class="text-xs text-slate-500 font-bold">Admin Engineering</span>
+                                    <span class="block font-extrabold text-slate-400 text-xs">-</span>
+                                    <span class="text-xs text-slate-400 font-semibold">Admin Engineering</span>
                                 </div>
 
-                                <!-- TTD 3: APPROVED BY -->
-                                <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
+                                <!-- TTD 3: APPROVED BY (LOCKED / BLOCKED) -->
+                                <div class="border border-gray-200 dark:border-slate-700/60 rounded bg-gray-100/70 dark:bg-slate-900/60 p-4 opacity-60 select-none cursor-not-allowed">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 3: Approved By</span>
-                                    <div class="h-16 flex items-center justify-center font-black text-slate-300 dark:text-slate-600 border-b border-dashed border-gray-300 dark:border-slate-600 mb-2 italic">
-                                        Waiting Approval
+                                    <div class="h-16 flex flex-col items-center justify-center border-b border-dashed border-gray-300 dark:border-slate-700 mb-2">
+                                        <svg class="w-5 h-5 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">LOCKED / BLOCKED</span>
                                     </div>
-                                    <span class="block font-black text-slate-400 dark:text-slate-500">- Pending Approver -</span>
-                                    <span class="text-xs text-slate-500 font-bold">Costing Department</span>
+                                    <span class="block font-extrabold text-slate-400 text-xs">-</span>
+                                    <span class="text-xs text-slate-400 font-semibold">Costing Department</span>
                                 </div>
 
                             </div>
@@ -328,12 +378,22 @@
     document.addEventListener('DOMContentLoaded', function () {
         const selectElement = document.getElementById('sparepart_select');
         const qtyInput = document.getElementById('qty_input');
+        const reqDateInput = document.getElementById('request_date');
+        const expDateInput = document.getElementById('expected_arrival_date');
+
+        // Dynamic Sync: Expected Arrival minimal sama dengan Request Date
+        reqDateInput.addEventListener('change', function() {
+            const selectedReqDate = this.value;
+            expDateInput.min = selectedReqDate;
+            if (expDateInput.value && expDateInput.value < selectedReqDate) {
+                expDateInput.value = selectedReqDate;
+            }
+        });
         
         function updateSparepartFields() {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             
             if (selectedOption && selectedOption.value !== "") {
-                // FIX: Mengambil data-sparepart-id kustom untuk visual tabel Odoo
                 const customPrId = selectedOption.getAttribute('data-sparepart-id');
                 const part = selectedOption.getAttribute('data-part');
                 const sap = selectedOption.getAttribute('data-sap');
@@ -360,7 +420,10 @@
         }
 
         function updateLiveQty() {
-            const qtyVal = qtyInput.value ? qtyInput.value : 0;
+            let qtyVal = qtyInput.value ? parseInt(qtyInput.value) : 0;
+            if (qtyVal < 0 || isNaN(qtyVal)) {
+                qtyVal = 0;
+            }
             document.getElementById('table_qty').innerText = qtyVal + ' Pcs';
         }
 

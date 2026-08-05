@@ -41,17 +41,16 @@
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <!-- Tombol Barcode IN — Mengarah ke Named Route 'barcode.parsing.in' dengan warna solid cerah -->
+            <!-- Tombol Barcode IN -->
             <a href="{{ route('barcode.parsing.in') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
                 Barcode IN
             </a>
             
-            <!-- Tombol Barcode OUT — Mengarah ke Named Route 'barcode.parsing' -->
-            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center  dark:ring-offset-slate-950">
+            <!-- Tombol Barcode OUT -->
+            <a href="{{ route('barcode.parsing') }}" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md tracking-wider uppercase font-nunito w-full sm:w-28 text-center dark:ring-offset-slate-950">
                 Barcode OUT
             </a>
         </div>
-
     </div>
 
     <!-- MAIN CONFIGURATOR CONTAINER -->
@@ -61,7 +60,7 @@
             
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                <!-- SEKSI KIRI: DROP DOWN CONTROLS (Jarak vertikal diperlebar gap-y-7) -->
+                <!-- SEKSI KIRI: DROP DOWN CONTROLS -->
                 <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-7">
                     
                     <!-- 1. Production Request Dropdown -->
@@ -73,13 +72,16 @@
                         <select id="production_request_id" onchange="handleDocumentSelection()" class="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-black dark:text-white outline-none focus:border-blue-500 transition-all">
                             <option value="" disabled selected>-- Select Approved PR --</option>
                             @foreach($productionRequests as $pr)
-                                <option value="{{ $pr->id }}" 
-                                        data-qty="{{ $pr->qty_req }}" 
-                                        data-line="{{ $pr->list_line_production_id ?? '01' }}" 
-                                        data-part-id="{{ $pr->sparepart_id }}"
-                                        data-part-code="{{ $pr->sparepart->part_no ?? $pr->sparepart->part_name ?? '766' }}">
-                                    {{ $pr->request_no }}
-                                </option>
+                                {{-- Filter Blade: Hanya tampilkan PR yang belum selesai/belum diproses --}}
+                                @if(!in_array(strtoupper($pr->status ?? ''), ['COMPLETED', 'DONE', 'CLOSED']) && !($pr->is_used ?? false))
+                                    <option value="{{ $pr->id }}" 
+                                            data-qty="{{ $pr->qty_req }}" 
+                                            data-line="{{ $pr->list_line_production_id ?? '01' }}" 
+                                            data-part-id="{{ $pr->sparepart_id }}"
+                                            data-part-code="{{ $pr->sparepart->part_no ?? $pr->sparepart->part_name ?? '766' }}">
+                                        {{ $pr->request_no }}
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
                     </div>
@@ -466,7 +468,8 @@
 
             if (result.success) {
                 await Swal.fire({ icon: 'success', title: 'Batch OUT Berhasil!', text: result.message });
-                resetForm();
+                // Refresh halaman agar dropdown ter-update sesuai data terbaru
+                window.location.reload();
             } else {
                 Swal.fire({ icon: 'error', title: 'Gagal Eksekusi', text: result.message });
             }

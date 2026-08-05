@@ -1,267 +1,279 @@
 @extends('admin')
 
 @section('content')
+{{-- Load Google Fonts Nunito & SweetAlert2 --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-    .font-nunito, .swal2-popup, .swal2-title, .swal2-html-container { font-family: 'Nunito', sans-serif !important; }
-    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
-    
-    #historyTable td { color: #000000 !important; vertical-align: middle !important; }
-    .dark #historyTable td { color: #cbd5e1 !important; }
-    #historyTable th { vertical-align: middle !important; }
-    nav[role="navigation"] svg { width: 16px; height: 16px; display: inline; }
-    nav[role="navigation"] div:first-child { display: none; }
+    .swal2-popup {
+        border-radius: 0.5rem !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    .dark .swal2-popup {
+        background-color: #0f172a !important; 
+        border: 1px solid #1e293b !important; 
+    }
+    .dark .swal2-title, .dark .swal2-html-container {
+        color: #f8fafc !important; 
+    }
 </style>
 
 <div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
-    {{-- Alert Banner --}}
-    <div class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
-        <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
-        <p class="text-[12px] md:text-[14px] font-bold text-emerald-800 dark:text-emerald-400 font-nunito leading-tight">
+    {{-- Alert Banner Top Counter (TEMA BIRU) --}}
+    <div class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
+        <span class="h-2 w-2 shrink-0 rounded-full bg-blue-500 animate-pulse"></span>
+        <p class="text-[12px] md:text-[14px] font-bold text-blue-800 dark:text-blue-400 font-nunito leading-tight">
             <span class="uppercase font-black mr-1 text-[13px] md:text-[15px]">STOCK IN ACTIVITIES:</span> 
-            Track and monitor your recent sparepart incoming logs and history records.
+            Total {{ (isset($history) && method_exists($history, 'total')) ? $history->total() : count($history) }} incoming sparepart logs recorded.
         </p>
     </div>
 
     {{-- Header Section --}}
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
-            <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight uppercase">Stock In Activities</h2>
-            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Track your recent sparepart incoming activities</p>
+            <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Stock In Activities</h2>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Track and monitor your recent sparepart incoming logs and receiving history</p>
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
             <a href="{{ route('eng.in.scan') }}" 
-               class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
-                Scan IN
+               class="inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3.5 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
+                <i class="fa-solid fa-qrcode text-xs"></i> Scan IN
             </a>
             
             <a href="{{ route('eng.in.manual') }}" 
-               class="inline-flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-3 text-[11px] font-bold text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-28 text-center cursor-pointer no-underline">
-                Manual IN
+               class="inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-to-r from-indigo-600 via-sky-600 to-blue-600 px-3.5 text-[11px] font-black text-white shadow-md hover:opacity-90 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
+                <i class="fa-solid fa-keyboard text-xs"></i> Manual IN
             </a>
         </div>
     </div>
 
-    {{-- Table Container --}}
+    {{-- PEMBUNGKUS UTAMA TABEL --}}
     <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
         
+        {{-- HEADER KONTROL RESPONSIF (Show Entries, Search, Export CSV) --}}
         <div class="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between font-nunito">
-            <!-- Filter Buttons -->
-            <div class="flex items-center order-2 sm:order-1">
-                <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-inner">
-                    <button type="button" onclick="filterTable('all', this)" class="filter-btn px-3 py-1 text-xs font-black rounded-lg transition-all duration-200 bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white">
-                        All
-                    </button>
-                    <button type="button" onclick="filterTable('success', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-                        Success
-                    </button>
-                    <button type="button" onclick="filterTable('pending', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-                        Pending
-                    </button>
-                    <button type="button" onclick="filterTable('manual in', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-                        Manual In
-                    </button>
-                    <button type="button" onclick="filterTable('scan in', this)" class="filter-btn px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 text-slate-500 dark:text-gray-400 hover:text-slate-950 dark:hover:text-white">
-                        Scan In
-                    </button>
+            <!-- Entries Controller -->
+            <div class="flex flex-wrap items-center gap-3 text-xs md:text-[13px] font-black text-slate-950 dark:text-slate-300 order-2 sm:order-1">
+                <div class="flex items-center gap-1.5">
+                    <span>Show</span>
+                    <form action="{{ url()->current() }}" method="GET" id="entriesForm">
+                        <select name="per_page" onchange="this.form.submit()" class="rounded-md border border-gray-300 dark:border-slate-700 bg-transparent px-2 py-1 outline-none text-slate-950 dark:text-white font-black cursor-pointer font-nunito text-xs">
+                            <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }} class="dark:bg-slate-900">10</option>
+                            <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }} class="dark:bg-slate-900">25</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }} class="dark:bg-slate-900">50</option>
+                        </select>
+                        @if(request('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                    </form>
+                    <span>entries</span>
                 </div>
             </div>
 
-            <!-- Search Bar -->
-            <div class="flex items-center w-full sm:w-auto order-1 sm:order-2 justify-end">
-                <div class="relative w-full sm:w-60">
+            <!-- Search & Export Grid -->
+            <div class="grid grid-cols-12 gap-2 w-full sm:w-auto order-1 sm:order-2">
+                {{-- LIVE SEARCH INPUT --}}
+                <div class="relative col-span-8 sm:w-60 sm:block">
                     <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
-                    <input type="text" id="tableSearch" placeholder="Search logs..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-black dark:text-white font-bold font-nunito">
+                    <form action="{{ url()->current() }}" method="GET" class="w-full">
+                        @if(request('per_page'))
+                            <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+                        @endif
+                        <input type="text" name="search" value="{{ request('search') }}" id="tableSearch" placeholder="Search TX ID, Sparepart, NIK..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-slate-950 dark:text-white font-bold font-nunito">
+                    </form>
                 </div>
+
+                {{-- TOMBOL EXPORT CSV --}}
+                <button type="button" onclick="exportTableToCSV('stock-in-activities.csv')" class="col-span-4 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-3.5 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
+                    <span class="hidden sm:inline">Export CSV</span>
+                    <span class="sm:hidden">CSV</span>
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </button>
             </div>
         </div>
 
-        {{-- Scrollable Table --}}
+        {{-- AREA SCROLL HORIZONTAL TABEL TEMATIC BLUE --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1250px]" id="historyTable">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1700px]" id="historyTable">
                 <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito">
-                        <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
-                        <th class="px-3 py-3.5 w-[100px] border-l border-blue-500 dark:border-blue-900/50">NIK</th>
-                        <th class="px-4 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Sparepart ID</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">Part No</th>
-                        <th class="px-3 py-3.5 w-[110px] border-l border-blue-500 dark:border-blue-900/50">SAP Code</th>
-                        <th class="px-2 py-3.5 w-[80px] border-l border-blue-500 dark:border-blue-900/50">RAK</th>
-                        <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:border-blue-900/50">Qty IN</th>
-                        <th class="px-2 py-3.5 w-[105px] border-l border-blue-500 dark:border-blue-900/50">Status</th>
-                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 dark:border-blue-900/50">Remark</th>
-                        <th class="px-3 py-3.5 border-l border-blue-500 dark:border-blue-900/50 text-center w-[130px]">Process Type</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Created At</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:border-blue-900/50">Updated At</th>
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
+                        <th class="px-2 py-3.5 w-[50px] text-center">
+                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
+                        </th>
+                        <th class="px-2 py-3.5 w-[60px] border-l border-blue-500 bg-blue-700/30">NO</th>
+                        <th class="px-3 py-3.5 w-[200px] border-l border-blue-500 bg-blue-700/30">TRANSACTION IN ID</th>
+                        <th class="px-3 py-3.5 w-[170px] border-l border-blue-500 bg-blue-700/30">OPERATOR</th>
+                        <th class="px-3 py-3.5 w-[170px] border-l border-blue-500 bg-blue-700/30">MATERIAL RECEIVED NO</th>
+                        <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 bg-blue-700/30">BARCODE ID</th>
+                        <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 bg-blue-700/30">SPAREPART ID</th>
+                        <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 bg-blue-700/30">RAK ID</th>
+                        <th class="px-2 py-3.5 w-[110px] border-l border-blue-500 bg-blue-700/30">QTY IN</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-blue-500 bg-blue-700/30">STATUS</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 bg-blue-700/30">PROCESS TYPE</th>
+                        <th class="px-4 py-3.5 w-[220px] border-l border-blue-500 bg-blue-700/30 text-left">REMARK</th>
+                        <th class="px-3 py-3.5 w-[150px] border-l border-blue-500 bg-blue-700/30 text-center">TIMESTAMP</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold text-black dark:text-slate-200 font-nunito bg-transparent">
+                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($history as $index => $log)
-                    <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
-                        <!-- NO -->
-                        <td class="px-2 py-3.5 text-slate-500">
-                            {{ $history->firstItem() + $index }}
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
+                        <td class="px-2 py-3.5 text-center">
+                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer">
                         </td>
-                        
-                        <!-- NIK -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->nik ?? $log->operator_nik ?? '-' }}
+
+                        {{-- 1. NO --}}
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
+                            {{ (method_exists($history, 'firstItem')) ? ($history->firstItem() + $index) : ($index + 1) }}
                         </td>
-                        
-                        <!-- SPAREPART ID -->
-                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide text-center whitespace-nowrap leading-normal text-blue-600 dark:text-blue-400">
-                            {{ $log->stockEng->sparepart->sparepart_id ?? $log->sparepart_id ?? '-' }}
+
+                        {{-- 2. TRANSACTION IN ID --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold font-mono text-blue-600 dark:text-blue-400 text-center whitespace-nowrap select-all">
+                            {{ $log->tx_id ?? $log->transaction_in_id ?? '-' }}
                         </td>
-                        
-                        <!-- PART NO -->
-                        <td class="px-3 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->stockEng->sparepart->part_number ?? '-' }}
-                        </td>
-                        
-                        <!-- SAP CODE -->
-                        <td class="px-3 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->stockEng->sparepart->sap_code ?? '-' }}
-                        </td>
-                        
-                        <!-- RAK -->
-                        <td class="px-2 py-3.5 font-mono border-l border-gray-100 dark:border-slate-800 whitespace-nowrap">
-                            {{ $log->stockEng->rak->nama_rak ?? $log->nama_rak ?? '-' }}
-                        </td>
-                        
-                        <!-- QTY IN -->
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                +{{ (isset($log->qty_added) && $log->qty_added > 0) ? $log->qty_added : ($log->qty ?? 1) }}
-                            </span>
-                        </td>
-                        
-                        <!-- STATUS -->
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            <div class="flex justify-center items-center">
-                                <span class="status-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
-                                    @if(strtolower($log->status ?? '') == 'success') bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800
-                                    @elseif(strtolower($log->status ?? '') == 'pending') bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-800
-                                    @else bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-800 @endif">
-                                    {{ $log->status ?? 'SUCCESS' }}
-                                </span>
+
+                        {{-- 3. OPERATOR --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center text-[12px] whitespace-nowrap">
+                            <div class="font-extrabold text-slate-900 dark:text-white">
+                                {{ $log->operator_name ?? optional($log->user)->name ?? 'Unknown' }}
                             </div>
-                        </td>
-                        
-                        <!-- REMARK -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800">
-                            @php
-                                $remarkText = $log->remark ?? '';
-                                $remarkLower = strtolower($remarkText);
-                                $isManual = str_contains($remarkLower, 'manual');
-                                $isScan = str_contains($remarkLower, 'scan');
-                            @endphp
-                            <div class="flex justify-center items-center">
-                                <span class="remark-cell inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
-                                    @if($isManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
-                                    @elseif($isScan) bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20
-                                    @else bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 @endif">
-                                    {{ $remarkText ? $log->remark : 'MANUAL IN' }} 
-                                </span>
-                            </div>
-                        </td>
-                        
-                        <!-- PROCESS TYPE -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center w-[130px]">
-                            @php
-                                $procType = $log->process_type ?? 'Manual';
-                                $isProcManual = strtolower($procType) === 'manual';
-                            @endphp
-                            <div class="flex justify-center items-center">
-                                <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border truncate max-w-full
-                                    @if($isProcManual) bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20
-                                    @else bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 @endif" title="{{ $procType }}">
-                                    {{ $procType }}
-                                </span>
-                            </div>
-                        </td>
-                        
-                        <!-- CREATED AT -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
-                            <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ isset($log->created_at) ? (\Carbon\Carbon::parse($log->created_at)->format('d/m/Y')) : '-' }}
-                            </div>
-                            <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ isset($log->created_at) ? (\Carbon\Carbon::parse($log->created_at)->format('H:i')) : '' }}
+                            <div class="text-[10px] text-slate-400 font-mono">
+                                NIK: {{ $log->operator_nik ?? $log->nik ?? '-' }}
                             </div>
                         </td>
 
-                        <!-- UPDATED AT -->
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
-                            <div class="text-[12px] font-bold text-black dark:text-white leading-tight">
-                                {{ isset($log->updated_at) ? (\Carbon\Carbon::parse($log->updated_at)->format('d/m/Y')) : '-' }}
+                        {{-- 4. MATERIAL RECEIVED NO --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide text-center whitespace-nowrap text-blue-600 dark:text-blue-400">
+                            {{ $log->material_received_no ?? $log->material_received_id ?? $log->mr_no ?? $log->production_req_no ?? '-' }}
+                        </td>
+
+                        {{-- 5. BARCODE ID --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
+                            {{ $log->barcode_id ?? '-' }}
+                        </td>
+
+                        {{-- 6. SPAREPART ID --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-emerald-600 dark:text-emerald-400 text-center whitespace-nowrap">
+                            {{ $log->stockEng->sparepart->sparepart_id ?? $log->sparepart_id ?? '-' }}
+                        </td>
+
+                        {{-- 7. RAK ID --}}
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-purple-600 dark:text-purple-400 text-center whitespace-nowrap">
+                            {{ $log->stockEng->rak->nama_rak ?? $log->nama_rak ?? $log->rak_id ?? '-' }}
+                        </td>
+
+                        {{-- 8. QTY IN --}}
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[11px] font-black border border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50">
+                                +{{ number_format((isset($log->qty_added) && $log->qty_added > 0) ? $log->qty_added : ($log->qty_transaction ?? $log->qty ?? 1)) }} Pcs
+                            </span>
+                        </td>
+
+                        {{-- 9. STATUS --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                                @if(strtolower($log->status ?? '') == 'success') border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50
+                                @elseif(strtolower($log->status ?? '') == 'pending') border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/50
+                                @else border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-900/50 @endif">
+                                {{ $log->status ?? 'success' }}
+                            </span>
+                        </td>
+
+                        {{-- 10. PROCESS TYPE --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            @php $isProcManual = strtolower($log->process_type ?? '') === 'manual'; @endphp
+                            <span class="inline-flex items-center justify-center rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-tight uppercase border
+                                @if($isProcManual) border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-900/50
+                                @else border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/50 @endif">
+                                {{ $log->process_type ?? 'Scan' }} In
+                            </span>
+                        </td>
+
+                        {{-- 11. REMARK --}}
+                        <td class="px-4 py-3.5 border-l border-gray-100 dark:border-slate-800 text-left font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title="{{ $log->remark }}">
+                            {{ $log->remark ?? '-' }}
+                        </td>
+
+                        {{-- 12. TIMESTAMP --}}
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            @php
+                                $createdAt = null;
+                                if ($log->created_at) {
+                                    $createdAt = $log->created_at instanceof \Carbon\Carbon ? $log->created_at : \Carbon\Carbon::parse($log->created_at);
+                                }
+                            @endphp
+                            <div class="font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                                {{ $createdAt ? $createdAt->format('d/m/Y') : '-' }}
                             </div>
-                            <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none mt-0.5">
-                                {{ isset($log->updated_at) ? (\Carbon\Carbon::parse($log->updated_at)->format('H:i')) : '' }}
+                            <div class="text-[10px] mt-0.5 text-slate-500">
+                                {{ $createdAt ? $createdAt->format('H:i') . ' WIB' : '' }}
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="12" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
+                    <tr>
+                        <td colspan="13" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                            No stock in logs found.
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination --}}
+        {{-- FOOTER PAGINATION RESPONSIF --}}
         <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
-            <p class="text-[11px] font-black text-black dark:text-slate-400 tracking-wide uppercase font-nunito text-center sm:text-left">
-                Showing {{ $history->firstItem() ?? 0 }} to {{ $history->lastItem() ?? 0 }} of {{ $history->total() ?? 0 }} Entries
+            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black">
+                Showing {{ (isset($history) && method_exists($history, 'firstItem')) ? ($history->firstItem() ?? 0) : 0 }} 
+                to {{ (isset($history) && method_exists($history, 'lastItem')) ? ($history->lastItem() ?? 0) : 0 }} 
+                of {{ (isset($history) && method_exists($history, 'total')) ? ($history->total() ?? 0) : 0 }} Entries
             </p>
-            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito text-black dark:text-white w-full sm:w-auto">
-                {{ $history->links() }}
+            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black">
+                @if(isset($history) && method_exists($history, 'links'))
+                    {{ $history->appends(['search' => request('search'), 'per_page' => request('per_page')])->links() }}
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let searchTimer;
-    document.getElementById('tableSearch').addEventListener('keyup', function() {
-        clearTimeout(searchTimer);
-        let query = this.value;
-        searchTimer = setTimeout(() => {
-            let url = new URL(window.location.href);
-            url.searchParams.set('search', query);
-            url.searchParams.set('page', 1);
-            window.location.href = url.toString();
-        }, 600);
+    // Select All Checkbox Handler
+    document.getElementById('selectAllCheckbox')?.addEventListener('change', function() {
+        let checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
     });
 
-    window.addEventListener('DOMContentLoaded', () => {
-        let urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.has('search')){
-            document.getElementById('tableSearch').value = urlParams.get('search');
-            document.getElementById('tableSearch').focus();
+    // Export Table Data to CSV
+    function exportTableToCSV(filename) {
+        let csv = [];
+        let rows = document.querySelectorAll("#historyTable tr");
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 1; j < cols.length; j++) { 
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s+)/gm, " ");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
         }
-    });
-
-    function filterTable(criteria, element) {
-        let url = new URL(window.location.href);
-        if(criteria === 'all') {
-            url.searchParams.delete('filter');
-        } else {
-            url.searchParams.set('filter', criteria);
-        }
-        url.searchParams.set('page', 1);
-        window.location.href = url.toString();
+        let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
     }
 
+    // Trigger SweetAlert Alerts
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false });
     @endif
@@ -269,4 +281,35 @@
         Swal.fire({ icon: 'error', title: 'Gagal!', text: "{{ session('error') }}", timer: 3000, showConfirmButton: false });
     @endif
 </script>
+
+<style>
+    .font-nunito, .swal2-popup, .swal2-title, .swal2-content, .swal2-html-container, #historyTable { 
+        font-family: 'Nunito', sans-serif !important; 
+    }
+
+    .table-body-data tr td, 
+    .table-body-data tr td div,
+    .table-empty-text {
+        color: #000000 !important;
+    }
+
+    .dark .table-body-data tr td {
+        color: #cbd5e1 !important;
+    }
+
+    .table-header-row th {
+        color: #ffffff !important;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
+    
+    #historyTable td, #historyTable th {
+        vertical-align: middle !important;
+    }
+    .custom-pagination nav svg { width: 14px; height: 14px; display: inline; }
+    .custom-pagination nav div:first-child { display: none; }
+</style>
 @endsection

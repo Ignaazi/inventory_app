@@ -10,12 +10,11 @@ class PurchaseRequestHistoryEngController extends Controller
 {
     /**
      * Menampilkan semua data dengan fitur Pencarian Ringkas & Pagination
-     * Mengikuti standar penanganan relasi dari listPurchaseRequest
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $perPage = $request->input('per_page', 10); // Sinkron dengan dropdown show entries
+        $perPage = $request->input('per_page', 10);
 
         // Eager loading relasi user & sparepart + Global Multi-Column Search
         $historyPr = PurchaseRequestEng::with(['user', 'sparepart'])
@@ -44,13 +43,15 @@ class PurchaseRequestHistoryEngController extends Controller
     }
 
     /**
-     * Mengambil data tunggal secara instan untuk disuntikkan ke Modal Preview & Edit via AJAX
+     * Menampilkan Halaman Document Preview PR (previewPR.blade.php)
      */
     public function preview($id)
     {
-        // Memuat data lengkap dengan relasi untuk kebutuhan modal preview
+        // Memuat data lengkap dengan relasi 'user' dan 'sparepart'
         $pr = PurchaseRequestEng::with(['user', 'sparepart'])->findOrFail($id);
-        return response()->json($pr);
+
+        // REFACTOR: Mengembalikan tampilan view Blade previewPR (bukan response JSON)
+        return view('stock_eng.purchase_request.previewPR', compact('pr'));
     }
 
     /**
@@ -81,8 +82,7 @@ class PurchaseRequestHistoryEngController extends Controller
             'status'       => $statusBaru,
         ]);
 
-        // FIXED: Mengubah $pr->pr_code menjadi $pr->no_pr agar tidak memicu error Property Not Found
-        return redirect()->back()->with('success', 'Data Purchase Request ' . $pr->no_pr . ' berhasil diperbarui, Bro!');
+        return redirect()->back()->with('success', 'Data Purchase Request ' . $pr->no_pr . ' berhasil diperbarui!');
     }
 
     /**

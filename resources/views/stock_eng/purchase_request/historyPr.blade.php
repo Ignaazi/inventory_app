@@ -12,19 +12,7 @@
     .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
 </style>
 
-<div x-data="{ 
-    showPreview: false,
-    selectedPr: {},
-    initPreview(id) {
-        fetch(`/eng/purchase-request/${id}/preview`)
-            .then(res => res.json())
-            .then(data => {
-                this.selectedPr = data;
-                this.showPreview = true;
-            })
-            .catch(err => alert('Gagal mengambil data preview dokumen!'));
-    }
-}" class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
+<div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300">
 
     {{-- Banner Top Alert Status Counter --}}
     <div class="mb-4 flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-900/50 px-3 py-2.5 md:px-4 md:py-3 shadow-sm">
@@ -204,10 +192,10 @@
                             <div class="text-[10px] mt-0.5 text-slate-500">{{ $pr->updated_at ? $pr->updated_at->format('H:i') : '-' }} WIB</div>
                         </td>
 
-                        {{-- ACTION BUTTON PREVIEW DOKUMEN --}}
+                        {{-- ACTION BUTTON: DIRECT TO FULL DOKUMEN PREVIEW (previewPR.blade.php) --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             <div class="flex justify-center items-center">
-                                <a href="#" @click.prevent="initPreview({{ $pr->id }})" class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md active:scale-95 cursor-pointer" title="Preview PR Document">
+                                <a href="{{ route('purchase.request.preview', $pr->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md active:scale-95 cursor-pointer" title="Preview PR Document">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -234,65 +222,6 @@
             </p>
             <div class="flex items-center justify-center gap-1.5 text-xs custom-pagination text-black">
                 {{ $historyPr->links() }}
-            </div>
-        </div>
-    </div>
-
-    {{-- 🔍 MODAL PREVIEW DETAIL DOKUMEN --}}
-    <div x-show="showPreview" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition style="display: none;">
-        <div @click.away="showPreview = false" class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-gray-200 dark:border-slate-800 transition-all font-nunito">
-            <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-800">
-                <h3 class="text-sm font-black text-black dark:text-white" x-text="'Document: ' + (selectedPr.no_pr ?? '-')"></h3>
-                <button @click="showPreview = false" class="text-gray-400 hover:text-black dark:hover:text-white font-black text-xl cursor-pointer">&times;</button>
-            </div>
-            
-            <div class="mt-4 space-y-2.5 text-xs text-black dark:text-slate-200 modal-body-data">
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Requester</span>
-                    <span class="col-span-2 font-black text-black dark:text-white" x-text="selectedPr.user ? selectedPr.user.name : '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Sparepart Code</span>
-                    <span class="col-span-2 font-extrabold text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.sparepart_id : '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Part Number</span>
-                    <span class="col-span-2 font-bold text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.part_number : '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">SAP Code</span>
-                    <span class="col-span-2 text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.sap_code : '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Category</span>
-                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.sparepart ? selectedPr.sparepart.category : '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Quantity</span>
-                    <span class="col-span-2 font-black text-black dark:text-white" x-text="(selectedPr.qty_pr ?? 1) + ' Pcs'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Priority</span>
-                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.priority ?? '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Destination</span>
-                    <span class="col-span-2 font-medium text-black dark:text-white" x-text="selectedPr.destination ?? '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5 border-b border-gray-100 dark:border-slate-800">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Status</span>
-                    <span class="col-span-2 uppercase font-black text-black dark:text-white" x-text="selectedPr.status ?? '-'"></span>
-                </div>
-                <div class="grid grid-cols-3 py-1.5">
-                    <span class="text-gray-500 font-bold uppercase text-[10px]">Remark Notes</span>
-                    <span class="col-span-2 font-medium italic text-black dark:text-white" x-text="selectedPr.remark ?? '-'"></span>
-                </div>
-            </div>
-            
-            <div class="mt-6 flex justify-end border-t border-gray-100 dark:border-slate-800 pt-3">
-                <button @click="showPreview = false" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-black dark:text-white font-black rounded-lg transition-all text-xs cursor-pointer">
-                    Close Document View
-                </button>
             </div>
         </div>
     </div>
@@ -327,10 +256,10 @@
 
 <style>
     /* Paksa Font Nunito untuk komponen utama dokumen */
-    .font-nunito, .swal2-popup, #historyPrTable, #historyPrTable td, #historyPrTable th, .modal-body-data span { font-family: 'Nunito', sans-serif !important; }
+    .font-nunito, .swal2-popup, #historyPrTable, #historyPrTable td, #historyPrTable th { font-family: 'Nunito', sans-serif !important; }
     
     /* Paksa warna text hitam (#000000) ke seluruh baris data KECUALI kolom status (.status-td) */
-    .table-body-data tr td:not(.status-td), .table-body-data tr td:not(.status-td) div, .table-empty-text, .modal-body-data span:last-child { color: #000000 !important; }
+    .table-body-data tr td:not(.status-td), .table-body-data tr td:not(.status-td) div, .table-empty-text { color: #000000 !important; }
     
     /* Menjaga pewarnaan bawaan kelas badge status Tailwind */
     .status-badge { color: inherit !important; }

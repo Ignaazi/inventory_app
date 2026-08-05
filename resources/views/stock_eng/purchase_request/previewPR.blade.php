@@ -5,14 +5,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
 @php
-    // Inisialisasi variabel pengaman jika dipanggil dari controller
+    // Inisialisasi variabel pengaman jika dipanggil tanpa controller
     $pr = $pr ?? null;
-
-    // Normalisasi data email pengirim & penerima
-    $targetEmail = optional($pr)->notification_email ?? optional(optional($pr)->user)->email ?? '-';
-    $senderUser  = Auth::user();
-    $senderEmail = !empty($senderUser->email) ? $senderUser->email : config('mail.from.address');
-    $senderName  = !empty($senderUser->name) ? $senderUser->name : 'Costing Department';
 @endphp
 
 <style>
@@ -154,9 +148,9 @@
     <div class="mb-4 no-print flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
             <h1 class="text-xl font-black uppercase text-slate-700 tracking-tight mb-2">Document Preview</h1>
-            <a href="{{ route('costing.pr.history') }}" class="btn-blue-gradient">
+            <a href="javascript:history.back()" class="btn-blue-gradient">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Kembali ke History
+                Kembali
             </a>
         </div>
 
@@ -174,7 +168,7 @@
         <!-- HEADER DOKUMEN -->
         <div class="flex justify-between items-center border-b-2 border-slate-400 pb-4 mb-6">
             <div class="flex items-center gap-3">
-                <img src="{{ asset('images/logosidebar.png') }}" alt="SIIX Logo" class="h-14 w-auto object-contain" onerror="this.src='/images/logo-siix.png';">
+                <img src="{{ asset('images/logosidebar.png') }}" alt="SIIX Logo" class="h-14 w-auto object-contain">
             </div>
 
             <div class="text-center">
@@ -187,7 +181,7 @@
             </div>
         </div>
 
-        <!-- INFO GRID (2 KOLOM) - DISESUAIKAN DENGAN EMAIL PENGIRIM & PENERIMA -->
+        <!-- INFO GRID (2 KOLOM) -->
         <div class="grid grid-cols-2 gap-x-10 gap-y-2 text-xs mb-6">
             <div class="space-y-2">
                 <div class="flex justify-between border-b border-slate-300 pb-1">
@@ -200,11 +194,7 @@
                 </div>
                 <div class="flex justify-between border-b border-slate-300 pb-1">
                     <span class="font-bold">NIK</span>
-                    <span class="font-black">{{ optional(optional($pr)->user)->nik ?? optional(optional($pr)->user)->nim ?? '-' }}</span>
-                </div>
-                <div class="flex justify-between border-b border-slate-300 pb-1">
-                    <span class="font-bold">Sender Email (Costing)</span>
-                    <span class="font-black text-slate-600 font-mono">{{ $senderEmail }}</span>
+                    <span class="font-black">{{ optional(optional($pr)->user)->nik ?? '-' }}</span>
                 </div>
             </div>
 
@@ -215,15 +205,15 @@
                 </div>
                 <div class="flex justify-between border-b border-slate-300 pb-1">
                     <span class="font-bold">Request Date</span>
-                    <span class="font-black">{{ optional($pr)->created_at ? \Carbon\Carbon::parse($pr->created_at)->format('d/m/Y H:i') : '-' }}</span>
+                    <span class="font-black">{{ optional($pr)->request_date ? \Carbon\Carbon::parse($pr->request_date)->format('d/m/Y H:i') : '-' }}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-300 pb-1">
+                    <span class="font-bold">Expected Arrival</span>
+                    <span class="font-black">{{ optional($pr)->expected_arrival_date ? \Carbon\Carbon::parse($pr->expected_arrival_date)->format('d/m/Y H:i') : '-' }}</span>
                 </div>
                 <div class="flex justify-between border-b border-slate-300 pb-1">
                     <span class="font-bold">Destination</span>
-                    <span class="font-black">{{ optional($pr)->destination ?? 'Costing Dept & Purchasing Dept' }}</span>
-                </div>
-                <div class="flex justify-between border-b border-slate-300 pb-1">
-                    <span class="font-bold">Sent Target Email</span>
-                    <span class="font-black text-indigo-700 font-mono">{{ $targetEmail }}</span>
+                    <span class="font-black">{{ optional($pr)->destination ?? '-' }}</span>
                 </div>
             </div>
         </div>
@@ -249,7 +239,7 @@
                         <td>{{ optional(optional($pr)->sparepart)->sap_code ?? '-' }}</td>
                         <td>{{ optional(optional($pr)->sparepart)->category ?? '-' }}</td>
                         <td class="text-center font-black">{{ optional($pr)->qty_pr ?? 1 }} Pcs</td>
-                        <td>{{ optional($pr)->destination ?? 'Costing Dept & Purchasing Dept' }}</td>
+                        <td>{{ optional($pr)->destination ?? '-' }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -318,7 +308,9 @@
                     </div>
 
                     <div>
-                        <span class="block font-black text-xs text-slate-700">Administrator</span>
+                        <span class="block font-black text-xs text-slate-700">
+                            {{ in_array(strtolower(optional($pr)->status ?? ''), ['checked', 'approved']) ? (optional(optional($pr)->checker)->name ?? 'Admin Engineering') : 'Admin Engineering' }}
+                        </span>
                         <span class="block text-[10px] font-bold text-slate-700 uppercase mt-0.5">Engineering Dept</span>
                     </div>
                 </div>
@@ -335,15 +327,15 @@
                             <img src="{{ $getSigUrl($pr->approved_signature) }}" alt="Approved Signature" class="max-h-14 object-contain">
                         @elseif(strtolower(optional($pr)->status ?? '') == 'approved')
                             <span class="px-2 py-1 border border-slate-300 text-[10px] font-black uppercase">OFFICIALLY APPROVED</span>
-                        @elseif(strtolower(optional($pr)->status ?? '') == 'rejected')
-                            <span class="px-2 py-1 border border-red-300 text-[10px] font-black uppercase text-red-600">REJECTED</span>
                         @else
                             <span class="text-[10px] font-black uppercase text-slate-400">WAITING APPROVAL</span>
                         @endif
                     </div>
 
                     <div>
-                        <span class="block font-black text-xs text-slate-700">{{ $senderName }}</span>
+                        <span class="block font-black text-xs text-slate-700">
+                            {{ strtolower(optional($pr)->status ?? '') == 'approved' ? (optional(optional($pr)->approver)->name ?? 'Costing Approver') : 'Costing Approver' }}
+                        </span>
                         <span class="block text-[10px] font-bold text-slate-700 uppercase mt-0.5">Costing Dept</span>
                     </div>
                 </div>

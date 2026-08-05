@@ -17,8 +17,8 @@ class PurchaseRequestEngController extends Controller
         $today = Carbon::now();
         $datePrefix = $today->format('Y/m/d'); 
         
-        // Pola pencarian disesuaikan dengan tanggal hari ini
-        $searchPattern = "RR/ENG/RFSP/" . $datePrefix . "/%";
+        // Pola pencarian disesuaikan dengan kode PR/
+        $searchPattern = "PR/ENG/RFSP/" . $datePrefix . "/%";
 
         try {
             $lastPr = PurchaseRequestEng::where('no_pr', 'like', $searchPattern)
@@ -35,7 +35,7 @@ class PurchaseRequestEngController extends Controller
             $nextNumber = '0001';
         }
 
-        $generatedPrCode = "RR/ENG/RFSP/" . $datePrefix . "/" . $nextNumber;
+        $generatedPrCode = "PR/ENG/RFSP/" . $datePrefix . "/" . $nextNumber;
 
         try {
             $spareparts = ListSparepartEng::all(); 
@@ -48,7 +48,7 @@ class PurchaseRequestEngController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi mengecek kecocokan ke kolom 'id' utama database
+        // Validasi input form PR
         $request->validate([
             'no_pr'                 => 'required|unique:purchase_requests,no_pr', 
             'sparepart_id'          => ['required', Rule::exists(ListSparepartEng::class, 'id')], 
@@ -73,7 +73,7 @@ class PurchaseRequestEngController extends Controller
             PurchaseRequestEng::create([
                 'no_pr'                 => $request->no_pr,
                 'user_id'               => $user->id, 
-                'sparepart_id'          => $request->sparepart_id, // Berisi ID integer auto-increment internal
+                'sparepart_id'          => $request->sparepart_id, 
                 'qty_pr'                => $request->qty_pr,
                 'priority'              => $request->priority,
                 'request_date'          => $request->request_date,
@@ -104,9 +104,8 @@ class PurchaseRequestEngController extends Controller
     public function listRequests(Request $request)
     {
         $search = $request->input('search');
-        $perPage = $request->input('per_page', 10); // Mendukung dropdown entries di blade
+        $perPage = $request->input('per_page', 10); 
         
-        // Try-catch dibongkar agar jika ada miss-match kolom/relasi, error SQL langsung muncul (tidak blank)
         $requests = PurchaseRequestEng::with(['user', 'sparepart'])
             ->where('status', 'pending')
             ->when($search, function ($query, $search) {
@@ -135,7 +134,6 @@ class PurchaseRequestEngController extends Controller
      */
     public function checkedView($id)
     {
-        // FindOrFail otomatis melempar 404 jika id tidak valid
         $pr = PurchaseRequestEng::with(['user', 'sparepart'])->findOrFail($id);
         return view('stock_eng.purchase_request.purchase_request_checked', compact('pr'));
     }

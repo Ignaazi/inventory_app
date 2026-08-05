@@ -178,13 +178,30 @@
     const manualInput = document.getElementById('manual_barcode');
     const btnManual = document.getElementById('btn_manual_submit');
 
+    // KONFIGURASI SCANNER MULTI-FORMAT (1D BARCODE & 2D QR CODE)
     const scanConfig = {
-        fps: 20, 
-        qrbox: function(width, height) {
-            const minEdge = Math.min(width, height);
-            return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
+        fps: 25, 
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Area scan dibuat fleksibel agar barcode 1D (lebar) & QR Code (kotak) terjangkau
+            return {
+                width: Math.floor(viewfinderWidth * 0.85),
+                height: Math.floor(viewfinderHeight * 0.65)
+            };
         },
-        aspectRatio: 1.0
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.DATA_MATRIX,
+            Html5QrcodeSupportedFormats.ITF
+        ],
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true // Akselerasi Native Barcode API Browser
+        }
     };
 
     // FUNGSI INTI AJAX SUBMIT SCAN IN
@@ -205,8 +222,8 @@
         });
 
         const formData = new FormData();
-        formData.append('barcode_scan', cleanCode); // Dikirim ke StockInEngineeringController
-        formData.append('process_type', mode);       // Mengindikasikan tipe scan/manual
+        formData.append('barcode_scan', cleanCode);
+        formData.append('process_type', mode);
         formData.append('comment', `Automated Stock IN via scan.`);
 
         try {
@@ -233,11 +250,11 @@
                     width: '350px'
                 });
             } else {
-                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message);
+                changeUIStatus('INVALID', 'TRANSAKSI DITOLAK', result.message || 'Data tidak sesuai');
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal Scan In',
-                    text: result.message,
+                    text: result.message || 'Format barcode tidak terdaftar.',
                     confirmButtonColor: '#ef4444'
                 });
             }
@@ -247,7 +264,7 @@
         } finally {
             setTimeout(() => {
                 resetSystemState();
-            }, 1000);
+            }, 1200);
         }
     }
 
@@ -323,7 +340,11 @@
                 resetSystemState();
             })
             .catch(err => {
-                Swal.fire({ icon: 'warning', title: 'Izin Kamera Blokir', text: 'Gunakan protokol HTTPS atau jalankan via localhost.' });
+                Swal.fire({ 
+                    icon: 'warning', 
+                    title: 'Izin Kamera Diperlukan', 
+                    text: 'Pastikan web diakses via HTTPS atau localhost dan beri izin akses kamera.' 
+                });
             });
         }
     });
@@ -352,17 +373,28 @@
         }
     });
 
-    // DEKRIPSI FILE GAMBAR BARCODE
+    // DEKRIPSI FILE GAMBAR BARCODE DENGAN DETEKSI LINTAS FORMAT
     photoInput.addEventListener('change', function(e) {
         if (e.target.files.length === 0) return;
         const file = e.target.files[0];
-        document.getElementById('label-upload-status').innerText = "File terunggah";
+        document.getElementById('label-upload-status').innerText = "Memproses Gambar...";
 
-        html5QrCode.scanFile(file, true)
-            .then(decodedText => { processAjaxStockIn(decodedText.trim(), 'scan'); })
+        html5QrCode.scanFileV2(file, true)
+            .then(scanResult => { 
+                processAjaxStockIn(scanResult.decodedText.trim(), 'scan'); 
+            })
             .catch(err => { 
-                Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR di dalam foto tidak jelas atau salah.' }); 
-                resetSystemState();
+                // Fallback scan biasa jika scanFileV2 mengalami masalah kompatibilitas
+                html5QrCode.scanFile(file, true)
+                    .then(decodedText => { processAjaxStockIn(decodedText.trim(), 'scan'); })
+                    .catch(() => {
+                        Swal.fire({ 
+                            icon: 'error', 
+                            title: 'Gagal Membaca Barcode', 
+                            text: 'Gambar barcode/QR tidak terdeteksi. Pastikan resolusi tajam dan kontras jelas.' 
+                        }); 
+                        resetSystemState();
+                    });
             });
     });
 </script>

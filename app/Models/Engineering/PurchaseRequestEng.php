@@ -21,6 +21,7 @@ class PurchaseRequestEng extends Model
         'request_date',
         'expected_arrival_date',
         'destination',
+        'notification_email',  // Added from migration
         'remark',
         'status',
         'prepared_signature',  // Step 1: Role Engineering (Requester)
@@ -42,7 +43,7 @@ class PurchaseRequestEng extends Model
     }
     
     /**
-     * RELASI: Ke model ListSparepartEng (FIXED)
+     * RELASI: Ke model ListSparepartEng
      * Menghubungkan kolom 'sparepart_id' milik PR ke Primary Key 'id' milik tabel spareparts.
      */
     public function sparepart()
@@ -64,7 +65,7 @@ class PurchaseRequestEng extends Model
                 return 'bg-emerald-50 text-emerald-600 border-emerald-200';
             case 'rejected':
                 return 'bg-rose-50 text-rose-600 border-rose-200';
-            default: // pending
+            default: // pending / checked
                 return 'bg-amber-50 text-amber-600 border-amber-200';
         }
     }

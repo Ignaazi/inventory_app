@@ -3,7 +3,7 @@
 @section('content')
 <!-- Inject Font Nunito & Global Layout Size Overrides -->
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
   .create-pr-view, .create-pr-view * {
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif !important;
@@ -13,7 +13,7 @@
 <div class="create-pr-view -m-4 md:-m-6 2xl:-m-10 bg-[#F9F9FB] dark:bg-slate-900 min-h-[calc(100vh-80px)] text-slate-950 dark:text-slate-100 font-sans p-4">
     
     <div class="px-4 pt-4 max-w-full mx-auto">
-        <h1 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">Final Approval Purchase Request</h1>
+        <h1 class="text-xl font-black text-slate-950 dark:text-white tracking-tight">Final Approval Purchase Request (Costing Dept)</h1>
     </div>
 
     <div class="p-4 max-w-full mx-auto">
@@ -43,7 +43,7 @@
 
         <div class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg shadow-md overflow-hidden">
             
-            <!-- TOP BAR STATUS ODOO (STATUS AKTIF PINDAH KE APPROVED DENGAN GRADASI EMERALD) -->
+            <!-- TOP BAR STATUS ODOO -->
             <div class="bg-gray-100 dark:bg-slate-800/80 border-b border-gray-300 dark:border-slate-600 px-4 py-2 flex justify-between items-center text-xs font-black uppercase tracking-wider">
                 <div class="flex gap-2 text-slate-600 dark:text-slate-400">
                     <span>Source: <span class="text-slate-950 dark:text-white">Checked PR Queue</span></span>
@@ -52,7 +52,7 @@
                 <div class="flex items-center bg-gray-200 dark:bg-slate-700 rounded overflow-hidden text-[10px] font-black border border-gray-300 dark:border-slate-600">
                     <span class="text-slate-400 dark:text-slate-500 px-4 py-1">Pending</span>
                     <span class="text-slate-400 dark:text-slate-500 px-4 py-1 border-l border-gray-300 dark:border-slate-600">Checked</span>
-                    <span class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-50 text-white px-4 py-1 relative after:content-[''] after:absolute after:top-0 after:right-[-6px] after:border-y-[12px] after:border-y-transparent after:border-l-[6px] after:border-l-emerald-500 z-10">Approved</span>
+                    <span class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white px-4 py-1 relative z-10">Approved</span>
                 </div>
             </div>
 
@@ -78,23 +78,16 @@
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">NIK / NIM</label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">NIK</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ optional($pr->user)->nim ?? optional($pr->user)->nik ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->user)->nik ?? optional($pr->user)->nim ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Email Address</label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Sparepart ID</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ optional($pr->user)->email ?? '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide">Sparepart ID</label>
-                            <div class="col-span-2">
-                                <input type="text" value="{{ optional($pr->sparepart)->sparepart_id ?? $pr->sparepart_id }}" readonly class="w-full bg-transparent border-0 text-indigo-600 dark:text-indigo-400 font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ optional($pr->sparepart)->sparepart_id ?? $pr->sparepart_id }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
@@ -119,12 +112,12 @@
                             </div>
                         </div>
 
-                        {{-- QTY DAPAT DIUBAH KEMBALI OLEH PIHAK COSTING APABILA DIBUTUHKAN SESUAI KONTROLLER --}}
-                        <div class="grid grid-cols-3 items-center border-b border-orange-400 dark:border-orange-500 pb-1.5 bg-orange-50/30 dark:bg-orange-950/10 px-1 rounded transition-all">
-                            <label class="font-black text-orange-600 dark:text-orange-400 text-xs uppercase tracking-wide">Quantity (QTY)</label>
+                        {{-- QTY READONLY --}}
+                        <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Quantity (QTY)</label>
                             <div class="col-span-2 flex items-center gap-1">
-                                <input type="number" name="qty_pr" value="{{ old('qty_pr', $pr->qty_pr) }}" min="1" required class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 outline-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                <span class="text-xs text-orange-600 dark:text-orange-400 font-black uppercase pr-2">Pcs</span>
+                                <input type="text" value="{{ $pr->qty_pr }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-black text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <span class="text-xs text-slate-600 dark:text-slate-400 font-black uppercase pr-2">Pcs</span>
                             </div>
                         </div>
                     </div>
@@ -153,16 +146,36 @@
                         </div>
 
                         <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Last Updated</label>
+                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Destination</label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ $pr->updated_at ? \Carbon\Carbon::parse($pr->updated_at)->format('d/m/Y H:i') : '-' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ $pr->destination ?? 'Costing Dept & Purchasing Dept' }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 items-center border-b border-gray-300 dark:border-slate-600 pb-1.5">
-                            <label class="font-black text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wide">Destination</label>
+                        {{-- INFORMATION EMAIL PENGIRIM (AUTOGENERATED DARI USER LOGIN) --}}
+                        <div class="grid grid-cols-3 items-center border-b border-slate-300 dark:border-slate-600 pb-1.5 bg-slate-50 dark:bg-slate-800/60 px-2 pt-1 rounded">
+                            <label class="font-black text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wide flex flex-col">
+                                <span>Sender Email</span>
+                                <span class="text-[9px] font-normal text-slate-400 lowercase italic">(Your Logged Account)</span>
+                            </label>
                             <div class="col-span-2">
-                                <input type="text" value="{{ $pr->destination }}" readonly class="w-full bg-transparent border-0 text-slate-950 dark:text-white font-bold text-sm p-0 cursor-not-allowed outline-none focus:ring-0">
+                                <input type="text" value="{{ Auth::user()->name }} ({{ Auth::user()->email ?? config('mail.from.address') }})" readonly class="w-full bg-transparent border-0 text-slate-800 dark:text-slate-200 font-bold text-xs p-0 cursor-not-allowed outline-none focus:ring-0">
+                            </div>
+                        </div>
+
+                        {{-- FIELD INPUT EMAIL TUJUAN / RECIPIENT (AKTIF UNTUK BEBAS DIISI COSTING) --}}
+                        <div class="grid grid-cols-3 items-center border-b-2 border-indigo-500 dark:border-indigo-400 pb-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 px-2 pt-1 rounded transition-all">
+                            <label class="font-black text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wide flex flex-col">
+                                <span>Send Email To <span class="text-rose-500">*</span></span>
+                                <span class="text-[9px] font-normal text-slate-400 lowercase italic">(Target Recipient Email)</span>
+                            </label>
+                            <div class="col-span-2">
+                                <input type="email" 
+                                       name="notification_email" 
+                                       value="{{ old('notification_email', $pr->notification_email ?? optional($pr->user)->email ?? '') }}" 
+                                       required 
+                                       placeholder="Contoh: purchasing@company.com" 
+                                       class="w-full bg-transparent border-0 text-indigo-700 dark:text-indigo-300 font-black text-sm p-0 outline-none focus:ring-0 focus:outline-none placeholder:text-slate-400 placeholder:font-normal">
                             </div>
                         </div>
                     </div>
@@ -225,6 +238,15 @@
 
                         {{-- CONTENT TAB 2: APPROVAL PROCESS SIGNATURES --}}
                         <div id="odoo-tab-approval" class="hidden">
+                            @php
+                                $getSigUrl = function($path) {
+                                    if (!$path) return null;
+                                    return (str_contains($path, 'uploads/') || str_contains($path, 'storage/')) 
+                                        ? asset($path) 
+                                        : asset('storage/' . $path);
+                                };
+                            @endphp
+
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center text-sm">
                                 
                                 <!-- TTD 1: PREPARED BY (ENGINEERING REQUESTER) -->
@@ -232,15 +254,9 @@
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 1: Prepared By</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
                                         @if($pr->prepared_signature)
-                                            <img src="{{ asset('storage/' . $pr->prepared_signature) }}" alt="Prepared Signature" class="max-h-14 object-contain">
+                                            <img src="{{ $getSigUrl($pr->prepared_signature) }}" alt="Prepared Signature" class="max-h-14 object-contain">
                                         @elseif(optional($pr->user)->signature_path || optional($pr->user)->signature)
-                                            @php
-                                                $sigFile = $pr->user->signature_path ?? $pr->user->signature;
-                                                $sigUrl = (str_contains($sigFile, 'uploads/') || str_contains($sigFile, 'storage/')) 
-                                                    ? asset($sigFile) 
-                                                    : asset('storage/' . $sigFile);
-                                            @endphp
-                                            <img src="{{ $sigUrl }}" alt="User Signature" class="max-h-14 object-contain">
+                                            <img src="{{ $getSigUrl($pr->user->signature_path ?? $pr->user->signature) }}" alt="User Signature" class="max-h-14 object-contain">
                                         @else
                                             <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs rounded border border-amber-300">SYSTEM GENERATED</span>
                                         @endif
@@ -253,14 +269,14 @@
                                 <div class="border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 p-4">
                                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Step 2: Checked By</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
-                                        @if(isset($pr->checked_signature) && $pr->checked_signature)
-                                            <img src="{{ asset('storage/' . $pr->checked_signature) }}" alt="Checked Signature" class="max-h-14 object-contain">
+                                        @if($pr->checked_signature)
+                                            <img src="{{ $getSigUrl($pr->checked_signature) }}" alt="Checked Signature" class="max-h-14 object-contain">
                                         @else
-                                            <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs rounded border border-emerald-300">VERIFIED OK</span>
+                                            <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs rounded border border-emerald-300">CHECKED & VERIFIED</span>
                                         @endif
                                     </div>
-                                    <span class="block font-black text-slate-950 dark:text-white">Section Head / Checker</span>
-                                    <span class="text-xs text-slate-500 font-bold">Engineering Control</span>
+                                    <span class="block font-black text-slate-950 dark:text-white">Admin Engineering</span>
+                                    <span class="text-xs text-slate-500 font-bold">Engineering Department</span>
                                 </div>
 
                                 <!-- TTD 3: APPROVED BY (COSTING AUDIT - DATA USER YANG SEDANG LOGIN SEKARANG) -->
@@ -268,19 +284,13 @@
                                     <span class="block text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Step 3: Approved By (You)</span>
                                     <div class="h-16 flex items-center justify-center font-black text-slate-950 dark:text-white border-b border-dashed border-gray-300 dark:border-slate-600 mb-2">
                                         @if(Auth::user() && (Auth::user()->signature_path || Auth::user()->signature))
-                                            @php
-                                                $sigFileApprover = Auth::user()->signature_path ?? Auth::user()->signature;
-                                                $sigUrlApprover = (str_contains($sigFileApprover, 'uploads/') || str_contains($sigFileApprover, 'storage/')) 
-                                                    ? asset($sigFileApprover) 
-                                                    : asset('storage/' . $sigFileApprover);
-                                            @endphp
-                                            <img src="{{ $sigUrlApprover }}" alt="Approver Signature" class="max-h-14 object-contain">
+                                            <img src="{{ $getSigUrl(Auth::user()->signature_path ?? Auth::user()->signature) }}" alt="Approver Signature" class="max-h-14 object-contain">
                                         @else
-                                            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs rounded border border-blue-300">SIGN READY</span>
+                                            <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs rounded border border-emerald-300">SYSTEM GENERATED</span>
                                         @endif
                                     </div>
                                     <span class="block font-black text-slate-950 dark:text-white">{{ Auth::user() ? Auth::user()->name : 'Costing Auditor' }}</span>
-                                    <span class="text-xs text-emerald-500 font-bold">Waiting Final Approval</span>
+                                    <span class="text-xs text-emerald-500 font-bold">Costing Department</span>
                                 </div>
 
                             </div>

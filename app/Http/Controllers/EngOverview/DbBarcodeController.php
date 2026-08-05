@@ -45,33 +45,43 @@ class DbBarcodeController extends Controller
 
         DB::beginTransaction();
         try {
-            // 2. LOGIKA OTOMATIS GENERATE KODE UNIK
-            $latestBarcode = DB::table('db_barcodes')->orderBy('id', 'desc')->first();
-            
-            if (!$latestBarcode) {
-                $nextBarcodeId = 'SIIXENG001';
+            $finalContent = $request->final_content;
+
+            // 🌟 DETEKSI TRANSAKSI: INBOUND vs OUT 🌟
+            // Jika final_content diawali 'TXENGIN' (Inbound Format Terbaru), gunakan string tersebut sebagai barcode_id
+            if (str_starts_with(strtoupper($finalContent), 'TXENGIN')) {
+                $barcodeId = $request->barcode_id ?? $finalContent;
+                $lifecycle = $request->current_lifecycle ?? 'AVAILABLE';
             } else {
-                $number = (int) substr($latestBarcode->barcode_id, 7);
-                $nextBarcodeId = 'SIIXENG' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+                // --- LOGIKA BARCODE OUT (TIDAK DIUBAH SAMA SEKALI / 100% UTUH) ---
+                $latestBarcode = DB::table('db_barcodes')->orderBy('id', 'desc')->first();
+                
+                if (!$latestBarcode) {
+                    $barcodeId = 'SIIXENG001';
+                } else {
+                    $number = (int) substr($latestBarcode->barcode_id, 7);
+                    $barcodeId = 'SIIXENG' . str_pad($number + 1, 3, '0', STR_PAD_LEFT);
+                }
+                $lifecycle = 'USED_IN';
             }
 
-            // 3. INSERT KE TABEL db_barcodes (Menggunakan kolom 'nik')
+            // 2. INSERT KE TABEL db_barcodes
             $insertedId = DB::table('db_barcodes')->insertGetId([
-                'barcode_id'        => $nextBarcodeId, 
+                'barcode_id'        => $barcodeId, 
                 'barcode_type'      => $request->barcode_type,
                 'barcode_size'      => $request->barcode_size,
-                'final_content'     => $request->final_content,
-                'nik'               => $currentCreatorNim, // 🌟 Menggunakan 'nik' sesuai struktur tabel
-                'current_lifecycle' => 'USED_IN',
+                'final_content'     => $finalContent,
+                'nik'               => $currentCreatorNim,
+                'current_lifecycle' => $lifecycle,
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
 
-            // 4. INSERT KE TABEL barcode_parsings (Sesuai dengan file migration yang kamu kirim)
+            // 3. INSERT KE TABEL barcode_parsings
             DB::table('barcode_parsings')->insert([
                 'barcode_db_id'         => $insertedId, 
                 'production_request_id' => $request->production_request_id, 
-                'nik'                   => $currentCreatorNim, // 🌟 DISESUAIKAN: Menggunakan 'nik' sesuai file migration lu!
+                'nik'                   => $currentCreatorNim,
                 'qty_parsed'            => 1,
                 'description'           => 'Barcode generated and locked for production request ID: ' . $request->production_request_id,
                 'created_at'            => now(),
@@ -82,8 +92,8 @@ class DbBarcodeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Barcode ' . $nextBarcodeId . ' berhasil disimpan dan dikunci untuk PR!',
-                'barcode_id' => $nextBarcodeId
+                'message' => 'Barcode ' . $barcodeId . ' berhasil disimpan dan dikunci untuk PR!',
+                'barcode_id' => $barcodeId
             ], 200);
 
         } catch (\Exception $e) {

@@ -3,7 +3,7 @@
 @section('content')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -27,14 +27,14 @@
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
             <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Database Barcode Master</h2>
-            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS KARAWANG</p>
+            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">PT SIIX EMS KARAWANG — INBOUND ENG RACK FORMAT</p>
         </div>
         <div>
             <a href="{{ route('barcode.parsing') }}" class="flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs md:text-[13px] font-black text-slate-950 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer font-nunito">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
                 </svg>
-                Back To Customizer
+                Back To Inbound Batch
             </a>
         </div>
     </div>
@@ -44,22 +44,25 @@
 
         {{-- AREA SCROLL HORIZONTAL --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1250px]" id="barcode-table">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1280px]" id="barcode-table">
                 <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950/80 text-white dark:text-blue-200 font-nunito table-header-row">
+                    <tr class="text-[12px] font-black uppercase tracking-wider bg-orange-600 dark:bg-orange-950/80 text-white dark:text-orange-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
-                        <th class="px-2 py-3.5 w-[90px] border-l border-blue-500 dark:bg-blue-900/50 text-center">VISUAL</th>
-                        <th class="px-3 py-3.5 w-[250px] border-l border-blue-500 dark:bg-blue-900/50 text-center">BARCODE ID</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">BARCODE TYPE</th>
-                        <th class="px-3 py-3.5 w-[160px] border-l border-blue-500 dark:bg-blue-900/50 text-center">DIMENSION / CONFIG</th>
-                        <th class="px-3 py-3.5 w-[180px] border-l border-blue-500 dark:bg-blue-900/50 text-center">CURRENT LIFECYCLE</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">CREATED AT</th>
-                        <th class="px-3 py-3.5 w-[130px] border-l border-blue-500 dark:bg-blue-900/50 text-center">UPDATED AT</th>
-                        <th class="px-3 py-3.5 w-[140px] border-l border-blue-500 dark:bg-blue-900/50 text-center">ACTION</th>
+                        <th class="px-2 py-3.5 w-[90px] border-l border-orange-500 dark:bg-orange-900/50 text-center">VISUAL</th>
+                        <th class="px-3 py-3.5 w-[280px] border-l border-orange-500 dark:bg-orange-900/50 text-center">BARCODE STRING (PARSED)</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">BARCODE TYPE</th>
+                        <th class="px-3 py-3.5 w-[150px] border-l border-orange-500 dark:bg-orange-900/50 text-center">DIMENSION / CONFIG</th>
+                        <th class="px-3 py-3.5 w-[160px] border-l border-orange-500 dark:bg-orange-900/50 text-center">CURRENT LIFECYCLE</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">CREATED AT</th>
+                        <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">UPDATED AT</th>
+                        <th class="px-3 py-3.5 w-[140px] border-l border-orange-500 dark:bg-orange-900/50 text-center">ACTION</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($barcodes as $index => $barcode)
+                    @php
+                        $content = $barcode->final_content ?? $barcode->barcode_id;
+                    @endphp
                     <tr class="table-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
                         <td class="px-2 py-3.5 text-center">
                             {{ $barcodes->firstItem() + $index }}
@@ -68,22 +71,25 @@
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center">
                             <div class="flex items-center justify-center">
                                 <div id="render_thumb_{{ $barcode->id }}" 
-                                     onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', '{{ $barcode->barcode_size }}')"
+                                     onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $content }}', '{{ $barcode->barcode_size }}')"
                                      title="Click to view large"
-                                     class="w-[44px] h-[44px] bg-white border border-gray-200 p-1 rounded-xl shadow-sm flex items-center justify-center cursor-pointer hover:scale-105 hover:border-blue-500 dark:hover:border-blue-400 transition-all overflow-hidden bg-center bg-no-repeat dark:border-slate-700 dark:bg-slate-800">
+                                     class="w-[44px] h-[44px] bg-white border border-gray-200 p-1 rounded-xl shadow-sm flex items-center justify-center cursor-pointer hover:scale-105 hover:border-orange-500 dark:hover:border-orange-400 transition-all overflow-hidden bg-center bg-no-repeat dark:border-slate-700 dark:bg-slate-800">
                                 </div>
                             </div>
                         </td>
 
+                        {{-- BARCODE ID WITH HIGHLIGHT FORMATTING --}}
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold text-center">
-                            <span class="inline-flex px-2.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-mono tracking-tight text-[12px] border border-indigo-100 dark:border-indigo-900/40 whitespace-normal break-all leading-tight">
-                                {{ $barcode->barcode_id }}
-                            </span>
+                            <div class="flex flex-col items-center justify-center gap-1">
+                                <span class="inline-flex px-2.5 py-1 rounded bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-mono tracking-wide text-[12px] font-black border border-orange-200 dark:border-orange-900/40 whitespace-normal break-all leading-tight shadow-2xs">
+                                    {{ $content }}
+                                </span>
+                            </div>
                         </td>
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             <div class="flex justify-center items-center">
-                                <span class="type-cell inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm bg-blue-50 text-blue-950 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50 status-badge">
+                                <span class="type-cell inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800/60 status-badge">
                                     {{ $barcode->barcode_type }}
                                 </span>
                             </div>
@@ -94,7 +100,7 @@
                         </td>
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words">
-                            {{ $barcode->current_lifecycle ?? '-' }}
+                            {{ $barcode->current_lifecycle ?? 'INBOUND_REGISTERED' }}
                         </td>
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
@@ -111,9 +117,9 @@
                             <div class="flex justify-center items-center gap-1.5">
                                 {{-- PREVIEW BUTTON --}}
                                 <button type="button" 
-                                        onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', '{{ $barcode->barcode_size }}')"
-                                        class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all shadow-md active:scale-95 cursor-pointer"
-                                        title="Preview"
+                                        onclick="openBarcodeModal({{ $barcode->id }}, '{{ $barcode->barcode_type }}', '{{ $content }}', '{{ $barcode->barcode_size }}')"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md active:scale-95 cursor-pointer"
+                                        title="Preview Structure"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178c.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
@@ -123,7 +129,7 @@
 
                                 {{-- DOWNLOAD BUTTON --}}
                                 <button type="button" 
-                                        onclick="downloadBarcodeDirectly('{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}')"
+                                        onclick="downloadBarcodeDirectly('{{ $barcode->barcode_type }}', '{{ $content }}')"
                                         class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition-all shadow-md active:scale-95 cursor-pointer"
                                         title="Download PNG"
                                 >
@@ -134,7 +140,7 @@
 
                                 {{-- PRINT BUTTON --}}
                                 <button type="button" 
-                                        onclick="printBarcodeDirectly('{{ $barcode->barcode_type }}', '{{ $barcode->final_content }}', '{{ $barcode->barcode_size }}')"
+                                        onclick="printBarcodeDirectly('{{ $barcode->barcode_type }}', '{{ $content }}', '{{ $barcode->barcode_size }}')"
                                         class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-purple-500 hover:bg-purple-600 text-white transition-all shadow-md active:scale-95 cursor-pointer"
                                         title="Print Barcode"
                                 >
@@ -170,31 +176,55 @@
     </div>
 </div>
 
-{{-- MODAL PREVIEW BARCODE --}}
+{{-- MODAL PREVIEW & STRUCTURE BREAKDOWN --}}
 <div id="barcodeModal" class="fixed inset-0 z-99999 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-sm opacity-0 transition-opacity duration-300 ease-in-out" onclick="closeBarcodeModal(event)">
-    <div class="relative bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-2xl border border-gray-200 dark:border-slate-800 max-w-md w-full transform scale-90 transition-transform duration-300 ease-in-out mx-4" onclick="event.stopPropagation()">
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-2xl border border-gray-200 dark:border-slate-800 max-w-lg w-full transform scale-90 transition-transform duration-300 ease-in-out mx-4" onclick="event.stopPropagation()">
         
         <button onclick="closeBarcodeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 font-bold text-2xl transition-colors">&times;</button>
 
-        <div class="text-center mb-5">
-            <h3 id="modal_header_type" class="text-indigo-600 dark:text-indigo-400 font-black text-[13px] tracking-widest uppercase mb-1"></h3>
+        <div class="text-center mb-4">
+            <h3 id="modal_header_type" class="text-orange-600 dark:text-orange-400 font-black text-[13px] tracking-widest uppercase mb-1"></h3>
             <p id="modal_header_size" class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider"></p>
         </div>
 
-        <div class="bg-slate-50 dark:bg-slate-950 p-6 rounded-xl border border-gray-100 dark:border-slate-800/80 flex items-center justify-center min-h-[240px] mb-5 shadow-inner">
+        <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-xl border border-gray-100 dark:border-slate-800/80 flex items-center justify-center min-h-[200px] mb-4 shadow-inner">
             <div id="modal_render_area" class="flex flex-col items-center justify-center bg-white p-4 rounded-xl shadow-sm border border-gray-100"></div>
         </div>
 
-        <div class="text-center space-y-4 font-nunito">
-            <p id="modal_content_text" class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 break-all bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-gray-100 dark:border-slate-800"></p>
-            
-            <button id="modal_download_btn" type="button" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest shadow-md active:scale-95">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
-                </svg>
-                Download PNG (Actual Size)
-            </button>
+        {{-- VISUAL PARSED BREAKDOWN CONTAINER --}}
+        <div class="space-y-3 font-nunito mb-5">
+            <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-gray-100 dark:border-slate-800 text-center">
+                <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Raw Barcode String</p>
+                <p id="modal_content_text" class="text-sm font-mono font-black text-orange-600 dark:text-orange-400 break-all select-all"></p>
+            </div>
+
+            {{-- DYNAMIC PARSER STRUCTURE BADGES --}}
+            <div id="modal_parsing_breakdown" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px]">
+                <div class="p-2 rounded-lg bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-900/40">
+                    <span class="block font-black text-orange-500 uppercase">PREFIX + RAK</span>
+                    <span id="parse_prefix_rak" class="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs"></span>
+                </div>
+                <div class="p-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-900/40">
+                    <span class="block font-black text-blue-500 uppercase">SPAREPART ID</span>
+                    <span id="parse_sp_id" class="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs"></span>
+                </div>
+                <div class="p-2 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-900/40">
+                    <span class="block font-black text-purple-500 uppercase">DATE (MMYY)</span>
+                    <span id="parse_mmyy" class="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs"></span>
+                </div>
+                <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/40">
+                    <span class="block font-black text-emerald-500 uppercase">COUNTER</span>
+                    <span id="parse_counter" class="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs"></span>
+                </div>
+            </div>
         </div>
+
+        <button id="modal_download_btn" type="button" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-xl transition-all uppercase text-xs tracking-widest shadow-md active:scale-95">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+            </svg>
+            Download PNG (Actual Size)
+        </button>
     </div>
 </div>
 
@@ -204,7 +234,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         @foreach($barcodes as $b)
-            renderThumbnail({{ $b->id }}, '{{ $b->barcode_type }}', '{{ $b->final_content }}');
+            renderThumbnail({{ $b->id }}, '{{ $b->barcode_type }}', '{{ $b->final_content ?? $b->barcode_id }}');
         @endforeach
     });
 
@@ -213,7 +243,7 @@
         if (!targetDiv) return;
 
         if (type === 'QR CODE') {
-            new QRCode(targetDiv, { text: content, width: 34, height: 34, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+            new QRCode(targetDiv, { text: content, width: 34, height: 34, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
             setTimeout(() => {
                 const img = targetDiv.querySelector('img');
                 if(img) { img.style.width = "34px"; img.style.height = "34px"; }
@@ -226,8 +256,32 @@
             const canvas = document.createElement('canvas'); targetDiv.appendChild(canvas);
             try { bwipjs.toCanvas(canvas, { bcid: 'pdf417', text: content, scale: 1, height: 8, columns: 3 }); canvas.style.maxWidth = "40px";
             } catch (e) { targetDiv.innerText = "Err"; }
-        } else if (type === '3D CODE') {
-            const canvas = document.createElement('canvas'); canvas.width = 34; canvas.height = 34; const ctx = canvas.getContext('2d'); ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 0, 34, 34); ctx.fillStyle = "#10b981"; ctx.fillRect(6, 6, 22, 22); targetDiv.appendChild(canvas);
+        } else {
+            const canvas = document.createElement('canvas'); targetDiv.appendChild(canvas);
+            try { bwipjs.toCanvas(canvas, { bcid: 'code128', text: content, scale: 1, height: 10 }); canvas.style.maxWidth = "40px";
+            } catch (e) { targetDiv.innerText = "Err"; }
+        }
+    }
+
+    function parseBarcodeStringStructure(str) {
+        const breakdownEl = document.getElementById('modal_parsing_breakdown');
+        
+        // Cek jika string sesuai pola TXENGINRAK...
+        if (str.startsWith("TXENGINRAK")) {
+            breakdownEl.classList.remove('hidden');
+            
+            // Pola: TXENGINRAK + 2 Digit Rak + Sparepart ID + 4 Digit Date (MMYY) + 4 Digit Counter
+            const prefixRak = str.substring(0, 12); // "TXENGINRAK01"
+            const counter = str.substring(str.length - 4); // 4 Digit terakhir
+            const dateStr = str.substring(str.length - 8, str.length - 4); // 4 Digit sebelum counter
+            const spId = str.substring(12, str.length - 8); // Sisa di tengah (Sparepart ID)
+
+            document.getElementById('parse_prefix_rak').innerText = prefixRak;
+            document.getElementById('parse_sp_id').innerText = spId || '-';
+            document.getElementById('parse_mmyy').innerText = dateStr;
+            document.getElementById('parse_counter').innerText = counter;
+        } else {
+            breakdownEl.classList.add('hidden');
         }
     }
 
@@ -238,7 +292,7 @@
 
         if (type === 'QR CODE') {
             const div = document.createElement('div');
-            new QRCode(div, { text: content, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H });
+            new QRCode(div, { text: content, width: 300, height: 300, correctLevel: QRCode.CorrectLevel.M });
             setTimeout(() => {
                 const img = div.querySelector('img');
                 if (img) {
@@ -247,8 +301,8 @@
                 }
             }, 100);
         } else {
-            let bcid = type === 'DATA MATRIX' ? 'datamatrix' : 'pdf417';
-            let opts = type === 'DATA MATRIX' ? { bcid: bcid, text: content, scale: 5, include0: true } : { bcid: bcid, text: content, scale: 2, height: 10, columns: 3 };
+            let bcid = type === 'DATA MATRIX' ? 'datamatrix' : (type === '2D CODE' ? 'pdf417' : 'code128');
+            let opts = type === 'DATA MATRIX' ? { bcid: bcid, text: content, scale: 5, include0: true } : { bcid: bcid, text: content, scale: 2, height: 12 };
             try {
                 bwipjs.toCanvas(canvas, opts);
                 const link = document.createElement('a'); link.href = canvas.toDataURL("image/png"); link.download = filename;
@@ -266,11 +320,11 @@
                 <style>
                     body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; margin: 0; font-family: 'Nunito', sans-serif; color: #000; }
                     .wrapper { text-align: center; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 15px; background: #fff; }
-                    .type { font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-bottom: 5px; color: #4f46e5; }
+                    .type { font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; margin-bottom: 5px; color: #ea580c; }
                     .size { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 15px; }
                     .render-zone { display: inline-block; margin-bottom: 15px; padding: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
-                    .render-zone canvas, .render-zone img { max-width: 200px; height: auto; }
-                    .raw-content { font-family: monospace; font-size: 12px; font-weight: 700; word-break: break-all; max-width: 280px; margin: 0 auto; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #f1f5f9; }
+                    .render-zone canvas, .render-zone img { max-width: 220px; height: auto; }
+                    .raw-content { font-family: monospace; font-size: 13px; font-weight: 800; word-break: break-all; max-width: 320px; margin: 0 auto; background: #fff7ed; color: #c2410c; padding: 8px 12px; border-radius: 6px; border: 1px solid #ffedd5; }
                 </style>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                 <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"><\/script>
@@ -285,11 +339,11 @@
                 <script>
                     const zone = document.getElementById('print_area');
                     if ('${type}' === 'QR CODE') {
-                        new QRCode(zone, { text: '${content}', width: 180, height: 180, correctLevel: QRCode.CorrectLevel.H });
+                        new QRCode(zone, { text: '${content}', width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
                     } else if ('${type}' === 'DATA MATRIX') {
                         const canvas = document.createElement('canvas'); zone.appendChild(canvas);
                         bwipjs.toCanvas(canvas, { bcid: 'datamatrix', text: '${content}', scale: 5, include0: true });
-                    } else if ('${type}' === '2D CODE') {
+                    } else {
                         const canvas = document.createElement('canvas'); zone.appendChild(canvas);
                         bwipjs.toCanvas(canvas, { bcid: 'pdf417', text: '${content}', scale: 2, height: 10, columns: 3 });
                     }
@@ -322,13 +376,16 @@
         document.getElementById('modal_header_size').innerText = `CONFIG: ${sizeString}`;
         document.getElementById('modal_content_text').innerText = content;
 
-        let renderPixelSize = 100 + ((sizeMm - 1) * 10.5); 
+        // Auto breakdown string jika sesuai format baru
+        parseBarcodeStringStructure(content);
+
+        let renderPixelSize = 110 + ((sizeMm - 1) * 10); 
         currentDownloadData = { url: '', filename: '' };
 
         if (type === 'QR CODE') {
             new QRCode(renderArea, {
                 text: content, width: renderPixelSize, height: renderPixelSize,
-                colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+                colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M
             });
             setTimeout(() => {
                 const img = renderArea.querySelector('img');
@@ -348,10 +405,6 @@
                 canvas.style.width = `${renderPixelSize}px`;
                 prepareDownload(canvas.toDataURL("image/png"), type, content);
             } catch (e) { renderArea.innerText = "Error rendering: " + e.message; }
-        } else if (type === '3D CODE') {
-            const canvas = document.createElement('canvas'); canvas.width = renderPixelSize; canvas.height = renderPixelSize; const ctx = canvas.getContext('2d'); ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 0, renderPixelSize, renderPixelSize); ctx.fillStyle = "#10b981"; ctx.fillRect(renderPixelSize*0.15, renderPixelSize*0.15, renderPixelSize*0.7, renderPixelSize*0.7);
-            renderArea.appendChild(canvas);
-            prepareDownload(canvas.toDataURL("image/png"), type, content);
         }
     }
 
