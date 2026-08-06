@@ -14,10 +14,24 @@ class DbBarcodeController extends Controller
     /**
      * Menampilkan list data final barcode dari database
      */
-    public function index()
+    public function index(Request $request)
     {
-        $barcodes = DbBarcode::orderBy('id', 'desc')->paginate(10);
-        return view('eng_overview.db_barcode', compact('barcodes'));
+        $filter = strtolower((string) $request->input('filter', 'all'));
+        $query = DbBarcode::query();
+
+        if ($filter === 'in') {
+            $query->where('barcode_id', 'LIKE', 'TXENGINRAK%');
+        } elseif ($filter === 'out') {
+            $query->where('barcode_id', 'LIKE', 'TXENGRAK%');
+        } else {
+            $filter = 'all';
+        }
+
+        $barcodes = $query->orderBy('id', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('eng_overview.db_barcode', compact('barcodes', 'filter'));
     }
 
     /**

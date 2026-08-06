@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ListSparepartEng;
+use App\Models\Production\stock_prod;
+use Illuminate\Http\JsonResponse;
 
 class OutProdController extends Controller
 {
@@ -48,11 +50,13 @@ class OutProdController extends Controller
             ->leftJoin('db_barcodes as b', 't.db_barcodes_id', '=', 'b.id')
             ->select([
                 't.*',
-                'u.nik as nik',
+                'u.nik as operator_nik',
+                't.nik_karyawan as employee_nik',
                 'u.name as operator_name',
                 DB::raw("REPLACE(UPPER(lp.no_line), 'LINI', 'LINE') as line_name"), // Mengubah LINI menjadi LINE01/LINE XX
                 'se.sparepart_id as item_code',
-                'b.barcode_id as barcode_code'
+                'b.barcode_id as barcode_code',
+                'b.current_lifecycle as barcode_lifecycle'
             ])
             ->where('t.tx_type', 'out')
             ->orderBy('t.created_at', 'desc')
@@ -70,6 +74,74 @@ class OutProdController extends Controller
     }
 
     /**
+     * Form manual OUT menggunakan barcode IN terakhir dari stock line.
+     */
+    public function manualOut()
+    {
+        $activeStocks = stock_prod::with(['line', 'sparepart'])
+            ->where('qty', '>', 0)
+            ->orderBy('line_id')
+            ->get()
+            ->map(function ($stock) {
+                $latestIn = DB::table('stock_prod_transactions')
+                    ->where('stock_prods_id', $stock->id)
+                    ->where('tx_type', 'in')
+                    ->where('status', 'success')
+                    ->latest('id')
+                    ->first();
+
+                $stock->barcode_code = $latestIn?->db_barcodes_id
+                    ? DB::table('db_barcodes')->where('id', $latestIn->db_barcodes_id)->value('barcode_id')
+                    : null;
+                $stock->line_name = $stock->line->no_line ?? $stock->line_id;
+                $stock->item_code = $stock->sparepart->sparepart_id ?? $stock->sparepart_id;
+
+                return $stock;
+            });
+
+        return view('stock_prod.transactionProd.manual_out', compact('activeStocks'));
+    }
+
+    /**
+     * Manual OUT tetap melewati validasi dan mutasi yang sama dengan scanner.
+     */
+    public function storeManualOut(Request $request)
+    {
+        $request->validate([
+            'stock_prods_id' => 'required|integer|exists:stock_prods,id',
+            'nik_karyawan'   => 'nullable|required_if:out_category,lost|string|max:50',
+            'out_category'   => 'required|string|in:broken,lost',
+            'photo_path'     => 'nullable|required_if:out_category,broken|image|max:5120',
+            'remark'         => 'nullable|string',
+        ]);
+
+        $latestIn = DB::table('stock_prod_transactions')
+            ->where('stock_prods_id', $request->stock_prods_id)
+            ->where('tx_type', 'in')
+            ->where('status', 'success')
+            ->latest('id')
+            ->first();
+
+        if (!$latestIn || !$latestIn->db_barcodes_id) {
+            return redirect()->back()->withInput()->with('error', 'Barcode IN aktif untuk stock line tersebut tidak ditemukan.');
+        }
+
+        $barcode = DB::table('db_barcodes')->where('id', $latestIn->db_barcodes_id)->value('barcode_id');
+        $request->merge([
+            'barcode_scan' => $barcode,
+            'process_type' => 'manual',
+        ]);
+
+        $response = $this->storeScanOut($request);
+        if ($response instanceof JsonResponse) {
+            $data = $response->getData(true);
+            return redirect()->back()->withInput()->with($data['success'] ? 'success' : 'error', $data['message']);
+        }
+
+        return $response;
+    }
+
+    /**
      * 3. CORE ENGINE: Memproses Eksekusi Scan OUT via AJAX Gun Scanner
      */
     public function storeScanOut(Request $request)
@@ -79,11 +151,22 @@ class OutProdController extends Controller
             'barcode_scan' => 'required|string',
             'process_type' => 'nullable|string|in:scan,manual',
             'out_category' => 'nullable|string|in:broken,lost,other', 
-            'remark'       => 'nullable|string'
+            'remark'       => 'nullable|string',
+            'nik_karyawan' => 'nullable|string|max:50',
+            'photo_path'   => 'nullable|image|max:5120',
         ]);
 
         DB::beginTransaction();
         try {
+            $reject = static function (string $message, int $status = 422) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], $status);
+            };
+
             // Bersihkan string spasi atau baris baru hasil ketikan gun scanner
             $targetCode = trim($request->barcode_scan);
             $targetCode = str_replace(["\r", "\n", "\t"], '', $targetCode);
@@ -93,6 +176,7 @@ class OutProdController extends Controller
                 ->leftJoin('db_barcodes', 'stock_prod_transactions.db_barcodes_id', '=', 'db_barcodes.id')
                 ->leftJoin('stock_eng_transactions', 'stock_prod_transactions.stock_eng_tx_id', '=', 'stock_eng_transactions.id')
                 ->where('stock_prod_transactions.tx_type', 'in')
+                ->where('stock_prod_transactions.status', 'success')
                 ->where(function($query) use ($targetCode) {
                     $query->where('db_barcodes.barcode_id', $targetCode)
                           ->orWhere('db_barcodes.final_content', $targetCode)
@@ -111,32 +195,57 @@ class OutProdController extends Controller
 
             // Proteksi 1: Jika barcode tidak terdaftar di riwayat transaksi masuk lantai produksi
             if (!$historyIn) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Gagal Scan! Kode QR/Barcode (' . $targetCode . ') tidak ditemukan atau belum pernah di-Stock IN ke produksi.'
-                ], 422);
+                return $reject('Gagal Scan! Kode QR/Barcode (' . $targetCode . ') tidak ditemukan atau belum pernah di-Stock IN ke produksi.');
             }
 
+            // Kunci master barcode juga, supaya dua scanner tidak memproses barcode yang sama.
+            $barcodeData = $historyIn->db_barcodes_id
+                ? DB::table('db_barcodes')->where('id', $historyIn->db_barcodes_id)->lockForUpdate()->first()
+                : null;
+
             // Production OUT hanya boleh dilakukan setelah Production IN dan sebelum barcode di-return.
-            if ($historyIn->db_barcodes_id && $historyIn->barcode_lifecycle !== 'USED_IN') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal Scan! Barcode tidak berstatus USED_IN (status saat ini: '
-                        . ($historyIn->barcode_lifecycle ?? '-') . '). Barcode sudah dipakai atau sudah di-return.'
-                ], 422);
+            if ($barcodeData && $barcodeData->current_lifecycle !== 'USED_IN') {
+                return $reject('Gagal Scan! Barcode tidak berstatus USED_IN (status saat ini: '
+                    . ($barcodeData->current_lifecycle ?? '-') . '). Barcode sudah dipakai atau sudah di-return.');
+            }
+
+            // Pastikan IN adalah transaksi produksi terakhir untuk barcode ini.
+            $latestProductionTx = $historyIn->db_barcodes_id
+                ? DB::table('stock_prod_transactions')
+                    ->where('db_barcodes_id', $historyIn->db_barcodes_id)
+                    ->where('status', 'success')
+                    ->latest('id')
+                    ->first()
+                : null;
+
+            if (!$latestProductionTx || $latestProductionTx->tx_type !== 'in') {
+                return $reject('Gagal Scan! Barcode belum berada pada siklus Production IN aktif.');
             }
 
             // Proteksi 2: Cek sisa stock fisik barang tersebut di tabel live stock produksi (stock_prods)
             $liveStock = DB::table('stock_prods')
                 ->where('id', $historyIn->stock_prods_id)
                 ->where('qty', '>', 0)
+                ->lockForUpdate()
                 ->first();
 
             if (!$liveStock) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Gagal Scan! Item terdeteksi, namun sisa live stock untuk komponen ini di lini terkait sudah habis (0).'
-                ], 422);
+                return $reject('Gagal Scan! Item terdeteksi, namun sisa live stock untuk komponen ini di lini terkait sudah habis (0).');
+            }
+
+            $outCatInput = $request->input('out_category');
+            $finalCategory = in_array($outCatInput, ['broken', 'lost'], true) ? $outCatInput : null;
+            $nikKaryawan = trim((string) $request->input('nik_karyawan', ''));
+
+            if ($finalCategory === 'lost' && $nikKaryawan === '') {
+                return $reject('NIK karyawan wajib diisi untuk kategori LOST.');
+            }
+
+            $fotoPath = null;
+            if ($request->hasFile('photo_path')) {
+                $fotoPath = $request->file('photo_path')->store('production_outs', 'public');
+            } elseif ($request->hasFile('test_photo')) {
+                $fotoPath = $request->file('test_photo')->store('production_outs', 'public');
             }
 
             // 🌟 Penomoran Otomatis Kode Transaksi Baru (Format: TXPRODOUT + DDMMYY + 0001 s/d 9999)
@@ -154,10 +263,11 @@ class OutProdController extends Controller
             }
             $txId = $datePrefix . $nextNum;
 
-            // Jembatan Penyelamat ENUM: Jika dropdown memilih 'other', amankan menjadi NULL
-            $outCatInput = $request->input('out_category');
-            $finalCategory = in_array($outCatInput, ['broken', 'lost']) ? $outCatInput : null;
             $processType   = $request->input('process_type', 'scan');
+            $remark = trim((string) ($request->input('remark') ?? 'AUTOMATED OUT'));
+            if ($finalCategory === 'lost') {
+                $remark .= ' | NIK KARYAWAN YANG MENGHILANGKAN: ' . $nikKaryawan;
+            }
 
             // 1. TULIS LOG TRANSAKSI BARU (stock_prod_transactions)
             DB::table('stock_prod_transactions')->insert([
@@ -167,21 +277,27 @@ class OutProdController extends Controller
                 'stock_eng_tx_id'       => $historyIn->stock_eng_tx_id,
                 'db_barcodes_id'        => $historyIn->db_barcodes_id,
                 'production_request_id' => $historyIn->production_request_id,
-                'nik_karyawan'          => Auth::user()->nik ?? null,
+                'nik_karyawan'          => $nikKaryawan !== '' ? $nikKaryawan : null,
                 'tx_type'               => 'out',
                 'out_category'          => $finalCategory,
                 'qty_transaction'       => 1, // Pengurangan 1 unit per scan
                 'process_type'          => $processType,
+                'photo_path'            => $fotoPath,
                 'status'                => 'success',
-                'remark'                => $request->remark ?? 'AUTOMATED OUT',
+                'remark'                => $remark,
                 'created_at'            => now(),
                 'updated_at'            => now()
             ]);
 
             // 2. POTONG LIVE STOK UTAMA DI LANTAI PRODUKSI (stock_prods)
-            DB::table('stock_prods')
+            $affectedRows = DB::table('stock_prods')
                 ->where('id', $liveStock->id)
+                ->where('qty', '>', 0)
                 ->decrement('qty', 1);
+
+            if ($affectedRows !== 1) {
+                return $reject('Gagal Scan! Stok line sudah habis saat transaksi diproses.');
+            }
 
             // 3. UPDATE LOG SIKLUS HIDUP BARCODE
             if ($historyIn->db_barcodes_id) {
@@ -197,7 +313,8 @@ class OutProdController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Sukses! Barcode ' . $targetCode . ' berhasil di-Scan OUT dan memotong stok lini produksi.'
+                'message' => 'Sukses! Barcode ' . $targetCode . ' berhasil di-Scan OUT. Stok line berkurang 1 dan '
+                    . 'barcode siap diproses Engineering Disposal.'
             ]);
 
         } catch (\Exception $e) {

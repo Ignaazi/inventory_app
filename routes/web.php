@@ -7,17 +7,17 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EngineeringOverviewController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\StockEngineeringController;
 use App\Http\Controllers\Engineering\ListSparepartEngController;
 use App\Http\Controllers\Engineering\StockInEngineeringController;
 use App\Http\Controllers\Engineering\StockOutEngineeringController;
-use App\Http\Controllers\Engineering\StockReturnEngineeringController; // 🔥 ADDED
+use App\Http\Controllers\Engineering\StockReturnEngineeringController;
 use App\Http\Controllers\Engineering\ApprovalEngController;
 use App\Http\Controllers\Engineering\HistoryApprovalController;
 use App\Http\Controllers\Engineering\PurchaseRequestEngController;
 use App\Http\Controllers\Engineering\PurchaseRequestHistoryEngController;
 use App\Http\Controllers\Engineering\TransactionController;
-use App\Http\Controllers\Engineering\TransactionDisposalController;
 use App\Http\Controllers\Engineering\DisposalEngineeringController;
 use App\Http\Controllers\EngOverview\BarcodeParsingController;
 use App\Http\Controllers\EngOverview\DbBarcodeController;
@@ -46,9 +46,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
 
     // Dashboard Utama
-    Route::get('/admin', function () {
-        return view('admin');
-    })->name('dashboard');
+    Route::get('/admin', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -69,6 +67,9 @@ Route::middleware('auth')->group(function () {
 
         // Modul Utama Engineering (/eng/...)
         Route::prefix('eng')->group(function () {
+
+            // 🔥 Engineering Overview Dashboard Page
+            Route::get('/overview', [EngineeringOverviewController::class, 'index'])->name('eng.overview');
 
             // Sparepart
             Route::get('/list-sparepart/export', [StockEngineeringController::class, 'export'])->name('list-sparepart.export');
@@ -91,7 +92,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('/scan/store', 'storeScan')->name('.scan.store');
             });
 
-            // Stock Return 🔥 (Menggunakan StockReturnEngineeringController)
+            // Stock Return (Menggunakan StockReturnEngineeringController)
             Route::controller(StockReturnEngineeringController::class)->prefix('return')->name('eng.return.')->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::get('/scan', 'scan')->name('scan');
@@ -144,6 +145,9 @@ Route::middleware('auth')->group(function () {
 
         // Modul Engineering Overview (/eng-overview/...)
         Route::prefix('eng-overview')->group(function () {
+            // 🔥 Direct URL Access ke Dashboard Overview jika diakses melalui /eng-overview
+            Route::get('/', [EngineeringOverviewController::class, 'index'])->name('eng.overview.direct');
+
             Route::controller(BarcodeParsingController::class)->group(function () {
                 Route::get('/barcode-parsing', 'index')->name('barcode.parsing');
                 Route::get('/barcode-parsing-in', 'indexIn')->name('barcode.parsing.in');
@@ -170,7 +174,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/out', 'indexOut')->name('out');
             });
 
-            // Transaksi RETURN Log & Executions 🔥
+            // Transaksi RETURN Log & Executions
             Route::controller(StockReturnEngineeringController::class)->group(function () {
                 Route::get('/return', 'index')->name('return');
                 Route::get('/return/scan', 'scan')->name('return.scan');
@@ -183,8 +187,7 @@ Route::middleware('auth')->group(function () {
                 return view('stock_eng.transaction.return_manual', compact('stocks', 'raks'));
             })->name('return.manual');
 
-            // Split Architecture Module Disposal
-            Route::get('/disposal', [TransactionDisposalController::class, 'index'])->name('disposal');
+            Route::get('/disposal', [DisposalEngineeringController::class, 'index'])->name('disposal');
 
             Route::controller(DisposalEngineeringController::class)->prefix('disposal')->name('disposal.')->group(function () {
                 Route::get('/scan', 'scanView')->name('scan');

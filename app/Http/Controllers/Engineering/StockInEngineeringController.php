@@ -99,7 +99,12 @@ class StockInEngineeringController extends Controller
 
         $raks = \App\Models\Rak::orderBy('nama_rak', 'asc')->get();
 
-        return view('stock_eng.transaction.in_scan', compact('stocks', 'barcodes', 'raks'));
+        return view('stock_eng.transaction.in_scan', [
+            'stocks' => $stocks,
+            'barcodes' => $barcodes,
+            'raks' => $raks,
+            'scan_mode' => 'engineering',
+        ]);
     }
 
     /**

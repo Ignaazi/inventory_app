@@ -28,6 +28,7 @@ class TransactionController extends Controller
                 'users.name',                 // Langsung ambil nama user
                 'production_requests.request_no', // Langsung nomor request produksi
                 'db_barcodes.barcode_id',     // Barcode ID riil
+                'db_barcodes.current_lifecycle as barcode_lifecycle',
                 'spareparts.sparepart_id',    // Sparepart ID riil (misal: 120, 148, 130, 766)
                 'raks.nama_rak'               // Nama/Lokasi Rak riil
             ])
@@ -83,6 +84,7 @@ class TransactionController extends Controller
                 'users.nik',
                 'users.name',
                 'db_barcodes.barcode_id',
+                'db_barcodes.current_lifecycle as barcode_lifecycle',
                 'spareparts.sparepart_id',
                 'raks.nama_rak'
             ])

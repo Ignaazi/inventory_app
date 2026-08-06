@@ -39,19 +39,29 @@
         </div>
     </div>
 
+    {{-- Filter sumber barcode: pola ID IN dan OUT dibuat berbeda oleh generator. --}}
+    <div class="mb-4 flex flex-wrap items-center gap-2 font-nunito">
+        <span class="mr-1 text-xs font-black uppercase tracking-wide text-black dark:text-white">Filter:</span>
+        @foreach(['all' => 'ALL', 'in' => 'IN', 'out' => 'OUT'] as $value => $label)
+            <a href="{{ url()->current() . '?filter=' . $value }}"
+               class="rounded-lg border px-4 py-2 text-xs font-black tracking-wide no-underline transition {{ (($filter ?? 'all') === $value) ? 'border-orange-600 bg-orange-600 text-white' : 'border-gray-300 bg-white text-black hover:border-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white' }}">
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
+
     {{-- PEMBUNGKUS UTAMA TABEL --}}
     <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
 
         {{-- AREA SCROLL HORIZONTAL --}}
         <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1280px]" id="barcode-table">
+            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[1120px]" id="barcode-table">
                 <thead>
                     <tr class="text-[12px] font-black uppercase tracking-wider bg-orange-600 dark:bg-orange-950/80 text-white dark:text-orange-200 font-nunito table-header-row">
                         <th class="px-2 py-3.5 w-[50px] text-center">NO</th>
                         <th class="px-2 py-3.5 w-[90px] border-l border-orange-500 dark:bg-orange-900/50 text-center">VISUAL</th>
                         <th class="px-3 py-3.5 w-[280px] border-l border-orange-500 dark:bg-orange-900/50 text-center">BARCODE STRING (PARSED)</th>
                         <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">BARCODE TYPE</th>
-                        <th class="px-3 py-3.5 w-[150px] border-l border-orange-500 dark:bg-orange-900/50 text-center">DIMENSION / CONFIG</th>
                         <th class="px-3 py-3.5 w-[160px] border-l border-orange-500 dark:bg-orange-900/50 text-center">CURRENT LIFECYCLE</th>
                         <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">CREATED AT</th>
                         <th class="px-3 py-3.5 w-[120px] border-l border-orange-500 dark:bg-orange-900/50 text-center">UPDATED AT</th>
@@ -89,18 +99,14 @@
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             <div class="flex justify-center items-center">
-                                <span class="type-cell inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800/60 status-badge">
+                                <span class="type-cell inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800/60">
                                     {{ $barcode->barcode_type }}
                                 </span>
                             </div>
                         </td>
                         
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center truncate" title="{{ $barcode->barcode_size }}">
-                            {{ $barcode->barcode_size }}
-                        </td>
-
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 text-center font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words">
-                            {{ $barcode->current_lifecycle ?? 'INBOUND_REGISTERED' }}
+                            @include('partials.lifecycle-badge', ['lifecycle' => $barcode->current_lifecycle ?? 'UNKNOWN'])
                         </td>
 
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-center">
@@ -153,7 +159,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                        <td colspan="8" class="py-10 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No Barcode Registered in Database
                         </td>
                     </tr>
@@ -442,7 +448,8 @@
 <style>
     .font-nunito, .swal2-popup, #barcode-table { font-family: 'Nunito', sans-serif !important; }
     .table-body-data tr td, .table-body-data tr td div, .table-empty-text { color: #000000 !important; }
-    .dark .table-body-data tr td, .dark .table-body-data tr td div, .dark .table-empty-text { color: #cbd5e1 !important; }
+    .table-body-data tr td span:not(.lifecycle-badge):not(.remark-cell) { color: #000000 !important; }
+    .dark .table-body-data tr td, .dark .table-body-data tr td div, .dark .table-empty-text { color: #000000 !important; }
     .status-badge { color: inherit !important; }
     .table-header-row th { color: #ffffff !important; }
     .scrollbar-thin::-webkit-scrollbar { height: 7px; }

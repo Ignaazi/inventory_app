@@ -45,6 +45,18 @@ class DisposalEng extends Model
         'updated_at'      => 'datetime',
     ];
 
+    /**
+     * NIK PIC hilang disimpan di remark karena sumbernya adalah Production OUT.
+     */
+    public function getNikKaryawanAttribute(): ?string
+    {
+        if (preg_match('/NIK KARYAWAN YANG MENGHILANGKAN:\s*([^|]+)/i', (string) $this->remark, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+
     // =========================================================================
     // LOCAL SCOPES (Penyederhanaan Query Builder)
     // =========================================================================

@@ -14,12 +14,18 @@ class StockEngineeringController extends Controller
     {
         $raks = Rak::all();
         // Memuat relasi 'rak' dan 'sparepart' agar data nama/id, sap, dan part number bisa dipanggil di view
-        $stocks = StockEng::with(['rak', 'sparepart'])->orderBy('created_at', 'desc')->paginate(25);
+        $stocks = StockEng::with(['rak', 'sparepart'])->orderBy('updated_at', 'desc')->paginate(25);
         
         // Perbaikan: Diurutkan berdasarkan 'sparepart_id' karena kolom 'name' sudah tidak ada
         $ListSparepartEng = ListSparepartEng::orderBy('sparepart_id', 'asc')->get(); 
+
+        $stockSummary = [
+            'critical' => StockEng::where('qty', '<=', 0)->count(),
+            'warning'  => StockEng::where('qty', '>', 0)->whereColumn('qty', '<=', 'min_stock')->count(),
+            'safe'     => StockEng::whereColumn('qty', '>', 'min_stock')->count(),
+        ];
         
-        return view('stock_eng.index', compact('stocks', 'raks', 'ListSparepartEng'));
+        return view('stock_eng.index', compact('stocks', 'raks', 'ListSparepartEng', 'stockSummary'));
     }
 
     public function indexIn()

@@ -23,6 +23,7 @@
         border-color: #1e293b;
     }
 
+    /* VIEWPORT KAMERA TINGGI & LEGA UNTUK PEMBACAAN MAKSIMAL */
     .scanner-viewport {
         position: relative;
         overflow: hidden;
@@ -31,8 +32,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 380px;
+        min-height: 580px;
+        height: 580px;
         border: 1px solid #1e293b;
+    }
+
+    /* Responsif Layar Smartphone / HP */
+    @media (max-width: 640px) {
+        .scanner-viewport {
+            min-height: 520px;
+            height: 520px;
+        }
     }
 
     .laser-line {
@@ -55,7 +65,7 @@
     }
 
     #reader { width: 100%; height: 100%; }
-    #reader video { object-fit: cover !important; border-radius: 12px; }
+    #reader video { object-fit: cover !important; border-radius: 12px; width: 100% !important; height: 100% !important; }
 </style>
 
 <div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300 text-slate-800 dark:text-slate-200">
@@ -82,11 +92,11 @@
     {{-- GRID MODULE SCANNER & DIAGNOSTIC --}}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
         
-        {{-- MODULE KAMERA SCANNER --}}
+        {{-- MODULE KAMERA SCANNER (COL-SPAN 8) --}}
         <div class="lg:col-span-8 panel-box flex flex-col p-4 md:p-5">
             <div class="mb-3 flex justify-between items-center pb-3 border-b border-gray-100 dark:border-slate-800">
-                <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide">
-                    Live Camera Return Scanner
+                <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-amber-500"></i> Live Camera Return Scanner
                 </h3>
                 <span id="badge_method" class="px-2.5 py-1 text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 rounded-lg flex items-center gap-1.5 uppercase tracking-wider">
                     <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> STANDBY
@@ -100,7 +110,7 @@
                     
                     <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-0">
                         <i class="fa-solid fa-camera text-4xl text-slate-700 mb-2"></i>
-                        <span class="text-slate-500 text-xs font-mono font-bold">KAMERA NONAKTIF</span>
+                        <span class="text-slate-500 text-xs font-mono font-bold uppercase">KAMERA NONAKTIF</span>
                     </div>
                 </div>
 
@@ -115,211 +125,71 @@
             </div>
         </div>
 
-        {{-- DIAGNOSTIC LOG & INPUT MANUAL --}}
+        {{-- DIAGNOSTIC LOG & PAYLOAD MONITOR (COL-SPAN 4) --}}
         <div class="lg:col-span-4 flex flex-col gap-5">
             
             {{-- LOG TERMINAL --}}
             <div id="status-container" class="panel-box p-4 md:p-5 transition-colors duration-300">
-                <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3 mb-3">
-                    Terminal Log Realtime
-                </h3>
+                <div class="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3 mb-3">
+                    <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-microchip text-slate-500"></i> Terminal Log Realtime
+                    </h3>
+                    <span class="text-[10px] font-bold text-slate-400">SYNC ONLINE</span>
+                </div>
                 <div class="flex items-start gap-3">
                     <div id="status-icon-box" class="flex-shrink-0 w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                        <i class="fa-solid fa-microchip text-lg" id="main-status-icon"></i>
+                        <i class="fa-solid fa-server text-lg" id="main-status-icon"></i>
                     </div>
                     <div>
                         <h4 class="text-xs md:text-sm font-extrabold text-slate-900 dark:text-white" id="status-title">Terminal Ready</h4>
                         <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed" id="status-desc">
-                            Arahkan barcode ke lensa kamera atau gunakan USB Gun Scanner/input keyboard di bawah.
+                            Arahkan barcode ke lensa kamera untuk membatalkan/mengembalikan ketersediaan stok komponen.
                         </p>
                     </div>
                 </div>
             </div>
 
-            {{-- INPUT MANUAL KEYBOARD / GUN SCANNER --}}
-            <div class="panel-box p-4 md:p-5 flex flex-col gap-4">
-                <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-barcode text-amber-500"></i> Manual / Gun Scanner
-                </h3>
-                
-                <div>
-                    <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Scan / Ketik Barcode ID</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="manual_barcode" placeholder="Scan barcode ID..." class="flex-1 rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500">
-                        <button type="button" id="btn_manual_submit" class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-lg text-white text-xs font-black transition-all cursor-pointer">
-                            Process
-                        </button>
+            {{-- MONITOR PAYLOAD SCAN TERAKHIR --}}
+            <div class="panel-box p-4 md:p-5 flex flex-col justify-between">
+                <div class="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3 mb-3">
+                    <h3 class="font-black text-slate-800 dark:text-white text-xs md:text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-amber-500"></i> Payload Scan Terakhir
+                    </h3>
+                    <span id="scan-timestamp" class="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">--:--:--</span>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 p-4 text-slate-200 flex flex-col justify-between shadow-inner">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Hasil Scan ID / Barcode</div>
+                        <div class="py-2">
+                            <div id="last-scanned-code" class="text-xs font-mono font-bold text-amber-400 break-all bg-slate-950 p-3.5 rounded-lg border border-slate-800 text-center tracking-wider">
+                                WAITING FOR SCAN...
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 flex justify-between items-center pt-2 border-t border-slate-800 font-mono">
+                            <span>Status Process:</span>
+                            <span id="last-scanned-type" class="text-slate-300 font-bold uppercase">IDLE</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <span>Mode Transaksi</span>
+                        <span class="text-amber-600 dark:text-amber-400 font-extrabold uppercase">
+                            PRODUCTION RETURN (+1 STOK)
+                        </span>
                     </div>
                 </div>
-
-                <div class="border-t border-gray-100 dark:border-slate-800 pt-3">
-                    <p class="text-[10px] font-bold text-slate-400 mb-1.5">Alternatif: Upload Gambar Barcode/QR</p>
-                    <label for="upload-image-scan" class="flex flex-col items-center justify-center w-full p-3 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all">
-                        <i class="fa-solid fa-cloud-arrow-up text-amber-500 text-lg mb-1"></i>
-                        <span class="text-xs font-extrabold text-amber-600" id="label-upload-status">Upload File Barcode</span>
-                        <input type="file" id="upload-image-scan" accept="image/*" class="hidden" />
-                    </label>
-                </div>
             </div>
 
         </div>
     </div>
+</div>
 
-    {{-- TABEL RIWAYAT SCAN RETURN --}}
-    <div class="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 pt-4 shadow-sm">
-        <div class="px-5 mb-3 flex items-center justify-between">
-            <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Recent Return Transactions
-            </h3>
-        </div>
-
-        <div class="w-full overflow-x-auto scrollbar-thin bg-transparent">
-            <table class="w-full table-fixed text-center border-collapse border-b border-gray-200 dark:border-slate-800 min-w-[2000px]" id="historyTable">
-                <thead>
-                    <tr class="text-[12px] font-black uppercase tracking-wider bg-blue-600 dark:bg-blue-950 text-white font-nunito table-header-row">
-                        <th class="px-3 py-4 w-[50px] text-center">
-                            <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded border-blue-400 bg-transparent text-blue-600 focus:ring-blue-500 cursor-pointer checked:bg-white checked:border-white">
-                        </th>
-                        <th class="px-4 py-4 w-[70px] border-l border-blue-500/50 bg-blue-700/50">NO</th>
-                        <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50">TRANSACTION ID</th>
-                        <th class="px-4 py-4 w-[140px] border-l border-blue-500/50 bg-blue-700/50">NIK</th>
-                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">OPERATOR NAME</th>
-                        <th class="px-5 py-4 w-[190px] border-l border-blue-500/50 bg-blue-700/50">BARCODE ID</th>
-                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50">SPAREPART ID</th>
-                        <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">RAK</th>
-                        <th class="px-4 py-4 w-[120px] border-l border-blue-500/50 bg-blue-700/50">QTY RETURN</th>
-                        <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">STATUS</th>
-                        <th class="px-4 py-4 w-[150px] border-l border-blue-500/50 bg-blue-700/50">PROCESS TYPE</th>
-                        <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50 text-left">REMARK</th>
-                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50 text-center">CREATED AT</th>
-                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50 text-center">UPDATED AT</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
-                    @forelse($history as $index => $log)
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
-                        <td class="px-3 py-4 text-center">
-                            <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer">
-                        </td>
-
-                        {{-- 1. NO --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center">
-                            {{ (method_exists($history, 'firstItem')) ? ($history->firstItem() + $index) : ($index + 1) }}
-                        </td>
-
-                        {{-- 2. TRANSACTION ID --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-extrabold font-mono text-indigo-600 dark:text-indigo-400 text-center whitespace-nowrap select-all">
-                            {{ $log->tx_id ?? '-' }}
-                        </td>
-
-                        {{-- 3. NIK OPERATOR --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                            {{ $log->nik ?? $log->nik_karyawan ?? '-' }}
-                        </td>
-
-                        {{-- 4. OPERATOR NAME --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap font-extrabold text-slate-900 dark:text-white">
-                            {{ $log->operator_name ?? 'System' }}
-                        </td>
-
-                        {{-- 5. BARCODE ID --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
-                            {{ $log->barcode_code ?? '-' }}
-                        </td>
-
-                        {{-- 6. SPAREPART ID --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-emerald-600 dark:text-emerald-400 text-center font-extrabold whitespace-nowrap">
-                            {{ $log->item_code ?? '-' }}
-                        </td>
-
-                        {{-- 7. RAK / LINE TARGET --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-purple-600 dark:text-purple-400 text-center font-extrabold whitespace-nowrap">
-                            {{ $log->line_name ?? ('LINE ' . ($log->stock_prods_id ?? '-')) }}
-                        </td>
-
-                        {{-- 8. QTY RETURN --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[11px] font-black border border-indigo-200 bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-900/50">
-                                {{ number_format($log->qty_transaction ?? 1) }} Pcs
-                            </span>
-                        </td>
-
-                        {{-- 9. STATUS --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[10px] font-black tracking-tight uppercase border
-                                @if(strtolower($log->status ?? '') == 'success') border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/50
-                                @elseif(strtolower($log->status ?? '') == 'pending') border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/50
-                                @else border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-900/50 @endif">
-                                {{ $log->status ?? 'SUCCESS' }}
-                            </span>
-                        </td>
-
-                        {{-- 10. PROCESS TYPE --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            @php $isProcManual = strtolower($log->process_type ?? '') === 'manual'; @endphp
-                            <span class="inline-flex items-center justify-center rounded-lg px-3 py-1 text-[10px] font-black tracking-tight uppercase border
-                                @if($isProcManual) border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/50
-                                @else border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-900/50 @endif">
-                                {{ $log->process_type ?? 'Scan' }} Return
-                            </span>
-                        </td>
-
-                        {{-- 11. REMARK --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[220px]" title="{{ $log->remark ?? 'AUTOMATED RETURN' }}">
-                            {{ !empty($log->remark) ? strtoupper($log->remark) : 'AUTOMATED RETURN' }}
-                        </td>
-
-                        {{-- 12. CREATED AT --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            @php
-                                $createdAt = $log->created_at ? (\Carbon\Carbon::parse($log->created_at)) : null;
-                            @endphp
-                            <div class="font-bold text-slate-800 dark:text-slate-200 leading-tight">
-                                {{ $createdAt ? $createdAt->format('d/m/Y') : '-' }}
-                            </div>
-                            <div class="text-[10px] mt-0.5 text-slate-500">
-                                {{ $createdAt ? $createdAt->format('H:i') . ' WIB' : '' }}
-                            </div>
-                        </td>
-
-                        {{-- 13. UPDATED AT --}}
-                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
-                            @php
-                                $updatedAt = $log->updated_at ? (\Carbon\Carbon::parse($log->updated_at)) : null;
-                            @endphp
-                            <div class="font-bold text-slate-800 dark:text-slate-200 leading-tight">
-                                {{ $updatedAt ? $updatedAt->format('d/m/Y') : '-' }}
-                            </div>
-                            <div class="text-[10px] mt-0.5 text-slate-500">
-                                {{ $updatedAt ? $updatedAt->format('H:i') . ' WIB' : '' }}
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="14" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
-                            No production return history logs found.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- PAGINATION --}}
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 font-nunito">
-            <p class="text-[11px] font-black tracking-wide uppercase font-nunito text-center sm:text-left text-black dark:text-slate-400">
-                Showing {{ (isset($history) && method_exists($history, 'firstItem')) ? ($history->firstItem() ?? 0) : 0 }} 
-                to {{ (isset($history) && method_exists($history, 'lastItem')) ? ($history->lastItem() ?? 0) : 0 }} 
-                of {{ (isset($history) && method_exists($history, 'total')) ? ($history->total() ?? 0) : 0 }} Entries
-            </p>
-            <div class="flex items-center justify-center gap-1.5 text-xs font-nunito w-full sm:w-auto custom-pagination text-black dark:text-white">
-                @if(isset($history) && method_exists($history, 'links'))
-                    {{ $history->appends(['search' => request('search'), 'per_page' => request('per_page')])->links() }}
-                @endif
-            </div>
-        </div>
-    </div>
+<!-- ELEMEN TERSEMBUNYI UNTUK MENJAGA SCRIPT JS ORIGINAL TETAP JALAN TANPA ERROR -->
+<div class="hidden">
+    <input type="text" id="manual_barcode">
+    <button type="button" id="btn_manual_submit"></button>
+    <input type="file" id="upload-image-scan">
+    <span id="label-upload-status"></span>
 </div>
 
 <script>
@@ -344,12 +214,37 @@
         aspectRatio: 1.0
     };
 
-    // AJAX SUBMIT RETURN
+    // UPDATE DISPLAY MONITOR SCAN TERAKHIR
+    function updateMonitorDisplay(code, status) {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0] + ' WIB';
+        
+        const codeEl = document.getElementById('last-scanned-code');
+        const timeEl = document.getElementById('scan-timestamp');
+        const typeEl = document.getElementById('last-scanned-type');
+
+        if(codeEl) codeEl.innerText = code;
+        if(timeEl) timeEl.innerText = timeStr;
+        
+        if(typeEl) {
+            typeEl.innerText = status;
+            if (status === 'SUCCESS') {
+                typeEl.className = "text-emerald-400 font-bold uppercase";
+            } else if (status === 'PROCESSING') {
+                typeEl.className = "text-amber-400 font-bold uppercase";
+            } else {
+                typeEl.className = "text-rose-400 font-bold uppercase";
+            }
+        }
+    }
+
+    // AJAX SUBMIT RETURN (LOGIKA ORIGINAL 100% UTUH)
     async function processAjaxStockReturn(rawCode, mode = 'scan') {
         const cleanCode = rawCode.replace(/[\n\r\t]/g, "").trim();
         if (!cleanCode || isProcessing) return;
         
         isProcessing = true; 
+        updateMonitorDisplay(cleanCode, 'PROCESSING');
         changeUIStatus('PROCESSING', 'MEMBACA...', `Mengirim data return: ${cleanCode}`);
 
         Swal.fire({
@@ -377,6 +272,7 @@
 
             if (response.ok && result.success) {
                 changeUIStatus('VALID', 'STOK DIKEMBALIKAN', result.message);
+                updateMonitorDisplay(cleanCode, 'SUCCESS');
                 
                 Swal.fire({
                     icon: 'success',
@@ -390,6 +286,8 @@
                 });
             } else {
                 changeUIStatus('INVALID', 'RETURN DITOLAK', result.message);
+                updateMonitorDisplay(cleanCode, 'FAILED');
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal Return',
@@ -399,6 +297,8 @@
             }
         } catch (error) {
             changeUIStatus('INVALID', 'KONEKSI LOSS', 'Koneksi ke database terputus.');
+            updateMonitorDisplay(cleanCode, 'ERROR');
+
             Swal.fire({ icon: 'error', title: 'Network Error', text: 'Periksa jaringan/server Anda.' });
         } finally {
             setTimeout(() => {
@@ -439,9 +339,10 @@
 
     function resetSystemState() {
         isProcessing = false;
-        photoInput.value = "";
-        manualInput.value = "";
-        document.getElementById('label-upload-status').innerText = "Upload File Barcode";
+        if(photoInput) photoInput.value = "";
+        if(manualInput) manualInput.value = "";
+        const labelUpload = document.getElementById('label-upload-status');
+        if(labelUpload) labelUpload.innerText = "Upload File Barcode";
         
         if(!isCameraRunning) {
             document.getElementById('status-container').className = "panel-box p-4 md:p-5";
@@ -492,37 +393,35 @@
         }
     });
 
-    btnManual.addEventListener('click', () => {
-        const val = manualInput.value.trim();
-        if(val) processAjaxStockReturn(val, 'manual');
-    });
+    if(btnManual) {
+        btnManual.addEventListener('click', () => {
+            const val = manualInput ? manualInput.value.trim() : '';
+            if(val) processAjaxStockReturn(val, 'manual');
+        });
+    }
 
-    manualInput.addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') {
-            btnManual.click();
-        }
-    });
+    if(manualInput) {
+        manualInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && btnManual) {
+                btnManual.click();
+            }
+        });
+    }
 
-    photoInput.addEventListener('change', function(e) {
-        if (e.target.files.length === 0) return;
-        const file = e.target.files[0];
-        document.getElementById('label-upload-status').innerText = "File terunggah";
+    if(photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            if (e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            const lbl = document.getElementById('label-upload-status');
+            if(lbl) lbl.innerText = "File terunggah";
 
-        html5QrCode.scanFile(file, true)
-            .then(decodedText => { processAjaxStockReturn(decodedText.trim(), 'scan'); })
-            .catch(err => { 
-                Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR tidak terdeteksi.' }); 
-                resetSystemState();
-            });
-    });
+            html5QrCode.scanFile(file, true)
+                .then(decodedText => { processAjaxStockReturn(decodedText.trim(), 'scan'); })
+                .catch(err => { 
+                    Swal.fire({ icon: 'error', title: 'Gagal Dekripsi', text: 'Format Barcode/QR tidak terdeteksi.' }); 
+                    resetSystemState();
+                });
+        });
+    }
 </script>
-
-<style>
-    .table-body-data tr td, .table-body-data tr td div { color: #000000 !important; }
-    .dark .table-body-data tr td { color: #cbd5e1 !important; }
-    .table-header-row th { color: #ffffff !important; }
-    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
-</style>
 @endsection

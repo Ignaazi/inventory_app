@@ -18,19 +18,12 @@ class ListSparepartEng extends Model
     protected $table = 'spareparts';
 
     /**
-     * Menentukan kunci utama (Primary Key) dari tabel ini.
-     * Karena menggunakan 'sparepart_id', bukan 'id'.
+     * Tabel `spareparts` menggunakan kolom `id` sebagai primary key.
+     * `sparepart_id` adalah kode item, bukan kunci relasi.
      *
      * @var string
      */
-    protected $primaryKey = 'sparepart_id';
-
-    /**
-     * Jika 'sparepart_id' di database kamu berupa STRING (bukan angka/integer auto-increment),
-     * aktifkan 2 baris di bawah ini dengan melepas tanda komentar (//):
-     */
-    // public $incrementing = false;
-    // protected $keyType = 'string';
+    protected $primaryKey = 'id';
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
@@ -55,4 +48,4 @@ class ListSparepartEng extends Model
     {
         return $this->hasMany(StockEng::class, 'sparepart_id');
     }
-}   
+}

@@ -33,7 +33,7 @@
             <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Track and monitor permanent barcode disposal and scrapped item history</p>
         </div>
 
-        {{-- Tombol Tunggal Scan Disposal --}}
+        {{-- Tombol Scan Disposal --}}
         <div class="flex items-center gap-2 w-full sm:w-auto">
             <a href="{{ route('stock_eng.transaction.disposal.scan') }}" 
                class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 px-5 text-xs font-black text-white shadow-md shadow-rose-600/20 hover:shadow-lg hover:brightness-110 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline">
@@ -101,12 +101,13 @@
                         </th>
                         <th class="px-4 py-4 w-[70px] border-l border-rose-500/50 bg-rose-700/50">NO</th>
                         <th class="px-5 py-4 w-[220px] border-l border-rose-500/50 bg-rose-700/50">TRANSACTION DISPOSAL ID</th>
-                        <th class="px-4 py-4 w-[140px] border-l border-rose-500/50 bg-rose-700/50">NIK</th>
+                        <th class="px-4 py-4 w-[170px] border-l border-rose-500/50 bg-rose-700/50">NIK KARYAWAN/PIC</th>
                         <th class="px-5 py-4 w-[180px] border-l border-rose-500/50 bg-rose-700/50">OPERATOR NAME</th>
                         <th class="px-5 py-4 w-[190px] border-l border-rose-500/50 bg-rose-700/50">BARCODE ID</th>
                         <th class="px-4 py-4 w-[160px] border-l border-rose-500/50 bg-rose-700/50">SPAREPART ID</th>
                         <th class="px-4 py-4 w-[120px] border-l border-rose-500/50 bg-rose-700/50">QTY DISPOSAL</th>
                         <th class="px-4 py-4 w-[130px] border-l border-rose-500/50 bg-rose-700/50">STATUS</th>
+                        <th class="px-4 py-4 w-[160px] border-l border-rose-500/50 bg-rose-700/50">CURRENT LIFE CYCLE</th>
                         <th class="px-4 py-4 w-[150px] border-l border-rose-500/50 bg-rose-700/50">PROCESS TYPE</th>
                         <th class="px-5 py-4 w-[220px] border-l border-rose-500/50 bg-rose-700/50 text-left">REMARK</th>
                         <th class="px-4 py-4 w-[160px] border-l border-rose-500/50 bg-rose-700/50 text-center">CREATED AT</th>
@@ -132,7 +133,7 @@
 
                         {{-- 3. NIK OPERATOR (RELASI USER) --}}
                         <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                            {{ $log->user->nik ?? $log->nik ?? '-' }}
+                            {{ $log->nik_karyawan ?? $log->user->nik ?? '-' }}
                         </td>
 
                         {{-- 4. OPERATOR NAME (RELASI USER) --}}
@@ -167,6 +168,11 @@
                             </span>
                         </td>
 
+                        {{-- 9. CURRENT LIFE CYCLE BARCODE --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            @include('partials.lifecycle-badge', ['lifecycle' => $log->barcode->current_lifecycle ?? 'UNKNOWN'])
+                        </td>
+
                         {{-- 9. PROCESS TYPE --}}
                         <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             @php $isProcManual = strtolower($log->process_type ?? '') === 'manual'; @endphp
@@ -178,8 +184,8 @@
                         </td>
 
                         {{-- 10. REMARK --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[220px]" title="{{ $log->remark ?? 'INSTANT SCRAP VIA TERMINAL SCANNER' }}">
-                            {{ !empty($log->remark) ? strtoupper($log->remark) : 'INSTANT SCRAP VIA TERMINAL SCANNER' }}
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black uppercase tracking-tight max-w-[220px]">
+                            @include('partials.transaction-remark', ['remark' => $log->remark, 'transactionType' => 'DISPOSAL'])
                         </td>
 
                         {{-- 11. CREATED AT --}}
@@ -210,7 +216,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="13" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                        <td colspan="14" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No stock disposal logs found.
                         </td>
                     </tr>
@@ -282,10 +288,9 @@
     .table-empty-text {
         color: #000000 !important;
     }
+    .table-body-data tr td span:not(.lifecycle-badge):not(.remark-cell) { color: #000000 !important; }
 
-    .dark .table-body-data tr td {
-        color: #cbd5e1 !important;
-    }
+    .dark .table-body-data tr td { color: #000000 !important; }
 
     .table-header-row th {
         color: #ffffff !important;

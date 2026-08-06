@@ -50,7 +50,8 @@ class InProdController extends Controller
                 'u.name as operator_name',
                 'lp.no_line as line_name',
                 'se.sparepart_id as item_code',
-                'b.barcode_id as barcode_code'
+                'b.barcode_id as barcode_code',
+                'b.current_lifecycle as barcode_lifecycle'
             ])
             ->where('t.tx_type', 'in')
             ->orderBy('t.created_at', 'desc')
@@ -64,7 +65,9 @@ class InProdController extends Controller
      */
     public function scanIn()
     {
-        return view('stock_prod.transactionProd.inProd_scan');
+        return view('stock_eng.transaction.in_scan', [
+            'scan_mode' => 'production',
+        ]);
     }
 
     /**
@@ -149,6 +152,8 @@ class InProdController extends Controller
             $engTx = DB::table('stock_eng_transactions')
                 ->where('db_barcodes_id', $barcodeDb->id)
                 ->where('tx_type', 'out')
+                ->where('status', 'success')
+                ->latest('id')
                 ->first();
 
             if (!$engTx) {
@@ -161,23 +166,41 @@ class InProdController extends Controller
                 return $this->buildResponse($isAjax, false, 'Gagal! Relasi barcode dan stok asal Engineering tidak konsisten.', 422);
             }
 
-            $alreadyReceived = DB::table('stock_prod_transactions')
+            // Barcode yang sudah pernah IN boleh di-IN kembali hanya setelah OUT.
+            // Ini menjaga saldo tetap satu kali bertambah per siklus OUT -> IN.
+            $latestProductionTx = DB::table('stock_prod_transactions')
                 ->where('db_barcodes_id', $barcodeDb->id)
-                ->where('tx_type', 'in')
-                ->exists();
+                ->where('status', 'success')
+                ->latest('id')
+                ->first();
 
-            if ($alreadyReceived) {
+            if ($latestProductionTx && $latestProductionTx->tx_type !== 'out') {
                 DB::rollBack();
-                return $this->buildResponse($isAjax, false, 'Double Scan! Barcode ini sudah pernah diterima di Production dan tidak dapat ditambahkan kembali.', 422);
+                return $this->buildResponse(
+                    $isAjax,
+                    false,
+                    'Double Scan! Barcode ini belum menyelesaikan siklus Production OUT, sehingga belum dapat di-IN kembali.',
+                    422
+                );
             }
+
+            $isReIn = $latestProductionTx && $latestProductionTx->tx_type === 'out';
 
             // 4. FIXED ENGINE: 2-DIGIT BOUNDED LINE RESOLVER
             $targetLineId = $request->input('line_id'); 
             $tableLine = $this->getLineTableName();
             $allLines = DB::table($tableLine)->get();
 
+            // Untuk siklus OUT -> IN, gunakan line dari stok yang dipakai saat OUT.
+            // Ini lebih akurat daripada menebak line dari teks barcode.
+            if (!$targetLineId && $isReIn && $latestProductionTx->stock_prods_id) {
+                $targetLineId = DB::table('stock_prods')
+                    ->where('id', $latestProductionTx->stock_prods_id)
+                    ->value('line_id');
+            }
+
             if (!$targetLineId) {
-                if (preg_match('/LINE(\d{2})/i', $scannedInput, $matches)) {
+                if (preg_match('/LINE(\d{2})/i', $barcodeCode, $matches)) {
                     $lineNoClean = (int)$matches[1]; 
                     
                     foreach ($allLines as $lineItem) {
@@ -199,7 +222,7 @@ class InProdController extends Controller
                 $productionRequest = DB::table('production_requests')->where('id', $engTx->production_request_id)->first();
                 if ($productionRequest) {
                     foreach ((array)$productionRequest as $columnName => $columnValue) {
-                        if (in_array(strtolower($columnName), ['line', 'line_id', 'no_line']) && $columnValue) {
+                        if (in_array(strtolower($columnName), ['line', 'line_id', 'no_line', 'list_line_production_id']) && $columnValue) {
                             foreach ($allLines as $lineItem) {
                                 if ($lineItem->id == $columnValue || 
                                     strcasecmp($lineItem->line_id, $columnValue) === 0 || 
@@ -296,7 +319,9 @@ class InProdController extends Controller
 
             $tableSparepart = (new ListSparepartEng)->getTable();
             $itemName = DB::table($tableSparepart)->where('id', $sparepartId)->value('sparepart_id') ?? 'Sparepart';
-            $msgSuccess = 'Sukses! Item [' . $itemName . '] berhasil ditambahkan ke Lini Produksi. Qty Saat Ini: ' . $stockProd->qty . ' Pcs.';
+            $cycleLabel = $isReIn ? 'RE-IN setelah Production OUT' : 'IN awal';
+            $msgSuccess = 'Sukses! Item [' . $itemName . '] berhasil ' . $cycleLabel
+                . ' pada Lini Produksi. Qty Saat Ini: ' . $stockProd->qty . ' Pcs.';
 
             if ($isAjax) {
                 return response()->json(['success' => true, 'message' => $msgSuccess]);

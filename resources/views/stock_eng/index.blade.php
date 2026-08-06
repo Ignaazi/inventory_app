@@ -27,18 +27,16 @@
 <div class="font-nunito w-full p-3 md:p-6 bg-slate-50/30 dark:bg-slate-950 min-h-screen transition-all duration-300 text-black">
 
     @php
-    $outOfStock = $stocks->where('qty', '<=', 0)->count();
-    $lowStock = $stocks->filter(function($item) {
-        return $item->qty > 0 && $item->qty <= $item->min_stock;
-    })->count();
+    $outOfStock = $stockSummary['critical'] ?? 0;
+    $lowStock = $stockSummary['warning'] ?? 0;
 
     if ($outOfStock > 0) {
         $theme = [
             'bg' => 'bg-red-50 dark:bg-red-950/20', 
             'border' => 'border-red-200 dark:border-red-900/50', 
             'dot' => 'bg-red-600', 
-            'text' => 'text-red-800 dark:text-red-300',
-            'status' => 'LOST',
+            'text' => 'text-black dark:text-white',
+            'status' => 'CRITICAL',
             'msg' => $outOfStock . ' item out of stock — immediate reorder recommended'
         ];
     } elseif ($lowStock > 0) {
@@ -46,7 +44,7 @@
             'bg' => 'bg-[#FFFBEB] dark:bg-amber-950/10', 
             'border' => 'border-amber-200 dark:border-amber-900/30', 
             'dot' => 'bg-[#F59E0B]', 
-            'text' => 'text-[#92400E] dark:text-amber-300',
+            'text' => 'text-black dark:text-white',
             'status' => 'WARNING',
             'msg' => $lowStock . ' low stock — prepare for reorder'
         ];
@@ -55,7 +53,7 @@
             'bg' => 'bg-emerald-50 dark:bg-emerald-950/10', 
             'border' => 'border-emerald-200 dark:border-emerald-900/30', 
             'dot' => 'bg-emerald-500', 
-            'text' => 'text-emerald-800 dark:text-emerald-300',
+            'text' => 'text-black dark:text-white',
             'status' => 'SAFE',
             'msg' => 'All systems stable — stock levels are safe'
         ];
@@ -75,7 +73,7 @@
     <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-nunito">
         <div>
             <h2 class="text-xl md:text-2xl font-black text-black dark:text-white tracking-tight">Nozzle Inventory</h2>
-            <p class="text-[11px] md:text-[13px] font-bold text-slate-500 dark:text-slate-400">Inventory Monitoring System</p>
+            <p class="text-[11px] md:text-[13px] font-bold text-black dark:text-white">Inventory Monitoring System</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -108,7 +106,7 @@
         <div class="px-4 border-b border-slate-100 dark:border-slate-800 font-nunito">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div class="relative w-full sm:w-60">
-                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-black dark:text-white">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
                     <input type="text" id="searchInput" onkeyup="applyFilterAndSearch()" placeholder="Search data..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-transparent py-2 pl-9 pr-3 text-xs md:text-[13px] outline-none focus:border-blue-500 text-black dark:text-white font-bold font-nunito">
@@ -120,7 +118,7 @@
                     All Storage
                 </button>
                 @foreach($raks as $rak)
-                    <button onclick="filterRak(this, '{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-black text-slate-600 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 border-t border-x border-slate-300 dark:border-slate-700 whitespace-nowrap uppercase tracking-wider transition-all">
+                    <button onclick="filterRak(this, '{{ $rak->nama_rak }}')" class="tab-btn px-4 py-2 rounded-t-lg text-xs font-black text-black dark:text-white bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 border-t border-x border-slate-300 dark:border-slate-700 whitespace-nowrap uppercase tracking-wider transition-all">
                         {{ $rak->nama_rak }}
                     </button>
                 @endforeach
@@ -148,7 +146,7 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent">
                     @forelse($stocks as $index => $item)
                     <tr class="row-nozzle hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent" data-rak="{{ $item->rak->nama_rak ?? '' }}">
-                        <td class="px-2 py-3.5 text-center text-slate-500">
+                        <td class="px-2 py-3.5 text-center text-black dark:text-white">
                             {{ $stocks->firstItem() + $index }}
                         </td>
                         <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold whitespace-nowrap">
@@ -157,41 +155,48 @@
                         
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             @php
-                                $statusColor = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'; 
+                                $itemStatus = 'SAFE';
+                                $statusColor = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
                                 if($item->qty <= 0) {
+                                    $itemStatus = 'CRITICAL';
                                     $statusColor = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]';
                                 } elseif($item->qty <= $item->min_stock) {
+                                    $itemStatus = 'WARNING';
                                     $statusColor = 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]';
                                 }
                             @endphp
                             <div class="flex items-center justify-center">
-                                <div class="h-2.5 w-2.5 rounded-full {{ $statusColor }}"></div>
+                                <span
+                                    class="inline-block h-3 w-3 rounded-full {{ $statusColor }}"
+                                    title="{{ $itemStatus }}"
+                                    aria-label="{{ $itemStatus }}"
+                                ></span>
                             </div>
                         </td>
                         
                         <td class="px-4 py-3.5 text-center border-l border-gray-100 dark:border-slate-800 font-extrabold tracking-wide whitespace-normal break-words leading-normal">
                             {{ $item->sparepart->sparepart_id ?? '-' }}
                         </td>
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono tracking-wide whitespace-nowrap">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-nunito tracking-wide whitespace-nowrap text-black dark:text-white">
                             {{ $item->sparepart->part_number ?? '-' }}
                         </td>
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-mono text-blue-600 dark:text-blue-400 font-extrabold whitespace-nowrap">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-nunito text-black dark:text-white font-extrabold whitespace-nowrap">
                             {{ $item->sparepart->sap_code ?? '-' }}
                         </td>
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800">
                             <div class="flex justify-center items-center">
-                                <span class="bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
+                                <span class="bg-slate-100 border border-slate-200 text-black dark:bg-slate-800 dark:text-white dark:border-slate-700 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
                                     {{ $item->category ?? ($item->sparepart->category ?? '-') }}
                                 </span>
                             </div>
                         </td>
                         <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 font-extrabold text-[14px] whitespace-nowrap">{{ $item->qty }}</td>
-                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-slate-500 whitespace-nowrap">{{ $item->min_stock }}</td>
+                        <td class="px-2 py-3.5 border-l border-gray-100 dark:border-slate-800 text-black dark:text-white whitespace-nowrap">{{ $item->min_stock }}</td>
                         
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-black dark:text-white">
                             {{ $item->created_at ? $item->created_at->format('d/m/Y H:i') : '-' }}
                         </td>
-                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        <td class="px-3 py-3.5 border-l border-gray-100 dark:border-slate-800 font-semibold whitespace-nowrap text-black dark:text-white">
                             {{ $item->updated_at ? $item->updated_at->format('d/m/Y H:i') : '-' }}
                         </td>
                         
@@ -219,14 +224,14 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="12" class="py-10 text-center text-slate-400 italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
+                    <tr><td colspan="12" class="py-10 text-center text-black dark:text-white italic font-medium text-[13px] font-nunito">No entries found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3 items-center justify-between border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 font-nunito">
-            <p class="text-[11px] font-black text-black dark:text-slate-400 tracking-wide uppercase text-center sm:text-left">
+            <p class="text-[11px] font-black text-black dark:text-white tracking-wide uppercase text-center sm:text-left">
                 Showing {{ $stocks->firstItem() }} to {{ $stocks->lastItem() }} of {{ $stocks->total() }} Entries
             </p>
             <div class="flex items-center justify-center gap-1.5 text-xs text-black dark:text-white w-full sm:w-auto">
@@ -249,7 +254,7 @@
             <input type="hidden" id="current_item_id" value="">
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Pilih Rak</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Pilih Rak</label>
                     <select name="rak_id" id="rak_id" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-semibold" required>
                         <option value="">-- Pilih Rak --</option>
                         @foreach($raks as $rak)
@@ -259,9 +264,9 @@
                 </div>
                 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Part No (Pilih Disini)</label>
-                    <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-mono font-bold" required>
-                        <option value="">-- Pilih Part Number --</option>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">No Nozzle (Pilih Disini)</label>
+                    <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-nunito font-bold" required>
+                        <option value="">-- Pilih No Nozzle --</option>
                         @foreach($ListSparepartEng as $sp)
                             {{-- Menggunakan $sp->id sebagai value utama agar lolos validasi database foreign key --}}
                             <option value="{{ $sp->id }}" 
@@ -269,38 +274,38 @@
                                     data-name="{{ $sp->sparepart_id ?? '' }}" 
                                     data-sap="{{ $sp->sap_code ?? '' }}"
                                     data-category="{{ $sp->category ?? '' }}">
-                                {{ $sp->part_number ?? 'No Part Num' }}
+                                {{ $sp->sparepart_id ?? 'No Nozzle' }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">No Nozzle</label>
-                    <input type="text" id="no_nozzle" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-bold" placeholder="Terisi Otomatis..." readonly>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">No Nozzle</label>
+                    <input type="text" id="no_nozzle" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-nunito font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Sap Code</label>
-                    <input type="text" id="sap_code" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-mono font-bold" placeholder="Terisi Otomatis..." readonly>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Sap Code</label>
+                    <input type="text" id="sap_code" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-nunito font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Category</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Category</label>
                     <input type="text" name="category" id="category" placeholder="Terisi Otomatis..." class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-bold" readonly>
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Qty</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Qty</label>
                     <input type="number" name="qty" id="qty" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Min Stock</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Min Stock</label>
                     <input type="number" name="min_stock" id="min_stock" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
                 </div>
             </div>
             <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancel</button>
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-bold text-black dark:text-white hover:text-slate-700 dark:hover:text-slate-300">Cancel</button>
                 <button type="submit" class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg hover:opacity-90 transition-all active:scale-95 tracking-wide">Save Data</button>
             </div>
         </form>
@@ -318,7 +323,7 @@
         <form action="{{ route('rak.store') }}" method="POST" class="p-6 border-b border-slate-100 dark:border-slate-800">
             @csrf
             <div class="mb-2">
-                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block uppercase tracking-wide">Nama Rak Baru</label>
+                <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Nama Rak Baru</label>
                 <div class="flex gap-2">
                     <input type="text" name="nama_rak" placeholder="Contoh: RAK-A1" class="flex-1 rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-bold" required>
                     <button type="submit" class="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md hover:opacity-90 transition-all tracking-wide whitespace-nowrap uppercase">
@@ -329,7 +334,7 @@
         </form>
 
         <div class="p-6">
-            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block uppercase tracking-wide">Existing Racks (Delete List)</label>
+            <label class="text-xs font-bold text-black dark:text-white mb-2 block uppercase tracking-wide">Existing Racks (Delete List)</label>
             <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1 scrollbar-thin">
                 @foreach($raks as $rak)
                     <div class="flex items-center justify-between py-2.5">
@@ -348,7 +353,7 @@
         </div>
 
         <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 flex justify-end border-t border-slate-100 dark:border-slate-800">
-            <button type="button" onclick="closeRackModal()" class="px-4 py-2 text-xs font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 rounded-lg">Close</button>
+            <button type="button" onclick="closeRackModal()" class="px-4 py-2 text-xs font-bold bg-slate-200 text-black dark:bg-slate-700 dark:text-white rounded-lg">Close</button>
         </div>
     </div>
 </div>
@@ -362,10 +367,10 @@
         let btns = document.querySelectorAll(".tab-btn");
         btns.forEach(btn => {
             btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
-            btn.classList.add('bg-slate-200/80', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300', 'border-slate-300', 'dark:border-slate-700');
+            btn.classList.add('bg-slate-200/80', 'dark:bg-slate-800', 'text-black', 'dark:text-white', 'border-slate-300', 'dark:border-slate-700');
         });
         element.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
-        element.classList.remove('bg-slate-200/80', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300', 'border-slate-300', 'dark:border-slate-700');
+        element.classList.remove('bg-slate-200/80', 'dark:bg-slate-800', 'text-black', 'dark:text-white', 'border-slate-300', 'dark:border-slate-700');
         applyFilterAndSearch();
     }
 

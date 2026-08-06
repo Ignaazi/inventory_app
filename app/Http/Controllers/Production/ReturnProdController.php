@@ -55,7 +55,8 @@ class ReturnProdController extends Controller
                 'u.name as operator_name',
                 DB::raw("REPLACE(UPPER(lp.no_line), 'LINI', 'LINE') as line_name"),
                 'se.sparepart_id as item_code',
-                'b.barcode_id as barcode_code'
+                'b.barcode_id as barcode_code',
+                'b.current_lifecycle as barcode_lifecycle'
             ])
             ->where('t.tx_type', 'return');
 
@@ -100,7 +101,8 @@ class ReturnProdController extends Controller
                 'u.name as operator_name',
                 DB::raw("REPLACE(UPPER(lp.no_line), 'LINI', 'LINE') as line_name"),
                 'se.sparepart_id as item_code',
-                'b.barcode_id as barcode_code'
+                'b.barcode_id as barcode_code',
+                'b.current_lifecycle as barcode_lifecycle'
             ])
             ->where('t.tx_type', 'return');
 

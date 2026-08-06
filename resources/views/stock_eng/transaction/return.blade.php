@@ -105,6 +105,7 @@
                         <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">RAK</th>
                         <th class="px-4 py-4 w-[120px] border-l border-blue-500/50 bg-blue-700/50">QTY RETURN</th>
                         <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">STATUS</th>
+                        <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50">CURRENT LIFE CYCLE</th>
                         <th class="px-4 py-4 w-[150px] border-l border-blue-500/50 bg-blue-700/50">PROCESS TYPE</th>
                         <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50 text-left">REMARK</th>
                         <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50 text-center">CREATED AT</th>
@@ -170,6 +171,11 @@
                             </span>
                         </td>
 
+                        {{-- 11. CURRENT LIFE CYCLE BARCODE --}}
+                        <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
+                            @include('partials.lifecycle-badge', ['lifecycle' => $log->barcode_lifecycle ?? 'UNKNOWN'])
+                        </td>
+
                         {{-- 10. PROCESS TYPE --}}
                         <td class="px-4 py-4 border-l border-gray-100 dark:border-slate-800 text-center whitespace-nowrap">
                             @php $isProcManual = strtolower($log->process_type ?? '') === 'manual'; @endphp
@@ -181,8 +187,8 @@
                         </td>
 
                         {{-- 11. REMARK (AUTOMATIC RETURN IN UPPERCASE) --}}
-                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate max-w-[220px]" title="{{ $log->remark ?? 'AUTOMATIC RETURN' }}">
-                            {{ !empty($log->remark) ? strtoupper($log->remark) : 'AUTOMATIC RETURN' }}
+                        <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 text-left font-black uppercase tracking-tight max-w-[220px]">
+                            @include('partials.transaction-remark', ['remark' => $log->remark, 'transactionType' => 'RETURN'])
                         </td>
 
                         {{-- 12. CREATED AT --}}
@@ -213,7 +219,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="14" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
+                        <td colspan="15" class="py-12 text-center italic font-medium text-[13px] font-nunito dark:bg-slate-900 table-empty-text">
                             No stock return logs found.
                         </td>
                     </tr>
@@ -285,10 +291,9 @@
     .table-empty-text {
         color: #000000 !important;
     }
+    .table-body-data tr td span:not(.lifecycle-badge):not(.remark-cell) { color: #000000 !important; }
 
-    .dark .table-body-data tr td {
-        color: #cbd5e1 !important;
-    }
+    .dark .table-body-data tr td { color: #000000 !important; }
 
     .table-header-row th {
         color: #ffffff !important;

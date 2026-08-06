@@ -38,7 +38,7 @@
 
             <div class="p-6">
                 {{-- Form wajib menggunakan enctype untuk handling berkas foto/file gambar --}}
-                <form action="{{ url('/prod/transaction/out/store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                <form action="{{ route('prod.transaction.out.manual.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                     @csrf
                     <input type="hidden" name="process_type" value="manual">
 
@@ -61,15 +61,15 @@
                     {{-- 2. INPUT NIK KARYAWAN PIC --}}
                     <div>
                         <label for="nik_karyawan" class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                            NIK Karyawan / PIC Lapangan <span class="text-rose-500">*</span>
+                            NIK Karyawan yang Menghilangkan / PIC
+                            <span id="nik-required-mark" class="text-rose-500 hidden">*</span>
                         </label>
                         <input type="text" 
                                name="nik_karyawan" 
                                id="nik_karyawan" 
                                value="{{ old('nik_karyawan') }}"
                                class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" 
-                               placeholder="Masukkan NIK Operator yang bertanggung jawab..." 
-                               required>
+                               placeholder="Wajib untuk kategori Lost...">
                     </div>
 
                     {{-- 3. KATEGORI OUT (OUT CATEGORY ENUM) --}}
@@ -134,18 +134,24 @@
         const star = document.getElementById('star-required');
         const text = document.getElementById('photo-instruction-text');
         const photoInput = document.getElementById('photo_path');
+        const nikInput = document.getElementById('nik_karyawan');
+        const nikRequiredMark = document.getElementById('nik-required-mark');
 
         if (selectedValue === 'lost') {
             // Jika HILANG (lost): Foto bersifat opsional/tidak wajib karena fisik barang tidak ada
             wrapper.classList.remove('border-amber-400', 'bg-amber-50/20', 'dark:border-amber-900/40');
             star.classList.add('hidden');
             photoInput.required = false;
+            nikInput.required = true;
+            nikRequiredMark.classList.remove('hidden');
             text.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-extrabold font-mono uppercase">[FOTO OPSIONAL] Komponen dilaporkan hilang. Data bisa langsung disimpan tanpa lampiran bukti foto fisik.</span>';
         } else if (selectedValue === 'broken') {
             // Jika RUSAK (broken): Foto mutlak WAJIB dilampirkan ke sistem
             wrapper.classList.add('border-amber-400', 'bg-amber-50/20', 'dark:border-amber-900/40');
             star.classList.remove('hidden');
             photoInput.required = true;
+            nikInput.required = false;
+            nikRequiredMark.classList.add('hidden');
             text.innerHTML = '<span class="text-rose-600 dark:text-rose-400 font-extrabold font-mono uppercase">[FOTO WAJIB] Komponen dalam kondisi rusak fisik. Anda wajib mengambil foto bukti fisik barang!</span>';
         }
     }
