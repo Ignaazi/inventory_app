@@ -381,12 +381,6 @@
                   </a>
                 </li>
                 <!-- TAMBAHAN SUB-MENU RETURN -->
-                <li>
-                  <a href="{{ route('prod.transaction.return') }}" class="flex items-center gap-3 rounded-lg px-4 py-2 text-[13px] font-semibold transition-all {{ request()->routeIs('prod.transaction.return') ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ request()->routeIs('prod.transaction.return') ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
-                    <span>Return</span>
-                  </a>
-                </li>
               </ul>
             </div>
           </li>

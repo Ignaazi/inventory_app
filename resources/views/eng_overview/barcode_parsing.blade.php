@@ -75,7 +75,7 @@
                                 {{-- Filter Blade: Hanya tampilkan PR yang belum selesai/belum diproses --}}
                                 @if(!in_array(strtoupper($pr->status ?? ''), ['COMPLETED', 'DONE', 'CLOSED']) && !($pr->is_used ?? false))
                                     <option value="{{ $pr->id }}" 
-                                            data-qty="{{ $pr->qty_req }}" 
+                                            data-qty="{{ $pr->qty_remaining ?? $pr->qty_req }}"
                                             data-line="{{ $pr->list_line_production_id ?? '01' }}" 
                                             data-part-id="{{ $pr->sparepart_id }}"
                                             data-part-code="{{ $pr->sparepart->part_no ?? $pr->sparepart->part_name ?? '766' }}">

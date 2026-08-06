@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash; 
@@ -16,15 +17,17 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = DB::table('users')
-                    ->where('nik', $request->nik)
-                    ->first();
+        $user = User::where('nik', $request->nik)->first();
 
         if ($user && $user->is_active == 1) {
             if (Hash::check($request->password, $user->password)) {
+                $token = $user->createToken('mobile', ['transactions'])->plainTextToken;
+
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Selamat datang kembali, ' . $user->name . '!',
+                    'token' => $token,
+                    'token_type' => 'Bearer',
                     'user' => [
                         'id'   => $user->id,
                         'name' => $user->name,
@@ -57,5 +60,27 @@ class AuthController extends Controller
                 'message' => 'Gagal mengambil data dari DB: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json([
+            'status' => 'success',
+            'user' => $request->user(),
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $token = $request->user()->currentAccessToken();
+
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Token mobile berhasil dicabut.',
+        ]);
     }
 }

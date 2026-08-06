@@ -37,7 +37,12 @@ class StockProdController extends Controller
         // 4. Semua Line (Untuk modal Add Nozzle biasa)
         $allLines = $lineModel::orderBy('no_line', 'asc')->get();
 
-        $stocks = stock_prod::with(['line', 'sparepart'])->orderBy('created_at', 'desc')->paginate(25);
+        // Placeholder line tanpa sparepart dipakai untuk aktivasi tab saja,
+        // bukan sebagai data nozzle yang ditampilkan di inventory.
+        $stocks = stock_prod::with(['line', 'sparepart'])
+            ->whereNotNull('sparepart_id')
+            ->orderBy('created_at', 'desc')
+            ->paginate(25);
         $ListSparepartEng = ListSparepartEng::orderBy('sparepart_id', 'asc')->get(); 
         
         return view('stock_prod.stock_prod', compact('stocks', 'activeLines', 'availableLines', 'allLines', 'ListSparepartEng'));
@@ -53,16 +58,15 @@ class StockProdController extends Controller
                 'line_id' => 'required', // ID dari tabel list_line_productions
             ]);
 
-            // Ambil sparepart pertama di database buat pemicu awal (karena DB lu NOT NULL)
-            $firstSparepart = ListSparepartEng::first();
-            if (!$firstSparepart) {
-                return redirect()->back()->with('error', 'Gagal! Isi master sparepart dulu di sistem baru bisa daftarin line.');
+            if (stock_prod::where('line_id', $request->line_id)->exists()) {
+                return redirect()->back()->with('error', 'Line tersebut sudah aktif.');
             }
 
-            // Daftarkan langsung ke tabel stock_prods biar permanen
+            // Simpan line kosong hanya untuk mengaktifkan tab All Lines.
+            // Data nozzle baru dibuat dari form Add Nozzle.
             $stock = new stock_prod();
             $stock->line_id = $request->line_id;
-            $stock->sparepart_id = $firstSparepart->id;
+            $stock->sparepart_id = null;
             $stock->qty = 0;
             $stock->min_stock = 0;
             $stock->save();
@@ -129,7 +133,30 @@ class StockProdController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $lineModel = $this->getLineModel();
+            $tableLine = (new $lineModel)->getTable();
+            $tableSparepart = (new ListSparepartEng)->getTable();
+
+            $request->validate([
+                'line_id'      => 'required|exists:' . $tableLine . ',id',
+                'sparepart_id' => 'required|exists:' . $tableSparepart . ',id',
+                'qty'          => 'required|numeric|min:0',
+                'min_stock'    => 'required|numeric|min:0',
+            ]);
+
             $stock = stock_prod::findOrFail($id);
+
+            $isDuplicate = stock_prod::where('line_id', $request->line_id)
+                ->where('sparepart_id', $request->sparepart_id)
+                ->where('id', '!=', $stock->id)
+                ->exists();
+
+            if ($isDuplicate) {
+                return redirect()->back()
+                    ->withErrors(['sparepart_id' => 'Nozzle ini sudah terdaftar di Line tersebut.'])
+                    ->withInput();
+            }
+
             $stock->line_id      = $request->line_id;
             $stock->sparepart_id = $request->sparepart_id;
             $stock->qty          = $request->qty;

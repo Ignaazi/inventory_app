@@ -12,16 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('db_barcodes', function (Blueprint $table) {
-            // 1. HAPUS KOLOM LAMA
-            $table->dropColumn('creator_nik');
+            // Hapus creator_nik jika masih ada di DB
+            if (Schema::hasColumn('db_barcodes', 'creator_nik')) {
+                $table->dropColumn('creator_nik');
+            }
 
-            // 2. SUNTIK KOLOM BARU YANG TERHUBUNG KE MASTER USERS
-            // Dibuat nullable agar data lama yang tidak punya relasi id tidak menyebabkan error constraint
-            $table->foreignId('users_id')
-                  ->nullable()
-                  ->after('stock_eng_id')
-                  ->constrained('users')
-                  ->onDelete('set null');
+            // Buat kolom users_id baru jika belum ada
+            if (!Schema::hasColumn('db_barcodes', 'users_id')) {
+                $table->foreignId('users_id')
+                      ->nullable()
+                      ->after('stock_eng_id')
+                      ->constrained('users')
+                      ->onDelete('set null');
+            }
         });
     }
 
@@ -31,11 +34,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('db_barcodes', function (Blueprint $table) {
-            // KEMBALIKAN KE STRUKTUR SEMULA JIKA DI-ROLLBACK
-            $table->dropForeign(['users_id']);
-            $table->dropColumn('users_id');
+            // Hapus users_id tanpa dropForeign manual agar tidak memicu error 1091
+            if (Schema::hasColumn('db_barcodes', 'users_id')) {
+                $table->dropConstrainedForeignId('users_id');
+            }
             
-            $table->string('creator_nik')->nullable()->after('stock_eng_id');
+            // Kembalikan creator_nik jika belum ada
+            if (!Schema::hasColumn('db_barcodes', 'creator_nik')) {
+                $table->string('creator_nik')->nullable()->after('stock_eng_id');
+            }
         });
     }
 };

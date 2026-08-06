@@ -16,6 +16,13 @@ class CheckRole
     {
         // 1. Cek apakah user sudah login
         if (!$request->user()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+
             return redirect('login');
         }
 
@@ -25,6 +32,13 @@ class CheckRole
         }
 
         // 3. Jika tidak punya akses, arahkan kembali dengan pesan error
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke modul ini.',
+            ], 403);
+        }
+
         return redirect('/dashboard')->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
     }
 }

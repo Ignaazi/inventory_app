@@ -137,9 +137,9 @@
                             <textarea x-model="remark" rows="2" readonly class="w-full rounded-md border border-slate-300 bg-slate-100 py-2 px-3 text-xs font-bold resize-none text-black cursor-not-allowed outline-none dark:bg-meta-4/30"></textarea>
                         </div>
 
-                        <!-- Supervisor Notes (Input Aktif) -->
+                        <!-- Admin Notes (Input Aktif) -->
                         <div class="flex flex-col gap-1.5 sm:col-span-2">
-                            <label class="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">SUPERVISOR APPROVAL NOTES (OPTIONAL)</label>
+                            <label class="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">ADMIN APPROVAL NOTES (OPTIONAL)</label>
                             <textarea name="notes" x-model="notes" rows="2" placeholder="Tambahkan instruksi atau catatan persetujuan akhir jika ada..." class="w-full rounded-md border border-slate-400 bg-white py-2 px-3 text-xs font-bold resize-none text-black outline-none transition focus:border-indigo-600 dark:bg-transparent dark:text-white"></textarea>
                         </div>
                     </div>
@@ -148,8 +148,8 @@
                     <div class="flex flex-col justify-between bg-slate-50 dark:bg-slate-900/40 p-4 rounded-md border border-slate-300 dark:border-strokedark relative z-0">
                         <div>
                             <div class="border-b border-slate-300 dark:border-strokedark pb-2 mb-3">
-                                <label class="text-xs font-black uppercase tracking-wider text-black dark:text-gray-200">Approved By Eng Spv</label>
-                                <p class="text-[10px] text-black font-bold mt-0.5">Otorisasi tanda tangan digital tingkat Supervisor</p>
+                                <label class="text-xs font-black uppercase tracking-wider text-black dark:text-gray-200">Approved By Admin</label>
+                                <p class="text-[10px] text-black font-bold mt-0.5">Otorisasi tanda tangan digital role Admin</p>
                             </div>
 
                             <div class="relative w-full h-28 bg-white dark:bg-slate-950 border border-slate-300 dark:border-gray-800 rounded-md flex items-center justify-center p-2 overflow-hidden shadow-inner">
@@ -257,7 +257,7 @@
                             <td class="py-2.5 px-4 font-mono font-black text-black tracking-wider">
                                 <span x-text="remark || ''"></span>
                                 <template x-if="notes">
-                                    <div class="text-indigo-600 font-sans text-[11px] font-bold mt-1 bg-indigo-50/50 p-1 rounded border border-indigo-100" x-text="'\n[SPV Eng Notes]: ' + notes"></div>
+                                    <div class="text-indigo-600 font-sans text-[11px] font-bold mt-1 bg-indigo-50/50 p-1 rounded border border-indigo-100" x-text="'\n[Admin Notes]: ' + notes"></div>
                                 </template>
                             </td>
                         </tr>
@@ -281,9 +281,9 @@
                     </div>
                 </div>
 
-                <!-- 2. Engineering Staff (Checked) -->
+                <!-- 2. Engineering Staff / Admin (Checked) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Eng Staff)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Engineering / Admin)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="engSignatureImg">
                             <img :src="engSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
@@ -291,13 +291,13 @@
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black tracking-wide truncate" x-text="receiving.checked_by_name || 'VERIFIED STAFF'"></p>
-                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Engineering Staff</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Engineering / Admin</p>
                     </div>
                 </div>
 
-                <!-- 3. Engineering Supervisor (Approved) -->
+                <!-- 3. Admin (Approved) -->
                 <div class="flex flex-col justify-between h-36 bg-white relative z-0">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Eng Spv)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Admin)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="spvSignatureImg">
                             <img :src="spvSignatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
@@ -310,7 +310,7 @@
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black tracking-wide truncate" x-text="spv_name || '( _________________ )'"></p>
-                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Engineering Supervisor</p>
+                        <p class="text-[9px] text-black font-black uppercase mt-0.5">Admin</p>
                     </div>
                 </div>
             </div>
@@ -347,7 +347,7 @@
             // Tanda Tangan Staff Eng (Tahap 2)
             engSignatureImg: "{{ $receiving->checked_signature ? (str_starts_with($receiving->checked_signature, 'http') ? $receiving->checked_signature : asset('storage/' . $receiving->checked_signature)) : null }}",
 
-            // Tanda Tangan Supervisor Eng (Tahap 3 - Aktif Saat Ini)
+            // Tanda Tangan Admin (Tahap 3 - Aktif Saat Ini)
             spv_nik: currentSpvNik,
             spv_name: currentSpvName,
             spvSignaturePathHidden: currentSpvSignature,

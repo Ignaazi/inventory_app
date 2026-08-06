@@ -69,7 +69,7 @@
                             <option value="" disabled selected>-- Select Material Received --</option>
                             @foreach($materialReceived as $mr)
                                 @php
-                                    $spCode = $mr->custom_sparepart_code ?? $mr->sparepart_id ?? '-';
+                                    $spCode = $mr->custom_sparepart_code ?? $mr->purchase_sparepart_id ?? '-';
                                     $spPartNum = $mr->part_number ?? '-';
                                     $spSapCode = $mr->sap_code ?? '-';
                                 @endphp

@@ -264,14 +264,15 @@
                 </div>
                 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">No Nozzle (Pilih Disini)</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Sparepart ID (Pilih Disini)</label>
                     <select name="sparepart_id" id="sparepart_id" onchange="autoFillByPart(this)" class="w-full rounded-lg border border-gray-300 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none focus:border-blue-500 text-black dark:text-white font-nunito font-bold" required>
-                        <option value="">-- Pilih No Nozzle --</option>
+                        <option value="">-- Pilih Sparepart ID --</option>
                         @foreach($ListSparepartEng as $sp)
                             {{-- Menggunakan $sp->id sebagai value utama agar lolos validasi database foreign key --}}
                             <option value="{{ $sp->id }}" 
                                     data-sparepart-id="{{ $sp->id }}"
                                     data-name="{{ $sp->sparepart_id ?? '' }}" 
+                                    data-part-number="{{ $sp->part_number ?? '' }}"
                                     data-sap="{{ $sp->sap_code ?? '' }}"
                                     data-category="{{ $sp->category ?? '' }}">
                                 {{ $sp->sparepart_id ?? 'No Nozzle' }}
@@ -281,7 +282,7 @@
                 </div>
 
                 <div class="col-span-2 md:col-span-1">
-                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">No Nozzle</label>
+                    <label class="text-xs font-bold text-black dark:text-white mb-1 block uppercase tracking-wide">Part Number</label>
                     <input type="text" id="no_nozzle" class="w-full rounded-lg border border-gray-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 p-2.5 text-sm outline-none text-black dark:text-white font-nunito font-bold" placeholder="Terisi Otomatis..." readonly>
                 </div>
 
@@ -390,11 +391,11 @@
 
     function autoFillByPart(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const nozzleName = selectedOption.getAttribute('data-name') || '';
+        const partNumber = selectedOption.getAttribute('data-part-number') || '';
         const sapCode = selectedOption.getAttribute('data-sap') || '';
         const category = selectedOption.getAttribute('data-category') || '';
         
-        document.getElementById('no_nozzle').value = nozzleName;
+        document.getElementById('no_nozzle').value = partNumber;
         document.getElementById('sap_code').value = sapCode;
         document.getElementById('category').value = category;
     }

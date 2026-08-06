@@ -155,7 +155,7 @@
                     <div class="flex flex-col justify-between bg-slate-50 dark:bg-slate-900/40 p-4 rounded-md border border-slate-300 dark:border-strokedark relative z-0">
                         <div>
                             <div class="border-b border-slate-300 dark:border-strokedark pb-2 mb-3">
-                                <label class="text-xs font-black uppercase tracking-wider text-black dark:text-gray-200">Prepared By Costing</label>
+                                 <label class="text-xs font-black uppercase tracking-wider text-black dark:text-gray-200">Prepared By Costing / Admin</label>
                                 <p class="text-[10px] text-black font-bold mt-0.5">Otorisasi digital terikat otomatis dengan sistem</p>
                             </div>
 
@@ -275,9 +275,9 @@
 
             <!-- DIGITAL SIGNATURE FOOTER STEP BY STEP -->
             <div class="grid grid-cols-3 gap-0 border border-black text-center text-xs mt-8 rounded-sm overflow-hidden">
-                <!-- 1. Costing (Prepared) -->
+                <!-- 1. Costing / Admin (Prepared) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white relative z-0">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Prepared By (Costing)</div>
+                         <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Prepared By (Costing / Admin)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         <div class="absolute inset-0 z-10 flex items-center justify-center p-1" x-show="signatureImg">
                             <img :src="signatureImg" class="max-h-full max-w-full object-contain mx-auto my-auto block">
@@ -294,16 +294,16 @@
                     </div>
                 </div>
 
-                <!-- 2. Engineering Staff (Checked) -->
+                <!-- 2. Engineering Staff / Admin (Checked) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Eng Staff)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Engineering / Admin)</div>
                     <div class="text-slate-500 text-[9px] font-black my-auto italic">( Pending Stage )</div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white"><p class="font-black uppercase text-black">( _________________ )</p></div>
                 </div>
 
-                <!-- 3. Engineering Supervisor (Approved) -->
+                <!-- 3. Admin (Approved) -->
                 <div class="flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Eng Spv)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Admin)</div>
                     <div class="text-slate-500 text-[9px] font-black my-auto italic">( Pending Stage )</div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white"><p class="font-black uppercase text-black">( _________________ )</p></div>
                 </div>

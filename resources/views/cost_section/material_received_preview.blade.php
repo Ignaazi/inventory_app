@@ -173,7 +173,7 @@
 
                 <!-- 2. Engineering Staff (Checked) -->
                 <div class="border-r border-black flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Eng Staff)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Checked By (Engineering / Admin)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         @if($mr->checked_signature)
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
@@ -192,9 +192,9 @@
                     </div>
                 </div>
 
-                <!-- 3. Engineering Supervisor (Approved) -->
+                <!-- 3. Admin (Approved) -->
                 <div class="flex flex-col justify-between h-36 bg-white">
-                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Eng Spv)</div>
+                    <div class="bg-slate-50 font-black border-b border-black py-1 uppercase tracking-wider text-[9px] text-black">Approved By (Admin)</div>
                     <div class="relative flex items-center justify-center h-20 w-full bg-white overflow-hidden mx-auto">
                         @if($mr->approved_signature)
                             <div class="absolute inset-0 z-10 flex items-center justify-center p-1">
@@ -208,7 +208,7 @@
                     </div>
                     <div class="border-t border-slate-200 py-1.5 px-1 bg-white">
                         <p class="font-black uppercase text-black truncate">
-                            {{ str_contains(strtolower($mr->status ?? ''), 'approved') ? 'Admin / SPV Engineering' : '( _________________ )' }}
+                            {{ str_contains(strtolower($mr->status ?? ''), 'approved') ? 'Admin' : '( _________________ )' }}
                         </p>
                     </div>
                 </div>

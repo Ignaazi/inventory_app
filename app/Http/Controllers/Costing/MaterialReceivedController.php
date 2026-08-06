@@ -85,6 +85,11 @@ class MaterialReceivedController extends Controller
      */
     public function storeCostingSignature(Request $request)
     {
+        if ($response = $this->guardSignatureRole(['costing', 'admin'], 'Costing atau Admin')) {
+            return $response;
+        }
+
+        $user = Auth::user();
         $prTable = (new PurchaseRequestEng())->getTable();
 
         $request->validate([
@@ -92,7 +97,6 @@ class MaterialReceivedController extends Controller
             'qty_received'        => 'required|integer|min:1',
             'lot_no'              => 'nullable|string|max:100',
             'remark'              => 'required|string',
-            'prepared_signature'  => 'required|string',
         ]);
 
         $pr = PurchaseRequestEng::findOrFail($request->purchase_request_id);
@@ -114,7 +118,9 @@ class MaterialReceivedController extends Controller
         $nextId = $latestMr ? $latestMr->id + 1 : 1;
         $finalMrNo = 'MR' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
-        $signaturePath = $this->uploadBase64Signature($request->prepared_signature, 'prepared');
+        // Never trust a signature path sent by the browser. Use the signed-in
+        // Costing user's signature registered in User Management.
+        $signaturePath = $user->signature_path;
 
         MaterialReceived::create([
             'no_mr'               => $finalMrNo,
@@ -199,7 +205,7 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 7. HALAMAN FORM APPROVAL AKHIR (SISI ENGINEERING SUPERVISOR)
+     * 7. HALAMAN FORM APPROVAL AKHIR (SISI ADMIN)
      */
     public function engApprove($id)
     {
@@ -218,6 +224,11 @@ class MaterialReceivedController extends Controller
      */
     public function signEngineeringStaff($id, Request $request)
     {
+        if ($response = $this->guardSignatureRole(['engineering', 'admin'], 'Engineering atau Admin')) {
+            return $response;
+        }
+
+        $user = Auth::user();
         $receiving = MaterialReceived::findOrFail($id);
 
         if (strtolower($receiving->status) !== 'pending') {
@@ -233,12 +244,11 @@ class MaterialReceivedController extends Controller
         $maxAllowed = $pr->qty_pr - $alreadyReceived;
 
         $request->validate([
-            'checked_signature' => 'required|string',
             'qty_received'      => "required|integer|min:0|max:{$maxAllowed}",
             'remark'            => 'required|string'
         ]);
 
-        $signaturePath = $this->uploadBase64Signature($request->checked_signature, 'checked');
+        $signaturePath = $user->signature_path;
 
         $receiving->update([
             'status'            => 'checked',
@@ -251,13 +261,17 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * 9. PROSES APPROVAL AKHIR SUPERVISOR / ADMIN (STATUS: CHECKED -> APPROVED)
+     * 9. PROSES APPROVAL AKHIR ADMIN (STATUS: CHECKED -> APPROVED)
      * FIX: Murni hanya mengubah entitas Material Received saja tanpa menyentuh tabel PR
      */
     public function approveEngineeringSpv($id, Request $request)
     {
+        if ($response = $this->guardSignatureRole('admin', 'Admin')) {
+            return $response;
+        }
+
+        $user = Auth::user();
         $request->validate([
-            'approved_signature' => 'required|string',
             'notes'              => 'nullable|string'
         ]);
 
@@ -267,8 +281,8 @@ class MaterialReceivedController extends Controller
             return redirect()->back()->with('error', 'Dokumen harus melalui status Checked Staff terlebih dahulu!');
         }
 
-        $signaturePath = $this->uploadBase64Signature($request->approved_signature, 'approved');
-        $updatedRemark = $mr->remark . ($request->notes ? "\n[SPV Eng Notes]: " . $request->notes : "");
+        $signaturePath = $user->signature_path;
+        $updatedRemark = $mr->remark . ($request->notes ? "\n[Admin Notes]: " . $request->notes : "");
 
         // Update record MR sesuai konfigurasi ENUM dari struktur database yang dikirim
         $mr->update([
@@ -298,22 +312,28 @@ class MaterialReceivedController extends Controller
     }
 
     /**
-     * HELPER UPLOAD BASE64 TTD DIGITAL
+     * Ensure the current department owns the workflow step and has a
+     * signature configured in User Management.
      */
-    private function uploadBase64Signature($base64String, $prefix)
+    private function guardSignatureRole(array|string $requiredRoles, string $roleLabel)
     {
-        if (!str_contains($base64String, 'data:image')) {
-            return $base64String;
+        $user = Auth::user();
+        $requiredRoles = (array) $requiredRoles;
+
+        if (!$user || !in_array(strtolower((string) $user->role), $requiredRoles, true)) {
+            return redirect()->back()->with(
+                'error',
+                "Tahap ini hanya dapat ditandatangani oleh user role {$roleLabel}."
+            );
         }
 
-        $image_parts = explode(";base64,", $base64String);
-        $image_type_aux = explode("image/", $image_parts[0]);
-        $image_type = $image_type_aux[1];
-        $image_base64 = base64_decode($image_parts[1]);
-        
-        $fileName = 'signatures/mr/' . $prefix . '_' . uniqid() . '.' . $image_type;
-        Storage::disk('public')->put($fileName, $image_base64);
-        
-        return 'storage/' . $fileName;
+        if (blank($user->signature_path)) {
+            return redirect()->back()->with(
+                'error',
+                "Signature user {$roleLabel} belum diatur di User Management."
+            );
+        }
+
+        return null;
     }
 }

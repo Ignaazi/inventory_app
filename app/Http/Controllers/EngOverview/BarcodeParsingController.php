@@ -16,20 +16,20 @@ class BarcodeParsingController extends Controller
      */
     public function index()
     {
-        // Ambil list ID dokumen yang sudah pernah diproses di Header
-        $parsedPrIds = DB::table('barcode_parsing_headers')
-                        ->whereNotNull('production_request_id')
-                        ->pluck('production_request_id');
-
         $parsedMrIds = DB::table('barcode_parsing_headers')
                         ->whereNotNull('material_received_id')
                         ->pluck('material_received_id');
+
+        $parsedQtyByPr = DB::table('barcode_parsings')
+                            ->whereNotNull('production_request_id')
+                            ->select('production_request_id', DB::raw('SUM(qty_parsed) as total_qty'))
+                            ->groupBy('production_request_id')
+                            ->pluck('total_qty', 'production_request_id');
 
         // 1. Ambil data request produksi dengan JOIN ke tabel spareparts (Hanya yang belum diproses)
         $productionRequests = DB::table('production_requests')
                                 ->leftJoin('spareparts', 'production_requests.sparepart_id', '=', 'spareparts.id')
                                 ->where('production_requests.status', 'Approved')
-                                ->whereNotIn('production_requests.id', $parsedPrIds)
                                 ->select(
                                     'production_requests.*',
                                     'spareparts.sparepart_id as custom_sparepart_code',
@@ -38,7 +38,11 @@ class BarcodeParsingController extends Controller
                                 )
                                 ->orderBy('production_requests.id', 'desc')
                                 ->get()
-                                ->map(function ($pr) {
+                                ->map(function ($pr) use ($parsedQtyByPr) {
+                                    $pr->qty_remaining = max(
+                                        0,
+                                        (int) $pr->qty_req - (int) ($parsedQtyByPr[$pr->id] ?? 0)
+                                    );
                                     $pr->sparepart = (object) [
                                         'id'          => $pr->sparepart_id, 
                                         'part_no'     => $pr->custom_sparepart_code, 
@@ -47,7 +51,9 @@ class BarcodeParsingController extends Controller
                                         'sap_code'    => $pr->sap_code
                                     ];
                                     return $pr;
-                                });
+                                })
+                                ->filter(fn ($pr) => $pr->qty_remaining > 0)
+                                ->values();
 
         // 2. Ambil data material received DENGAN JOIN via purchase_requests ke spareparts (Hanya yang belum diproses)
         $materialReceived = DB::table('material_received')
@@ -56,7 +62,7 @@ class BarcodeParsingController extends Controller
                                 ->whereNotIn('material_received.id', $parsedMrIds)
                                 ->select(
                                     'material_received.*',
-                                    'purchase_requests.sparepart_id',
+                                    'purchase_requests.sparepart_id as purchase_sparepart_id',
                                     'spareparts.sparepart_id as custom_sparepart_code',
                                     'spareparts.part_number',
                                     'spareparts.sap_code'
@@ -65,7 +71,7 @@ class BarcodeParsingController extends Controller
                                 ->get()
                                 ->map(function ($mr) {
                                     $mr->sparepart = (object) [
-                                        'id'          => $mr->sparepart_id, 
+                                        'id'          => $mr->purchase_sparepart_id,
                                         'part_no'     => $mr->custom_sparepart_code, 
                                         'part_name'   => $mr->custom_sparepart_code,
                                         'part_number' => $mr->part_number,
@@ -115,7 +121,10 @@ class BarcodeParsingController extends Controller
             $barcodeType   = $request->barcode_type;
             $barcodeSize   = $mode === 'IN' ? '10' : ($request->barcode_size ?: '10');
 
-            $stockEngRecord = DB::table('stock_engs')->where('id', $stockEngId)->first();
+            $stockEngRecord = DB::table('stock_engs')
+                                ->where('id', $stockEngId)
+                                ->lockForUpdate()
+                                ->first();
             if (!$stockEngRecord) {
                 return response()->json(['success' => false, 'message' => 'Lokasi Rak atau Data Stok Engineering tidak ditemukan!'], 404);
             }
@@ -269,13 +278,34 @@ class BarcodeParsingController extends Controller
                     return response()->json(['success' => false, 'message' => 'Dokumen Production Request tidak valid!'], 404);
                 }
 
-                $qty = (int) $prDoc->qty_req;
-                
-                if ($stockEngRecord->qty < $qty) {
+                $alreadyParsedQty = (int) DB::table('barcode_parsings')
+                    ->where('production_request_id', $sourceId)
+                    ->sum('qty_parsed');
+                $remainingRequestQty = max(0, (int) $prDoc->qty_req - $alreadyParsedQty);
+
+                if ($remainingRequestQty === 0) {
                     DB::rollBack();
                     return response()->json([
-                        'success' => false, 
-                        'message' => "Stok di Rak ini tidak mencukupi! Sisa stok saat ini: {$stockEngRecord->qty} pcs, sedangkan permintaan: {$qty} pcs."
+                        'success' => false,
+                        'message' => 'Production Request ini sudah terpenuhi seluruhnya.'
+                    ], 400);
+                }
+
+                if ((int) $stockEngRecord->sparepart_id !== (int) $prDoc->sparepart_id) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rak sumber tidak sesuai dengan sparepart pada Production Request.'
+                    ], 400);
+                }
+
+                $qty = min($remainingRequestQty, max(0, (int) $stockEngRecord->qty));
+
+                if ($qty === 0) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Stok di Rak ini sedang kosong.'
                     ], 400);
                 }
 
@@ -361,14 +391,31 @@ class BarcodeParsingController extends Controller
                   ->where('date_key', $dateKey)
                   ->update(['last_counter' => $localCounter, 'updated_at' => now()]);
 
-                // Update Total Qty di Header & Update Status PR
+                DB::table('stock_engs')
+                  ->where('id', $stockEngId)
+                  ->update([
+                      'qty'        => DB::raw('qty - ' . $qty),
+                      'updated_at' => now(),
+                  ]);
+
+                $remainingAfterBatch = $remainingRequestQty - $qty;
+
+                // PR tetap Approved saat parsial dan baru ditutup setelah qty penuh.
                 DB::table('barcode_parsing_headers')->where('id', $headerId)->update(['total_qty' => $qty]);
-                DB::table('production_requests')->where('id', $sourceId)->update(['status' => 'Completed', 'updated_at' => now()]);
+                if ($remainingAfterBatch === 0) {
+                    DB::table('production_requests')
+                      ->where('id', $sourceId)
+                      ->update(['status' => 'Completed', 'updated_at' => now()]);
+                }
 
                 DB::commit();
+                $remainingMessage = $remainingAfterBatch > 0
+                    ? " Sisa PR yang belum diproses: {$remainingAfterBatch} pcs."
+                    : ' PR sudah terpenuhi seluruhnya.';
+
                 return response()->json([
                     'success' => true,
-                    'message' => "Sukses memproses Batch OUT! Berhasil menerbitkan {$qty} data barcode baru untuk Lini {$lineStr}."
+                    'message' => "Sukses memproses Batch OUT! Berhasil menerbitkan {$qty} data barcode baru untuk Lini {$lineStr}.{$remainingMessage}"
                 ]);
             }
 
@@ -446,20 +493,20 @@ class BarcodeParsingController extends Controller
      */
     public function indexIn()
     {
-        // Ambil list ID dokumen yang sudah pernah diproses di Header
-        $parsedPrIds = DB::table('barcode_parsing_headers')
-                        ->whereNotNull('production_request_id')
-                        ->pluck('production_request_id');
-
         $parsedMrIds = DB::table('barcode_parsing_headers')
                         ->whereNotNull('material_received_id')
                         ->pluck('material_received_id');
+
+        $parsedQtyByPr = DB::table('barcode_parsings')
+                            ->whereNotNull('production_request_id')
+                            ->select('production_request_id', DB::raw('SUM(qty_parsed) as total_qty'))
+                            ->groupBy('production_request_id')
+                            ->pluck('total_qty', 'production_request_id');
 
         // 1. Ambil data request produksi dengan JOIN ke tabel spareparts (Hanya yang belum diproses)
         $productionRequests = DB::table('production_requests')
                                 ->leftJoin('spareparts', 'production_requests.sparepart_id', '=', 'spareparts.id')
                                 ->where('production_requests.status', 'Approved')
-                                ->whereNotIn('production_requests.id', $parsedPrIds)
                                 ->select(
                                     'production_requests.*',
                                     'spareparts.sparepart_id as custom_sparepart_code',
@@ -468,7 +515,11 @@ class BarcodeParsingController extends Controller
                                 )
                                 ->orderBy('production_requests.id', 'desc')
                                 ->get()
-                                ->map(function ($pr) {
+                                ->map(function ($pr) use ($parsedQtyByPr) {
+                                    $pr->qty_remaining = max(
+                                        0,
+                                        (int) $pr->qty_req - (int) ($parsedQtyByPr[$pr->id] ?? 0)
+                                    );
                                     $pr->sparepart = (object) [
                                         'id'          => $pr->sparepart_id, 
                                         'part_no'     => $pr->custom_sparepart_code, 
@@ -477,7 +528,9 @@ class BarcodeParsingController extends Controller
                                         'sap_code'    => $pr->sap_code
                                     ];
                                     return $pr;
-                                });
+                                })
+                                ->filter(fn ($pr) => $pr->qty_remaining > 0)
+                                ->values();
 
         // 2. Ambil data material received DENGAN JOIN via purchase_requests ke spareparts (Hanya yang belum diproses)
         $materialReceived = DB::table('material_received')
@@ -486,7 +539,7 @@ class BarcodeParsingController extends Controller
                                 ->whereNotIn('material_received.id', $parsedMrIds)
                                 ->select(
                                     'material_received.*',
-                                    'purchase_requests.sparepart_id',
+                                    'purchase_requests.sparepart_id as purchase_sparepart_id',
                                     'spareparts.sparepart_id as custom_sparepart_code',
                                     'spareparts.part_number',
                                     'spareparts.sap_code'
@@ -495,7 +548,7 @@ class BarcodeParsingController extends Controller
                                 ->get()
                                 ->map(function ($mr) {
                                     $mr->sparepart = (object) [
-                                        'id'          => $mr->sparepart_id, 
+                                        'id'          => $mr->purchase_sparepart_id,
                                         'part_no'     => $mr->custom_sparepart_code, 
                                         'part_name'   => $mr->custom_sparepart_code,
                                         'part_number' => $mr->part_number,
