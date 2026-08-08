@@ -66,6 +66,17 @@ class ApprovalEngController extends Controller
         $requestData = RequestProd::with(['user', 'sparepart', 'lineProduction'])->findOrFail($id);
         $role = $request->input('signer_role');
         $user = Auth::user();
+        $currentStatus = strtolower(trim((string) $requestData->status));
+
+        if ($role === 'staff' && !in_array($currentStatus, ['pending', 'draft submit'], true)) {
+            return redirect()->route('eng.approval')
+                ->with('error', 'Request ini sudah melewati tahap Checked Staff.');
+        }
+
+        if ($role === 'admin' && $currentStatus !== 'checked by staff') {
+            return redirect()->route('eng.approval')
+                ->with('error', 'Request harus berstatus Checked by Staff sebelum di-Approve.');
+        }
         
         $signaturePath = null;
 

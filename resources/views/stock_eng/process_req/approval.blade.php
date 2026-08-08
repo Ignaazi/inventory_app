@@ -110,9 +110,10 @@
                     @php
                         $statusText = 'unknown';
                         $badgeClass = 'bg-slate-100 text-slate-950 border-slate-300';
-                        
-                        $rawStatus = strtolower($req->status);
-                        
+
+                        $rawStatus = strtolower(trim((string) $req->status));
+                        $isPendingStage = $rawStatus === 'pending';
+
                         if(str_contains($rawStatus, 'draft')) {
                             $statusText = 'draft';
                             $badgeClass = 'bg-gray-100 text-gray-950 border-gray-300';
@@ -214,9 +215,9 @@
                                         </button>
                                     </form>
 
-                                    <a href="{{ route('eng.approval.review', $req->id) }}" 
+                                    <a href="{{ route('eng.approval.review', $req->id) }}"
                                        class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-black rounded text-[10px] uppercase tracking-wider shadow-sm hover:opacity-90 active:scale-95 transition-all text-center inline-block no-underline cursor-pointer">
-                                        Approve
+                                        {{ $isPendingStage ? 'Checked' : 'Approve' }}
                                     </a>
                                 @else
                                     <span class="text-[10px] font-black uppercase tracking-wider processed-text">Processed</span>
@@ -294,6 +295,10 @@
 
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'Success!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false, customClass: { popup: 'font-nunito' } });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({ icon: 'error', title: 'Tidak dapat diproses', text: "{{ session('error') }}", timer: 3500, showConfirmButton: true, customClass: { popup: 'font-nunito' } });
     @endif
 </script>
 

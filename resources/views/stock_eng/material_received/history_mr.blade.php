@@ -120,12 +120,37 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-800 text-[13px] font-bold font-nunito bg-transparent table-body-data">
                     @forelse($receivings as $index => $item)
                     @php
-                        // Karena halaman riwayat, status dipastikan approved / closed
-                        $statusText = 'approved';
-                        $badgeClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        $statusText = strtolower($item->status ?? 'unknown');
+                        $badgeClass = match ($statusText) {
+                            'approved' => 'bg-emerald-50 text-emerald-950 border-emerald-300',
+                            'checked' => 'bg-blue-50 text-blue-950 border-blue-300',
+                            'pending' => 'bg-amber-50 text-amber-950 border-amber-300',
+                            default => 'bg-slate-100 text-slate-950 border-slate-300',
+                        };
 
-                        $qtyStatusRaw = strtoupper($item->qty_status ?? 'CLOSED');
-                        $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        // Calculate from the actual PR balance, not the stored flag.
+                        $qtyStatusRaw = 'OPEN';
+                        $qtyStatusClass = 'bg-amber-50 text-amber-950 border-amber-300';
+                        $qtyPr = optional($item->purchaseRequest)->qty_pr ?? 0;
+
+                        if ($qtyPr > 0) {
+                            $totalAccumulated = \App\Models\Costing\MaterialReceived::where('purchase_request_id', $item->purchase_request_id)
+                                ->whereIn('status', ['pending', 'checked', 'approved'])
+                                ->where('id', '<=', $item->id)
+                                ->sum('qty_received');
+
+                            $shortage = max(0, $qtyPr - $totalAccumulated);
+
+                            if ($shortage > 0) {
+                                $qtyStatusRaw = 'OPEN (-' . number_format($shortage) . ' Pcs)';
+                            } else {
+                                $qtyStatusRaw = 'CLOSE';
+                                $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                            }
+                        } elseif ($item->qty_status !== 'open') {
+                            $qtyStatusRaw = 'CLOSE';
+                            $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
+                        }
                     @endphp
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">
                         <td class="px-2 py-3.5 text-center">
@@ -267,6 +292,44 @@
         document.body.appendChild(downloadLink);
         downloadLink.click();
     }
+
+    // Poll only the data version; avoid full-page reload flicker when nothing changed.
+    (() => {
+        const refreshInterval = 10000;
+        const editableElements = ['INPUT', 'TEXTAREA', 'SELECT'];
+        let currentVersion = @json($liveVersion);
+        let isPolling = false;
+
+        setInterval(async () => {
+            const activeElement = document.activeElement;
+            const isEditing = activeElement && editableElements.includes(activeElement.tagName);
+            const hasDialog = document.querySelector('.swal2-container');
+
+            if (document.visibilityState !== 'visible' || isEditing || hasDialog || isPolling) {
+                return;
+            }
+
+            isPolling = true;
+
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('live', '1');
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+
+                if (data.version !== currentVersion) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                // A temporary polling failure must not interrupt the page.
+            } finally {
+                isPolling = false;
+            }
+        }, refreshInterval);
+    })();
 </script>
 
 <style>

@@ -39,6 +39,10 @@
                class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-6 text-xs font-black text-white shadow-md shadow-orange-500/20 hover:shadow-lg hover:brightness-110 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline cursor-pointer">
                 Scan OUT
             </a>
+            <a href="{{ route('prod.transaction.out.manual') }}"
+               class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 text-xs font-black text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:brightness-110 tracking-wider uppercase active:scale-95 transition-all font-nunito w-full sm:w-auto text-center no-underline cursor-pointer">
+                Manual OUT LOST
+            </a>
         </div>
     </div>
 
@@ -99,8 +103,8 @@
                         </th>
                         <th class="px-4 py-4 w-[70px] border-l border-blue-500/50 bg-blue-700/50">NO</th>
                         <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50">TRANSACTION ID</th>
-                        <th class="px-4 py-4 w-[170px] border-l border-blue-500/50 bg-blue-700/50">NIK KARYAWAN/PIC</th>
-                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">OPERATOR NAME</th>
+                        <th class="px-4 py-4 w-[170px] border-l border-blue-500/50 bg-blue-700/50">NIK</th>
+                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">NAME</th>
                         <th class="px-5 py-4 w-[190px] border-l border-blue-500/50 bg-blue-700/50">BARCODE ID</th>
                         <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50">SPAREPART ID</th>
                         <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">RAK</th>
@@ -142,7 +146,7 @@
 
                         {{-- 5. BARCODE ID (SUDAH DIPERBAIKI MENAMPILKAN KODE TEXT BARCODE) --}}
                         <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
-                            {{ $log->barcode_code ?? '-' }}
+                            {{ $log->barcode_code ?? $log->employee_nik ?? $log->nik_karyawan ?? '-' }}
                         </td>
 
                         {{-- 6. SPAREPART ID --}}

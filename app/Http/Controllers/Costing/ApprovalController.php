@@ -7,7 +7,7 @@ use App\Models\Engineering\PurchaseRequestEng;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Barryvdh\DomPDF\Facade\Pdf; // Package dompdf untuk render Blade ke PDF
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ApprovalController extends Controller
 {
@@ -50,13 +50,8 @@ class ApprovalController extends Controller
         return view('cost_section.approval_pr', compact('pendingPr', 'search'));
     }
 
-    /**
-     * Menampilkan Form Halaman Baru untuk Approval Costing
-     * (Membuka views/cost_section/approve_PrForm.blade.php)
-     */
     public function approveForm($id)
     {
-        // Eager load user dan sparepart agar data di form baru lengkap
         $pr = PurchaseRequestEng::with(['user', 'sparepart'])->findOrFail($id);
 
         return view('cost_section.approve_PrForm', compact('pr'));

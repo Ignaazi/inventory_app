@@ -101,8 +101,8 @@
                         </th>
                         <th class="px-4 py-4 w-[70px] border-l border-rose-500/50 bg-rose-700/50">NO</th>
                         <th class="px-5 py-4 w-[220px] border-l border-rose-500/50 bg-rose-700/50">TRANSACTION DISPOSAL ID</th>
-                        <th class="px-4 py-4 w-[170px] border-l border-rose-500/50 bg-rose-700/50">NIK KARYAWAN/PIC</th>
-                        <th class="px-5 py-4 w-[180px] border-l border-rose-500/50 bg-rose-700/50">OPERATOR NAME</th>
+                        <th class="px-4 py-4 w-[170px] border-l border-rose-500/50 bg-rose-700/50">NIK</th>
+                        <th class="px-5 py-4 w-[180px] border-l border-rose-500/50 bg-rose-700/50">NAME</th>
                         <th class="px-5 py-4 w-[190px] border-l border-rose-500/50 bg-rose-700/50">BARCODE ID</th>
                         <th class="px-4 py-4 w-[160px] border-l border-rose-500/50 bg-rose-700/50">SPAREPART ID</th>
                         <th class="px-4 py-4 w-[120px] border-l border-rose-500/50 bg-rose-700/50">QTY DISPOSAL</th>
@@ -143,7 +143,7 @@
 
                         {{-- 5. BARCODE ID (RELASI BARCODE) --}}
                         <td class="px-5 py-4 border-l border-gray-100 dark:border-slate-800 font-mono text-amber-600 dark:text-amber-400 text-center whitespace-nowrap">
-                            {{ $log->barcode->barcode_id ?? $log->dbBarcode->barcode_id ?? $log->barcode_id ?? '-' }}
+                            {{ $log->barcode->barcode_id ?? $log->dbBarcode->barcode_id ?? $log->barcode_id ?? $log->nik_karyawan ?? '-' }}
                         </td>
 
                         {{-- 6. SPAREPART ID (MEMANGGIL KOLOM sparepart_id PADA TABEL SPAREPARTS, CONTOH: 120, 148, 170) --}}

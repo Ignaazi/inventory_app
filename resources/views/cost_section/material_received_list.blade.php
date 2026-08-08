@@ -132,34 +132,28 @@
                         }
 
                         // 2. PERBAIKAN & KALKULASI DINAMIS QTY STATUS (OPEN DENGAN SISA MINUSNYA)
-                        $qtyStatusRaw = strtoupper($mr->qty_status ?? 'OPEN');
-                        
-                        if(str_contains(strtolower($qtyStatusRaw), 'open')) {
-                            $qtyStatusClass = 'bg-amber-50 text-amber-950 border-amber-300'; // OPEN (Kuning)
-                            
-                            $qtyPr = optional($mr->purchaseRequest)->qty_pr ?? 0;
-                            
-                            if($qtyPr > 0) {
-                                // Hitung total item terkumpul untuk PR ini sampai record ini dibuat
-                                $totalAccumulated = \App\Models\Costing\MaterialReceived::where('purchase_request_id', $mr->purchase_request_id)
-                                    ->whereIn('status', ['pending', 'checked', 'approved'])
-                                    ->where('id', '<=', $mr->id) 
-                                    ->sum('qty_received');
-                                    
-                                $shortage = max(0, $qtyPr - $totalAccumulated);
-                                
-                                if($shortage > 0) {
-                                    $qtyStatusRaw = "OPEN (-" . number_format($shortage) . " Pcs)";
-                                } else {
-                                    $qtyStatusRaw = "CLOSE";
-                                    $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
-                                }
+                        $qtyStatusRaw = 'OPEN';
+                        $qtyStatusClass = 'bg-amber-50 text-amber-950 border-amber-300';
+                        $qtyPr = optional($mr->purchaseRequest)->qty_pr ?? 0;
+
+                        if ($qtyPr > 0) {
+                            // Hitung total item terkumpul untuk PR ini sampai record ini dibuat.
+                            $totalAccumulated = \App\Models\Costing\MaterialReceived::where('purchase_request_id', $mr->purchase_request_id)
+                                ->whereIn('status', ['pending', 'checked', 'approved'])
+                                ->where('id', '<=', $mr->id)
+                                ->sum('qty_received');
+
+                            $shortage = max(0, $qtyPr - $totalAccumulated);
+
+                            if ($shortage > 0) {
+                                $qtyStatusRaw = 'OPEN (-' . number_format($shortage) . ' Pcs)';
                             } else {
-                                $qtyStatusRaw = "OPEN";
+                                $qtyStatusRaw = 'CLOSE';
+                                $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
                             }
-                        } else {
-                            $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300'; // CLOSE (Hijau)
-                            $qtyStatusRaw = "CLOSE";
+                        } elseif ($mr->qty_status !== 'open') {
+                            $qtyStatusRaw = 'CLOSE';
+                            $qtyStatusClass = 'bg-emerald-50 text-emerald-950 border-emerald-300';
                         }
                     @endphp
                     <tr class="material-row-item hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors duration-150 bg-transparent">

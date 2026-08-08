@@ -99,7 +99,7 @@
                         <th class="px-4 py-4 w-[70px] border-l border-blue-500/50 bg-blue-700/50">NO</th>
                         <th class="px-5 py-4 w-[220px] border-l border-blue-500/50 bg-blue-700/50">TRANSACTION RETURN ID</th>
                         <th class="px-4 py-4 w-[140px] border-l border-blue-500/50 bg-blue-700/50">NIK</th>
-                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">OPERATOR NAME</th>
+                        <th class="px-5 py-4 w-[180px] border-l border-blue-500/50 bg-blue-700/50">NAME</th>
                         <th class="px-5 py-4 w-[190px] border-l border-blue-500/50 bg-blue-700/50">BARCODE ID</th>
                         <th class="px-4 py-4 w-[160px] border-l border-blue-500/50 bg-blue-700/50">SPAREPART ID</th>
                         <th class="px-4 py-4 w-[130px] border-l border-blue-500/50 bg-blue-700/50">RAK</th>

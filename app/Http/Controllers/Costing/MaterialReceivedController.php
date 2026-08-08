@@ -121,13 +121,14 @@ class MaterialReceivedController extends Controller
         // Never trust a signature path sent by the browser. Use the signed-in
         // Costing user's signature registered in User Management.
         $signaturePath = $user->signature_path;
+        $remainingQty = $pr->qty_pr - ($alreadyReceived + $request->qty_received);
 
         MaterialReceived::create([
             'no_mr'               => $finalMrNo,
             'purchase_request_id' => $request->purchase_request_id,
             'user_id'             => Auth::id(),
             'qty_received'        => $request->qty_received,
-            'qty_status'          => 'open', 
+            'qty_status'          => $remainingQty > 0 ? 'open' : 'closed',
             'remark'              => $request->remark,
             'status'              => 'pending',
             'prepared_signature'  => $signaturePath,
@@ -148,23 +149,30 @@ class MaterialReceivedController extends Controller
     {
         $search = $request->get('search');
         $perPage = $request->get('per_page', 10); 
+        $liveVersion = $this->materialReceivedLiveVersion(['pending', 'checked']);
+
+        if ($request->boolean('live')) {
+            return response()->json(['version' => $liveVersion]);
+        }
         
         $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
             ->whereIn('status', ['pending', 'checked']) // 💡 Data 'approved' otomatis sembunyi dari list utama
             ->when($search, function ($query) use ($search) {
-                $query->where('no_mr', 'LIKE', "%{$search}%")
-                      ->orWhereHas('purchaseRequest', function ($q) use ($search) {
-                          $q->where('no_pr', 'LIKE', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('no_mr', 'LIKE', "%{$search}%")
+                      ->orWhereHas('purchaseRequest', function ($purchaseRequestQuery) use ($search) {
+                          $purchaseRequestQuery->where('no_pr', 'LIKE', "%{$search}%");
                       })
-                      ->orWhereHas('user', function ($q) use ($search) {
-                          $q->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('nik', 'LIKE', "%{$search}%");
+                      ->orWhereHas('user', function ($userQuery) use ($search) {
+                          $userQuery->where('name', 'LIKE', "%{$search}%")
+                                    ->orWhere('nik', 'LIKE', "%{$search}%");
                       });
+                });
             })
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('id')
             ->paginate($perPage);
 
-        return view('stock_eng.material_received.eng_list_material_received', compact('receivings', 'search'));
+        return view('stock_eng.material_received.eng_list_material_received', compact('receivings', 'search', 'liveVersion'));
     }
 
     /**
@@ -175,23 +183,31 @@ class MaterialReceivedController extends Controller
     {
         $search = $request->get('search');
         $perPage = $request->get('per_page', 10); 
+        $liveVersion = $this->materialReceivedLiveVersion(['approved']);
+
+        if ($request->boolean('live')) {
+            return response()->json(['version' => $liveVersion]);
+        }
         
         $receivings = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])
             ->where('status', 'approved') // 💡 Hanya menarik data yang sudah disetujui
             ->when($search, function ($query) use ($search) {
-                $query->where('no_mr', 'LIKE', "%{$search}%")
-                      ->orWhereHas('purchaseRequest', function ($q) use ($search) {
-                          $q->where('no_pr', 'LIKE', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('no_mr', 'LIKE', "%{$search}%")
+                      ->orWhereHas('purchaseRequest', function ($purchaseRequestQuery) use ($search) {
+                          $purchaseRequestQuery->where('no_pr', 'LIKE', "%{$search}%");
                       })
-                      ->orWhereHas('user', function ($q) use ($search) {
-                          $q->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('nik', 'LIKE', "%{$search}%");
+                      ->orWhereHas('user', function ($userQuery) use ($search) {
+                          $userQuery->where('name', 'LIKE', "%{$search}%")
+                                    ->orWhere('nik', 'LIKE', "%{$search}%");
                       });
+                });
             })
-            ->orderBy('updated_at', 'desc') // Diurutkan berdasarkan approval paling baru
+            ->orderByDesc('updated_at') // Diurutkan berdasarkan approval paling baru
+            ->orderByDesc('id')
             ->paginate($perPage);
 
-        return view('stock_eng.material_received.history_mr', compact('receivings', 'search'));
+        return view('stock_eng.material_received.history_mr', compact('receivings', 'search', 'liveVersion'));
     }
 
     /**
@@ -200,6 +216,11 @@ class MaterialReceivedController extends Controller
     public function engConfirm($id)
     {
         $receiving = MaterialReceived::with(['user', 'purchaseRequest.sparepart'])->findOrFail($id);
+
+        if (strtolower($receiving->status) !== 'pending') {
+            return redirect()->route('eng.material.receiving.index')
+                ->with('error', 'Dokumen sudah diperiksa atau diproses oleh user lain.');
+        }
         
         return view('stock_eng.material_received.eng_checked_material_received', compact('receiving'));
     }
@@ -250,14 +271,18 @@ class MaterialReceivedController extends Controller
 
         $signaturePath = $user->signature_path;
 
+        $remainingQty = $pr->qty_pr - ($alreadyReceived + $request->qty_received);
+
         $receiving->update([
             'status'            => 'checked',
             'qty_received'      => $request->qty_received,
+            'qty_status'        => $remainingQty > 0 ? 'open' : 'closed',
             'checked_signature' => $signaturePath,
             'remark'            => $request->remark
         ]);
 
-        return redirect()->route('eng.material.receiving.index')->with('success', 'Material Received berhasil diperiksa (Checked) oleh Staff Engineering!');
+        return redirect()->route('eng.material.receiving.approve', $receiving->id)
+            ->with('success', 'Material Received berhasil diperiksa (Checked) oleh Staff Engineering dan siap di-approve!');
     }
 
     /**
@@ -283,16 +308,21 @@ class MaterialReceivedController extends Controller
 
         $signaturePath = $user->signature_path;
         $updatedRemark = $mr->remark . ($request->notes ? "\n[Admin Notes]: " . $request->notes : "");
+        $totalReceived = MaterialReceived::where('purchase_request_id', $mr->purchase_request_id)
+            ->whereIn('status', ['pending', 'checked', 'approved'])
+            ->sum('qty_received');
+        $remainingQty = $mr->purchaseRequest->qty_pr - $totalReceived;
 
         // Update record MR sesuai konfigurasi ENUM dari struktur database yang dikirim
         $mr->update([
             'status'             => 'approved', // Menjadi Approved sesuai enum data[cite: 2]
-            'qty_status'         => 'closed',   // Menjadi Closed sesuai enum data[cite: 2]
+            'qty_status'         => $remainingQty > 0 ? 'open' : 'closed',
             'approved_signature' => $signaturePath,
             'remark'             => $updatedRemark
         ]);
 
-        return redirect()->route('eng.material.receiving.index')->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED dan dipindahkan ke History!');
+        return redirect()->route('eng.material.receiving.history')
+            ->with('success', 'Dokumen Material Received dinyatakan FULLY APPROVED dan sudah masuk ke History!');
     }
 
     /**
@@ -335,5 +365,17 @@ class MaterialReceivedController extends Controller
         }
 
         return null;
+    }
+
+    private function materialReceivedLiveVersion(array $statuses): string
+    {
+        $latest = MaterialReceived::whereIn('status', $statuses)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first(['id', 'updated_at']);
+
+        return $latest
+            ? $latest->id . ':' . ($latest->updated_at?->getTimestamp() ?? 0)
+            : 'empty';
     }
 }

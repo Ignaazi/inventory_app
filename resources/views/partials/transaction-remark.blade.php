@@ -10,6 +10,8 @@
         $remarkText = 'AUTOMATED ' . strtoupper($matches[1]);
     } elseif (preg_match('/^AUTOMATED\s+(IN|OUT|RETURN|DISPOSAL)\s+VIA\b/i', $rawRemark, $matches)) {
         $remarkText = 'AUTOMATED ' . strtoupper($matches[1]);
+    } elseif (preg_match('/^AUTOMATED\s+LOST\b/i', $rawRemark)) {
+        $remarkText = 'AUTOMATED LOST';
     }
 @endphp
 

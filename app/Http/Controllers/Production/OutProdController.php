@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ListSparepartEng;
 use App\Models\Production\stock_prod;
-use Illuminate\Http\JsonResponse;
 
 class OutProdController extends Controller
 {
@@ -74,71 +73,125 @@ class OutProdController extends Controller
     }
 
     /**
-     * Form manual OUT menggunakan barcode IN terakhir dari stock line.
+     * Form manual OUT untuk barang hilang tanpa barcode.
      */
     public function manualOut()
     {
         $activeStocks = stock_prod::with(['line', 'sparepart'])
             ->where('qty', '>', 0)
+            ->whereIn('sparepart_id', DB::table('stock_engs')->select('sparepart_id'))
             ->orderBy('line_id')
             ->get()
             ->map(function ($stock) {
-                $latestIn = DB::table('stock_prod_transactions')
-                    ->where('stock_prods_id', $stock->id)
-                    ->where('tx_type', 'in')
-                    ->where('status', 'success')
-                    ->latest('id')
-                    ->first();
-
-                $stock->barcode_code = $latestIn?->db_barcodes_id
-                    ? DB::table('db_barcodes')->where('id', $latestIn->db_barcodes_id)->value('barcode_id')
-                    : null;
                 $stock->line_name = $stock->line->no_line ?? $stock->line_id;
                 $stock->item_code = $stock->sparepart->sparepart_id ?? $stock->sparepart_id;
+                $stock->part_number = $stock->sparepart->part_number ?? '-';
+                $stock->sap_code = $stock->sparepart->sap_code ?? '-';
 
                 return $stock;
             });
 
-        return view('stock_prod.transactionProd.manual_out', compact('activeStocks'));
+        return view('stock_prod.transactionProd.outProdManual', compact('activeStocks'));
     }
 
     /**
-     * Manual OUT tetap melewati validasi dan mutasi yang sama dengan scanner.
+     * Manual OUT LOST: tidak membutuhkan barcode dan selalu mengurangi satu unit.
      */
     public function storeManualOut(Request $request)
     {
         $request->validate([
             'stock_prods_id' => 'required|integer|exists:stock_prods,id',
-            'nik_karyawan'   => 'nullable|required_if:out_category,lost|string|max:50',
-            'out_category'   => 'required|string|in:broken,lost',
-            'photo_path'     => 'nullable|required_if:out_category,broken|image|max:5120',
+            'nik_karyawan'   => 'required|string|max:50',
             'remark'         => 'nullable|string',
         ]);
 
-        $latestIn = DB::table('stock_prod_transactions')
-            ->where('stock_prods_id', $request->stock_prods_id)
-            ->where('tx_type', 'in')
-            ->where('status', 'success')
-            ->latest('id')
-            ->first();
+        DB::beginTransaction();
 
-        if (!$latestIn || !$latestIn->db_barcodes_id) {
-            return redirect()->back()->withInput()->with('error', 'Barcode IN aktif untuk stock line tersebut tidak ditemukan.');
+        try {
+            $stock = stock_prod::with(['line', 'sparepart'])
+                ->lockForUpdate()
+                ->find($request->stock_prods_id);
+
+            if (!$stock) {
+                throw new \RuntimeException('Stock produksi tidak ditemukan.');
+            }
+
+            if ($stock->qty < 1) {
+                throw new \RuntimeException('Stok produksi untuk item tersebut sudah habis.');
+            }
+
+            // Disposal memakai master Engineering sebagai referensi item, tetapi
+            // tidak mengurangi saldo Engineering karena barang hilang di produksi.
+            $engineeringStock = DB::table('stock_engs')
+                ->where('sparepart_id', $stock->sparepart_id)
+                ->orderBy('id')
+                ->first();
+
+            if (!$engineeringStock) {
+                throw new \RuntimeException('Master stok Engineering untuk sparepart ini tidak ditemukan.');
+            }
+
+            $txId = $this->generateProductionOutTxId();
+            $disposalTxId = $this->generateDisposalTxId();
+            $nikKaryawan = trim($request->input('nik_karyawan'));
+            $itemCode = $stock->sparepart->sparepart_id ?? $stock->sparepart_id;
+            $lineName = $stock->line->no_line ?? $stock->line_id;
+            $remark = 'AUTOMATED LOST | NIK KARYAWAN YANG MENGHILANGKAN: ' . $nikKaryawan;
+
+            if ($request->filled('remark')) {
+                $remark .= ' | ' . trim($request->input('remark'));
+            }
+
+            $stock->decrement('qty', 1);
+
+            DB::table('stock_prod_transactions')->insert([
+                'tx_id'                 => $txId,
+                'users_id'              => Auth::id() ?? 1,
+                'stock_prods_id'        => $stock->id,
+                'stock_eng_tx_id'       => null,
+                'db_barcodes_id'        => null,
+                'production_request_id' => null,
+                'nik_karyawan'          => $nikKaryawan,
+                'tx_type'               => 'out',
+                'out_category'          => 'lost',
+                'qty_transaction'       => 1,
+                'process_type'          => 'manual',
+                'photo_path'            => null,
+                'status'                => 'success',
+                'remark'                => $remark,
+                'created_at'            => now(),
+                'updated_at'            => now(),
+            ]);
+
+            DB::table('stock_eng_transactions')->insert([
+                'tx_id'                 => $disposalTxId,
+                'users_id'              => Auth::id() ?? 1,
+                'stock_engs_id'         => $engineeringStock->id,
+                'db_barcodes_id'        => null,
+                'tx_type'               => 'disposal',
+                'qty_transaction'       => 1,
+                'process_type'          => 'manual',
+                'photo_path'            => null,
+                'status'                => 'success',
+                'remark'                => $remark
+                    . ' | SOURCE PRODUCTION MANUAL OUT: ' . $txId
+                    . ' | LINE: ' . $lineName
+                    . ' | SPAREPART: ' . $itemCode,
+                'created_at'            => now(),
+                'updated_at'            => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('prod.transaction.out')
+                ->with('success', 'Manual LOST berhasil dicatat. Stok ' . $itemCode . ' di Line ' . $lineName . ' berkurang 1.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan Manual LOST: ' . $e->getMessage());
         }
-
-        $barcode = DB::table('db_barcodes')->where('id', $latestIn->db_barcodes_id)->value('barcode_id');
-        $request->merge([
-            'barcode_scan' => $barcode,
-            'process_type' => 'manual',
-        ]);
-
-        $response = $this->storeScanOut($request);
-        if ($response instanceof JsonResponse) {
-            $data = $response->getData(true);
-            return redirect()->back()->withInput()->with($data['success'] ? 'success' : 'error', $data['message']);
-        }
-
-        return $response;
     }
 
     /**
@@ -324,5 +377,31 @@ class OutProdController extends Controller
                 'message' => 'Terjadi kesalahan sistem internal: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function generateProductionOutTxId(): string
+    {
+        $datePrefix = 'TXPRODOUT' . date('dmy');
+        $lastTrx = DB::table('stock_prod_transactions')
+            ->where('tx_id', 'LIKE', $datePrefix . '%')
+            ->orderBy('tx_id', 'desc')
+            ->first();
+
+        $nextNumber = $lastTrx ? ((int) substr($lastTrx->tx_id, -4)) + 1 : 1;
+
+        return $datePrefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function generateDisposalTxId(): string
+    {
+        $datePrefix = 'TXENGDIS' . date('dmy');
+        $lastTrx = DB::table('stock_eng_transactions')
+            ->where('tx_id', 'LIKE', $datePrefix . '%')
+            ->orderBy('tx_id', 'desc')
+            ->first();
+
+        $nextNumber = $lastTrx ? ((int) substr($lastTrx->tx_id, -3)) + 1 : 1;
+
+        return $datePrefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 }

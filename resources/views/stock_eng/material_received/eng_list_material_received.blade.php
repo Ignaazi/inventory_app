@@ -315,6 +315,44 @@
             }
         });
     }
+
+    // Poll only the data version; avoid full-page reload flicker when nothing changed.
+    (() => {
+        const refreshInterval = 10000;
+        const editableElements = ['INPUT', 'TEXTAREA', 'SELECT'];
+        let currentVersion = @json($liveVersion);
+        let isPolling = false;
+
+        setInterval(async () => {
+            const activeElement = document.activeElement;
+            const isEditing = activeElement && editableElements.includes(activeElement.tagName);
+            const hasDialog = document.querySelector('.swal2-container');
+
+            if (document.visibilityState !== 'visible' || isEditing || hasDialog || isPolling) {
+                return;
+            }
+
+            isPolling = true;
+
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('live', '1');
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+
+                if (data.version !== currentVersion) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                // A temporary polling failure must not interrupt the page.
+            } finally {
+                isPolling = false;
+            }
+        }, refreshInterval);
+    })();
 </script>
 
 <style>
